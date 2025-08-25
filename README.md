@@ -28,3 +28,4 @@ $ pip install annofab-cli-llm
 $ annofabcli-llm --help
 ```
 
+詳細は https://annofab-cli-llm.readthedocs.io/ja/latest/command_reference/index.html を参照してください。
