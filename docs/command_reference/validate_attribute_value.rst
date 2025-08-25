@@ -85,8 +85,8 @@ Examples
      --output_format csv
      --label_name car \
      --attribute_name status
-     --prompt @prompt.md
-     --attribute_description @attribute_description.md
+     --prompt @prompt.md \
+     --attribute_description @attribute_description.md \
      --annotation_overview @annotation_overview.md
 
 
