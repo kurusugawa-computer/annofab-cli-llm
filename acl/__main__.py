@@ -69,7 +69,7 @@ def mask_argv(argv: list[str]) -> list[str]:
     `argv`にセンシティブな情報が含まれている場合は、`***`に置き換える。
     """
     tmp_argv = copy.deepcopy(argv)
-    for masked_option in ["--annofab_password", "--annofab_pat"]:
+    for masked_option in ["--annofab_pat"]:
         try:
             index = tmp_argv.index(masked_option)
             tmp_argv[index + 1] = "***"
