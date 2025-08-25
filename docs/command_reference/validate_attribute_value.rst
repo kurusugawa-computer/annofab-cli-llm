@@ -6,12 +6,19 @@ Description
 =================================
 
 アノテーションの属性値を検証します。
+自然言語で記載された属性値の検証などに利用できます。
+たとえば、以下のようなケースで利用できます。
+
+* 属性値の誤字脱字の検出
+* 属性値がmarkdownの文法に準拠しているかの検証
+* 属性値Aと属性値Bの関係が矛盾していないかの検証
 
 
 Examples
 =================================
 
-
+基本的な使い方
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block::
     :caption: prompt.md
@@ -53,6 +60,37 @@ Examples
 
 ``validate_result.csv`` の ``suggested_attributes`` 列を ``attributes`` に変更することで、
 `annofabcli annotation change_attributes_per_annotation <https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation/change_attributes_per_annotation.html>`_ コマンドの ``--csv`` に渡して、属性値を一括で変更できます。
+
+
+属性やアノテーションルールのコンテキストを追加する
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+.. code-block::
+    :caption: attribute_description.md
+
+    属性`status`は画像に映っている状態を表します。
+
+
+.. code-block::
+    :caption: annotation_overview.md
+
+    画像の状況を説明するアノテーションです。
+
+
+.. code-block::
+
+    $ annofabcli-llm validate_annotation_attribute --project_id ${PROJECT_ID} \
+     --output validate_result.csv \
+     --output_format csv
+     --label_name car \
+     --attribute_name status
+     --prompt @prompt.md
+     --attribute_description @attribute_description.md
+     --annotation_overview @annotation_overview.md
+
+
+
 
 
 Usage Details

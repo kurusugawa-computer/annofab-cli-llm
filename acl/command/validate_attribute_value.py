@@ -429,16 +429,15 @@ def add_argument_to_parser(parser: argparse.ArgumentParser) -> None:
         help="アノテーション属性値をどのように検証するかを記述したプロンプト。\n例: 明らかな誤字脱字がないかをチェックしてください。\n"
         "先頭に`@`を指定すると、`@`以降をファイルパスとみなしてファイルの中身を読み込みます。",
     )
-
     parser.add_argument(
-        "--annotation_overview",
+        "--attribute_description",
         type=str,
         required=False,
         help="検証対象の属性の説明。\n例: 属性`status`は画像に映っている状態を表します。\n先頭に`@`を指定すると、`@`以降をファイルパスとみなしてファイルの中身を読み込みます。",
     )
 
     parser.add_argument(
-        "--attribute_description",
+        "--annotation_overview",
         type=str,
         required=False,
         help="アノテーションの概要。\n例: 画像の状況を説明するアノテーションです。\n先頭に`@`を指定すると、`@`以降をファイルパスとみなしてファイルの中身を読み込みます。",
