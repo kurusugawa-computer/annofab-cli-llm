@@ -62,6 +62,14 @@ Examples
 `annofabcli annotation change_attributes_per_annotation <https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation/change_attributes_per_annotation.html>`_ コマンドの ``--csv`` に渡して、属性値を一括で変更できます。
 
 
+
+.. note::
+
+    検証結果の途中経過は ``$HOME/.cache/annofab-cli-llm/temp/validate_annotation_attribute_*`` に出力されます。
+
+
+
+
 属性やアノテーションルールのコンテキストを追加する
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
