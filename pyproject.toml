@@ -1,0 +1,170 @@
+[project]
+name = "annofabcli-llm"
+dynamic = ["version"]
+description = "LLMとannofab-cliを組み合わせたツールです。"
+authors = [{ name = "Kurusugawa Computer Inc." }]
+license = { text = "MIT" }
+keywords = ["annofab", "cli", "llm"]
+readme = "README.md"
+requires-python = ">=3.12"
+classifiers = [
+    "Environment :: Console",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13"
+]
+dependencies = [
+    "loguru",
+    "litellm",
+    "requests",
+    "pyyaml",
+    "more-itertools",
+    "annofabapi>=1.4.7",
+    "pandas>=2,<3",
+    "annofabcli>=1.105.2",
+]
+
+[dependency-groups]
+dev = [
+    "ipython",
+]
+test = [
+    "pytest>=7",
+    "pytest-xdist",
+    "pytest-cov",
+]
+linter = [
+    "ruff>=0.11; python_version>='3.12'",
+    "mypy>=1; python_version>='3.12'",
+    "pylint>=3; python_version>='3.12'",
+    "types-pytz; python_version>='3.12'",
+    "types-requests; python_version>='3.12'",
+    "types-python-dateutil; python_version>='3.12'",
+    "types-PyYAML; python_version>='3.12'",
+]
+docs = [
+    "sphinx>=8; python_version>='3.12'",
+    "pydata-sphinx-theme>=0.13; python_version>='3.12'",
+    "sphinx-last-updated-by-git; python_version>='3.12'",
+    "sphinx-argparse; python_version>='3.12'",
+]
+
+[tool.uv]
+default-groups = ["dev", "test", "linter", "docs"]
+package = true
+
+
+[project.scripts]
+annofabcli-llm = "acl.__main__:main"
+
+[tool.mypy]
+ignore_missing_imports = true
+
+check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_unreachable = true
+
+show_column_numbers = true
+warn_unused_configs = true
+
+
+[tool.ruff]
+target-version = "py312"
+line-length = 200
+
+
+[tool.ruff.lint]
+
+ignore = [
+    "A005", # stdlib-module-shadowing: 標準ライブラリと同じ名前のモジュールはあるが、基本的には混乱しないはずなので無視する。
+    "G004", # `logging-f-string` : loggingでf-stringを使いたいので無視する
+    "PD901", #すでに`df`という変数をいろんなところで使っているため
+    "PD002", #すでにpandasで`inplace=True`はいろんなところで使っているため
+    "RUF001", # 全角記号など`ambiguous unicode character`も使いたいため
+    "RUF002",# 全角記号など`ambiguous unicode character`も使いたいため
+    "RUF003",# 全角記号など`ambiguous unicode character`も使いたいため
+    "PLR2004", # magic-value-comparison: listのサイズで判定するときがよくあるため
+    "ISC001", # single-line-implicit-string-concatenation: formatterと競合するので無視する https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
+    "ERA", # : 役立つこともあるが、コメントアウトしていないコードも警告されるので無視する
+    "PERF203", # try-except-in-loop: ループ内でtry-exceptを使うこともあるため無視する。
+    "COM812", # missing-trailing-comma: 末尾のカンマを考慮しないため無視する
+    "TRY003", # raise-vanilla-args: `ValueError`にf-stringで長いメッセージを渡すことが多いので無視する
+    "FIX", # TODOやFIXMEを使うため無視する
+    "TD", # TODOコメントの書き方に気にしていないので無視する
+    "SIM108", # if-else-block-instead-of-if-exp : if-elseブロックを使うこともあるため無視する
+    "SIM102",
+    
+
+    # 以下のルールはannofabcliのコードに合っていないので無効化した
+    "RSE", # flake8-raise
+    "D", # pydocstyle, Docstringを中途半端にしか書いていないので、除外する
+    "C90", # mccabe
+    "BLE", # flake8-blind-except
+    "S", # flake8-bandit
+    "EM",#flake8-errmsg
+    "EXE", # flake8-executable
+    "ICN", # flake8-import-conventions
+    "RET",#flake8-return
+    "TCH", # flake8-type-checking
+    "PT", # flake8-pytest-style
+]
+
+
+# preview段階のルールを個別に指定できるようにするための設定
+preview = true
+explicit-preview-rules = true
+
+select = [
+    "ALL",
+    # 以降のルールはpreview版のルールのみを指定する
+    "FURB132", # check-and-remove-from-set 
+    "FURB142", # for-loop-set-mutations
+    "FURB113", # repeated-append
+    "B909", # loop-iterator-mutation 
+    "PLW1514",  # unspecified-encoding: Windows環境で実行する際にencoding="utf-8"を指定しないとエラーになるため、チェックする
+]
+
+
+
+[tool.ruff.lint.per-file-ignores]
+# テストコードはチェックを緩和する
+"tests/**.py" = [
+    "PGH",  # pygrep-hooks
+    "DTZ",  # flake8-datetimez
+    "ANN",  # flake8-annotations
+    "E501",  # line-too-long
+    "RUF100",  # unused-noqa
+    "SIM", # flake8-simplify
+    "N", # pep8-naming
+    "PTH", # flake8-use-pathlib
+    "SLF", # flake8-self
+    "PLC2401", # non-ascii-name: メソッド名に日本語を使うため
+]
+
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.pyupgrade]
+# `typing.Optional`を使っているため、UP007のルールを無視する
+# https://beta.ruff.rs/docs/settings/#keep-runtime-typing
+# Python 3.9のサポートを終了したら、この設定を除去する
+keep-runtime-typing = true
+
+[tool.ruff.lint.pylint]
+max-args = 10
+
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.hatch.build.targets.wheel]
+packages = ["acl"]
+
+

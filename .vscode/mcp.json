@@ -1,0 +1,11 @@
+{
+    "servers": {
+        "my-mcp-server-d7bc8abe": {
+            "type": "stdio",
+            "command": "codex",
+            "args": [
+                "mcp"
+            ]
+        }
+    }
+}

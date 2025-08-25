@@ -1,0 +1,28 @@
+{
+    "terminal.integrated.allowChords": false, // terminal上でEmacsキーバインドを使うための設定
+    "python.languageServer": "Pylance",
+    "python.autoComplete.extraPaths": [
+        ".venv/lib/python3.12/site-packages/"
+    ],
+    "python.analysis.extraPaths": [
+        ".venv/lib/python3.12/site-packages/"
+    ],
+    "python.analysis.completeFunctionParens": true,
+    "[python]": {},
+    "python.testing.autoTestDiscoverOnSaveEnabled": false,
+    "files.exclude": {
+        ".coverage*": true,
+        "**/__pycache__": true,
+        "**/.pytest_cache": true,
+        "build/": true,
+        "dist/": true,
+        "docs/_build/": true,
+        "htmlcov/": true,
+        "out/": true,
+        "*.egg-info/": true,
+        ".devcontainer/.extensions/": true,
+        ".devcontainer/venv/": true
+    },
+    "editor.minimap.enabled": false,
+
+}
