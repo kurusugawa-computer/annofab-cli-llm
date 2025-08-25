@@ -164,7 +164,7 @@ def validate_annotation_attribute_with_llm(
             if 0 <= result.index < len(indices):
                 result.index = indices[result.index]
         if temp_dir:
-            print_json(messages, (temp_dir / f"{chunk_file_prefix}--llm_completion.json"))
+            print_json([e.model_dump() for e in results], (temp_dir / f"{chunk_file_prefix}--llm_completion.json"))
         all_results.extend(results)
 
     logger.info(
