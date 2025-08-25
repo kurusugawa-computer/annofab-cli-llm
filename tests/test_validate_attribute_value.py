@@ -1,3 +1,4 @@
+import pytest
 from acl.command.validate_attribute_value import split_by_json_length, validate_annotation_attribute_with_llm
 
 
@@ -26,6 +27,7 @@ def test_split_by_json_length():
     assert chunks[2][0][0]["status"] == "d" * 2000
 
 
+@pytest.mark.access_webapi
 def test_validate_annotation_attribute_with_llm():
     attribute_list = [
         {"status": "自動車が走っています。"},

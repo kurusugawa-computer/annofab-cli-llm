@@ -163,7 +163,7 @@ def read_at_file(value: str) -> str:
     """
     if value.startswith("@"):
         file_path = Path(value[1:])
-        return file_path.read_text()
+        return file_path.read_text(encoding="utf-8")
     return value
 
 

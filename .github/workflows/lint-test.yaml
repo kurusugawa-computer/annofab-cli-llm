@@ -38,5 +38,5 @@ jobs:
           make lint
       - name: Test
         run: |
-          make test
+          uv run pytest tests/ -m "not access_webapi"
     
