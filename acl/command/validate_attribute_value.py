@@ -17,8 +17,6 @@ from acl.common.cli import prompt_yesno, read_at_file
 from acl.common.utils import print_csv, print_json
 from acl.common.xdg_util import create_command_temp_dir
 
-
-
 COMMAND_NAME = "validate_annotation_attribute"
 
 
@@ -476,7 +474,7 @@ def add_argument_to_parser(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def add_parser(subparsers: argparse._SubParsersAction|None=None) -> argparse.ArgumentParser:
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     parser = acl.common.cli.add_parser(subparsers, COMMAND_NAME, "アノテーションの属性値を検証します。")
     add_argument_to_parser(parser)
     parser.set_defaults(func=main)

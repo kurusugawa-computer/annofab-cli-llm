@@ -111,7 +111,7 @@ def main(arguments: list[str] | None = None) -> None:
         args.command_help()
 
 
-def create_parser(subparsers: argparse._SubParsersAction|None = None) -> argparse.ArgumentParser:
+def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="LLMとannofab-cliを組み合わせたツールです。", formatter_class=acl.common.cli.PrettyHelpFormatter)
     parser.add_argument("--version", action="version", version=f"annofabcli-llm {acl.__version__}")
     parser.set_defaults(command_help=parser.print_help)

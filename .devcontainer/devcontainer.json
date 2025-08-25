@@ -22,7 +22,8 @@
 		"--net=host",
 		"--env=ANNOFAB_USER_ID",
 		"--env=ANNOFAB_PASSWORD",
-		"--env=ANNOFAB_PAT"
+		"--env=ANNOFAB_PAT",
+		"--env=OPENAI_API_KEY"
 	],
 	"containerEnv": {
 		"CONTAINER_WORKSPACE": "${containerWorkspaceFolder}",
