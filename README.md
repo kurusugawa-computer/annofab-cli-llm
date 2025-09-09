@@ -12,7 +12,7 @@ annofab-cliとLLMを組み合わせたツールです。
 # Install
 
 ```
-$ pip install annofab-cli-llm
+$ pip install annofabcli-llm
 ```
 
 # 設定
