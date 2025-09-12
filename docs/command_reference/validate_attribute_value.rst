@@ -40,9 +40,35 @@ Examples
 
     $ annofabcli-llm validate_annotation_attribute --project_id ${PROJECT_ID} \
      --output validate_result.csv \
-     --output_format csv
+     --output_format csv \
      --label_name car \
-     --attribute_name status
+     --attribute_name status \
+     --prompt @prompt.md
+
+
+異なるLLMモデルを使用する場合
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+より高性能なモデルを使用したい場合や、特定の用途に適したモデルを選択できます。
+
+.. code-block::
+
+    # GPT-4を使用（より高精度だが処理時間が長い）
+    $ annofabcli-llm validate_annotation_attribute --model openai/gpt-4 \
+     --project_id ${PROJECT_ID} \
+     --output validate_result.csv \
+     --output_format csv \
+     --label_name car \
+     --attribute_name status \
+     --prompt @prompt.md
+
+    # Claude-3.5 Sonnetを使用（テキスト処理に優秀）
+    $ annofabcli-llm validate_annotation_attribute --model anthropic/claude-3-5-sonnet-20241022 \
+     --project_id ${PROJECT_ID} \
+     --output validate_result.csv \
+     --output_format csv \
+     --label_name car \
+     --attribute_name status \
      --prompt @prompt.md
 
 
