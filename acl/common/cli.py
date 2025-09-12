@@ -12,7 +12,7 @@ from acl.common.utils import read_lines_except_blank_line
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_LLM_MODEL = "openai/o4-mini"
+DEFAULT_LLM_MODEL = "openai/gpt-5-mini"
 
 
 class ExitCode:

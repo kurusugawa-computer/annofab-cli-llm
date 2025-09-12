@@ -16,9 +16,7 @@ lint:
 	uv run mypy ${SOURCE_FILES} ${TEST_FILES}
 
 test:
-    # 更新の競合が発生する可能性があるので、並列実行しない
-	# skip対象のmakersを実行しないように"-m"で指定する
-	uv run pytest --cov=${SOURCE_FILES} --cov-report=html ${TEST_FILES} -m "not submitting_job and not depending_on_annotation_specs"
+	uv run pytest --cov=${SOURCE_FILES} --cov-report=html ${TEST_FILES}
 
 docs:
 	cd docs && uv run make html
