@@ -3,9 +3,11 @@ Command Reference
 ==================================================
 
 
+Available Commands
+=================================
+
 .. toctree::
-   :maxdepth: 2
-   :caption: Available Commands
+   :maxdepth: 1
    :titlesonly:
 
    validate_attribute_value

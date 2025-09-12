@@ -58,7 +58,9 @@ def add_parser(
         parent_parser = argparse.ArgumentParser(add_help=False, formatter_class=PrettyHelpFormatter)
         group = parent_parser.add_argument_group(GLOBAL_OPTIONAL_ARGUMENTS_TITLE)
 
-        group.add_argument("-m", "--model", action="store_true", default=DEFAULT_LLM_MODEL, help="使用するLLMのモデルです。デフォルトは'openai/o4-mini'です。使用できるモデルは https://docs.litellm.ai/docs/providers を参照してください。")
+        group.add_argument(
+            "-m", "--model", default=DEFAULT_LLM_MODEL, help="使用するLLMのモデルです。デフォルトは'openai/o4-mini'です。使用できるモデルは https://docs.litellm.ai/docs/providers を参照してください。"
+        )
         group.add_argument("--verbose", action="store_true", help="詳細なログを出力します。")
         group.add_argument("--yes", action="store_true", help="確認メッセージに対して常に'yes'と回答したとみなします。確認メッセージを表示されません。")
         group.add_argument("--annofab_pat", type=str, help="AnnofabのPersonal Access Token")
