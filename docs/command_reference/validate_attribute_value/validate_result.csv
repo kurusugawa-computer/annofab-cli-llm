@@ -1,2 +1,3 @@
 project_id,task_id,task_status,task_phase,task_phase_stage,input_data_id,input_data_name,updated_datetime,annotation_id,label,attributes,validation_messages,suggested_attributes
-p1,t1,complete,acceptance,1,i1,i1,2025-06-04T10:03:12.467+09:00,a1,car,{'left_hand_status': ‘歩行車が歩いてています。'},{'car': '「歩行車」は「歩行者」の間違いです。'},{'car': '  歩行者が歩いています。'}
+p1,t1,complete,acceptance,1,i1,i1,2025-06-04T10:03:12.467+09:00,a1,car,{'left_hand_status': ‘歩行車が歩いてています。'},{'left_hand_status': '「歩行車」は「歩行者」の間違いです。'},{'left_hand_status': '  歩行者が歩いています。'}
+
