@@ -12,7 +12,7 @@ from litellm import completion
 from loguru import logger
 from pydantic import BaseModel, Field
 
-import acl
+import acl.common.cli
 from acl.common.cli import prompt_yesno, read_at_file
 from acl.common.utils import print_csv, print_json
 from acl.common.xdg_util import create_command_temp_dir
