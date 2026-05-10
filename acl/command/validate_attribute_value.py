@@ -12,7 +12,7 @@ from litellm import completion
 from loguru import logger
 from pydantic import BaseModel, Field
 
-import acl
+import acl.common.cli
 from acl.common.cli import prompt_yesno, read_at_file
 from acl.common.utils import print_csv, print_json
 from acl.common.xdg_util import create_command_temp_dir
@@ -370,9 +370,9 @@ def main(args: argparse.Namespace) -> None:
         df = pandas.DataFrame(output_attribute_list, columns=cols)
         # `annofabcli annotation change_attributes_per_annotation`コマンドの`--csv`に渡せるようにするため、JSONに変換する。
         for col in ["attributes", "validation_messages", "suggested_attributes"]:
-            df[col] = df[col].map(lambda e: json.dumps(e))
+            df[col] = df[col].map(json.dumps)
 
-        print_csv(pandas.DataFrame(output_attribute_list, columns=cols), output=out)
+        print_csv(df, output=out)
 
     logger.info("アノテーションの属性値の検証が完了しました。")
 
