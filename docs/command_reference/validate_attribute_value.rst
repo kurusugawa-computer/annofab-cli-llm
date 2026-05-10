@@ -53,8 +53,8 @@ Examples
 
 .. code-block::
 
-    # GPT-4を使用（より高精度だが処理時間が長い）
-    $ annofabcli-llm validate_annotation_attribute --model openai/gpt-4 \
+    # GPT-5.4 miniを使用（より高精度だがコストは上がる）
+    $ annofabcli-llm validate_annotation_attribute --model openai/gpt-5.4-mini \
      --project_id ${PROJECT_ID} \
      --output validate_result.csv \
      --output_format csv \
@@ -135,5 +135,4 @@ Usage Details
    :prog: annofabcli-llm validate_attribute_value
    :nosubcommands:
    :nodefaultconst:
-
 
