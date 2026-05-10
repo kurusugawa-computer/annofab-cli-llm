@@ -372,7 +372,7 @@ def main(args: argparse.Namespace) -> None:
         for col in ["attributes", "validation_messages", "suggested_attributes"]:
             df[col] = df[col].map(json.dumps)
 
-        print_csv(pandas.DataFrame(output_attribute_list, columns=cols), output=out)
+        print_csv(df, output=out)
 
     logger.info("アノテーションの属性値の検証が完了しました。")
 
