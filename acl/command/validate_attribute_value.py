@@ -370,7 +370,7 @@ def main(args: argparse.Namespace) -> None:
         df = pandas.DataFrame(output_attribute_list, columns=cols)
         # `annofabcli annotation change_attributes_per_annotation`コマンドの`--csv`に渡せるようにするため、JSONに変換する。
         for col in ["attributes", "validation_messages", "suggested_attributes"]:
-            df[col] = df[col].map(lambda e: json.dumps(e))
+            df[col] = df[col].map(json.dumps)
 
         print_csv(pandas.DataFrame(output_attribute_list, columns=cols), output=out)
 
