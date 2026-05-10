@@ -10,6 +10,7 @@ from loguru import logger
 
 import acl
 import acl.common.cli
+from acl.command.parse_attribute_restriction import add_parser as add_parser_for_parse_attribute_restriction
 from acl.command.validate_attribute_value import add_parser as add_parser_for_validate_attribute_value
 from acl.common.xdg_util import get_logs_root_dir
 
@@ -118,6 +119,7 @@ def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argpa
 
     subparsers = parser.add_subparsers(dest="command_name")
 
+    add_parser_for_parse_attribute_restriction(subparsers)
     add_parser_for_validate_attribute_value(subparsers)
 
     return parser

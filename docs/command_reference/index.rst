@@ -10,6 +10,7 @@ Available Commands
    :maxdepth: 1
    :titlesonly:
 
+   parse_attribute_restriction
    validate_attribute_value
 
 

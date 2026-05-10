@@ -1,0 +1,317 @@
+import argparse
+import json
+from pathlib import Path
+from typing import Any
+
+import annofabapi
+from litellm import completion
+from loguru import logger
+from pydantic import BaseModel, Field
+
+import acl.common.cli
+from acl.common.cli import prompt_yesno, read_at_file
+from acl.common.utils import output_string, print_json
+from acl.common.xdg_util import create_command_temp_dir
+from annofabapi.util.annotation_specs import get_english_message
+from annofabapi.util.attribute_restrictions import Restriction, RestrictionAst, get_attribute_restriction_catalog
+
+COMMAND_NAME = "parse_attribute_restriction"
+
+
+class RestrictionAstParseResult(BaseModel):
+    """
+    属性制約の自然言語解析結果です。
+    """
+
+    asts: list[RestrictionAst]
+    """解析できた属性制約ASTの一覧です。"""
+    warnings: list[str] = Field(default_factory=list)
+    """解析時の注意事項です。"""
+    unresolved_texts: list[str] = Field(default_factory=list)
+    """属性制約として解釈できなかった原文の断片です。"""
+
+
+def summarize_annotation_specs_for_llm(annotation_specs: dict[str, Any]) -> dict[str, Any]:
+    """
+    annotation_specsから、LLMに渡しやすい最小限の要約情報を生成します。
+
+    Args:
+        annotation_specs: アノテーション仕様(v3)の情報
+
+    Returns:
+        LLM向けの要約情報
+    """
+    attributes: list[dict[str, Any]] = []
+    for additional in annotation_specs["additionals"]:
+        attribute_info = {
+            "attribute_name": get_english_message(additional["name"]),
+            "type": additional["type"],
+        }
+        choices = additional.get("choices")
+        if isinstance(choices, list):
+            attribute_info["choices"] = [get_english_message(choice["name"]) for choice in choices]
+        attributes.append(attribute_info)
+
+    labels = [get_english_message(label["label_name"]) for label in annotation_specs["labels"]]
+    return {
+        "attributes": attributes,
+        "labels": labels,
+    }
+
+
+def parse_restrictions_from_text(
+    *,
+    text: str,
+    annotation_specs: dict[str, Any],
+    llm_model: str,
+    temp_dir: Path | None = None,
+) -> RestrictionAstParseResult:
+    """
+    自然言語のテキストから属性制約ASTを抽出します。
+
+    Args:
+        text: 属性制約の情報が記載された自然言語
+        annotation_specs: アノテーション仕様(v3)の情報
+        llm_model: 使用するLLMのモデル
+        temp_dir: 任意の一時ディレクトリ
+
+    Returns:
+        属性制約の解析結果
+    """
+    annotation_specs_summary = summarize_annotation_specs_for_llm(annotation_specs)
+    restriction_catalog = [item.model_dump(mode="json") for item in get_attribute_restriction_catalog(annotation_specs)]
+    messages = [
+        {
+            "role": "system",
+            "content": """
+あなたは、自然言語で書かれたアノテーションルールから、Annofabの属性制約を抽出するAIです。
+抽出した制約は、必ずRestrictionAstParseResult形式で返してください。
+推測で属性名・選択肢名・ラベル名を補完してはいけません。
+annotation specsに存在しない属性名・選択肢名・ラベル名は出力してはいけません。
+表現できない条件、曖昧な条件、属性制約ではない文は unresolved_texts に入れてください。
+""".strip(),
+        },
+        {
+            "role": "user",
+            "content": f"""
+以下の自然言語テキストから、表現可能な属性制約を抽出してください。
+
+## 入力テキスト
+{text}
+
+## annotation specs の要約
+{json.dumps(annotation_specs_summary, ensure_ascii=False, indent=2)}
+
+## 属性制約カタログ
+{json.dumps(restriction_catalog, ensure_ascii=False, indent=2)}
+
+## RestrictionAstで表現できる制約の種類
+* checked / unchecked
+* is_empty / is_not_empty
+* equals_string / not_equals_string
+* matches_string / not_matches_string
+* equals_integer / not_equals_integer
+* has_choice / not_has_choice
+* has_label
+* can_input
+* imply
+
+## 制約の表現ルール
+* 1つの制約につき1つのASTを作ってください。
+* 「AならB」は imply を使ってください。
+* text/comment/tracking属性に対して文字列比較を使ってください。
+* integer属性に対して整数比較を使ってください。
+* choice/select属性に対して has_choice / not_has_choice を使ってください。
+* link属性に対して has_label を使ってください。
+* 属性制約として解釈できない文は unresolved_texts に入れてください。
+* 軽微な補足や曖昧さは warnings に入れてください。
+* asts, warnings, unresolved_texts の3項目を必ず返してください。
+""".strip(),
+        },
+    ]
+
+    if temp_dir is not None:
+        print_json(messages, temp_dir / "llm_prompt.json")
+
+    response = completion(
+        model=llm_model,
+        messages=messages,
+        response_format=RestrictionAstParseResult,
+    )
+    content = response.choices[0].message.content
+    result = RestrictionAstParseResult.model_validate_json(content)
+    logger.info(
+        f"[LLM] 属性制約を解析しました。 :: ast_count={len(result.asts)}, warnings={len(result.warnings)}, "
+        f"unresolved_texts={len(result.unresolved_texts)}, total_tokens={response.usage.total_tokens}, "
+        f"prompt_tokens={response.usage.prompt_tokens}, completion_tokens={response.usage.completion_tokens}"
+    )
+
+    if temp_dir is not None:
+        print_json(annotation_specs_summary, temp_dir / "annotation_specs_summary.json")
+        print_json(restriction_catalog, temp_dir / "attribute_restriction_catalog.json")
+        print_json(result.model_dump(mode="json"), temp_dir / "llm_completion.json")
+
+    return result
+
+
+def get_annotation_specs(
+    *,
+    annotation_specs_json_file: Path | None,
+    project_id: str | None,
+    annofab_pat: str | None,
+) -> dict[str, Any]:
+    """
+    ファイルまたはAnnofab APIからannotation specsを取得します。
+
+    Args:
+        annotation_specs_json_file: annotation specs JSONファイル
+        project_id: AnnofabのプロジェクトID
+        annofab_pat: AnnofabのPAT
+
+    Returns:
+        annotation specs(v3)
+    """
+    if annotation_specs_json_file is not None:
+        logger.info(f"annotation specs JSONファイルを読み込みます。 :: path='{annotation_specs_json_file}'")
+        return json.loads(annotation_specs_json_file.read_text(encoding="utf-8"))
+
+    if project_id is None:
+        raise ValueError("`annotation_specs_json_file`または`project_id`のいずれかを指定してください。")
+
+    logger.info(f"Annofabからannotation specsを取得します。 :: project_id='{project_id}'")
+    service = annofabapi.build(pat=annofab_pat)
+    annotation_specs, _ = service.api.get_annotation_specs(project_id, query_params={"v": "3"})
+    return annotation_specs
+
+
+def to_human_readable_text(result: RestrictionAstParseResult) -> str:
+    """
+    解析結果を人が読みやすいテキストへ変換します。
+
+    Args:
+        result: 解析結果
+
+    Returns:
+        人が読みやすいテキスト
+    """
+    lines: list[str] = []
+
+    if result.asts:
+        lines.append("[restrictions]")
+        lines.extend(f"- {ast.to_human_readable()}" for ast in result.asts)
+    else:
+        lines.append("[restrictions]")
+        lines.append("(none)")
+
+    if result.warnings:
+        lines.append("")
+        lines.append("[warnings]")
+        lines.extend(f"- {warning}" for warning in result.warnings)
+
+    if result.unresolved_texts:
+        lines.append("")
+        lines.append("[unresolved_texts]")
+        lines.extend(f"- {text}" for text in result.unresolved_texts)
+
+    return "\n".join(lines)
+
+
+def to_annofab_restrictions(result: RestrictionAstParseResult, annotation_specs: dict[str, Any]) -> list[dict[str, Any]]:
+    """
+    解析結果をAnnofabへ登録可能な属性制約JSONへ変換します。
+
+    Args:
+        result: 解析結果
+        annotation_specs: アノテーション仕様(v3)の情報
+
+    Returns:
+        Annofabに登録可能な属性制約JSON
+    """
+    return [Restriction.from_ast(ast, annotation_specs).to_dict() for ast in result.asts]
+
+
+def main(args: argparse.Namespace) -> None:
+    restriction_text = read_at_file(args.restriction_text)
+
+    temp_dir = create_command_temp_dir(COMMAND_NAME)
+    logger.info(f"一時ディレクトリ'{temp_dir}'を作成しました。このディレクトリにLLMの入出力情報などを出力します。")
+    temp_dir.mkdir(exist_ok=True)
+
+    annotation_specs = get_annotation_specs(
+        annotation_specs_json_file=args.annotation_specs_json_file,
+        project_id=args.project_id,
+        annofab_pat=args.annofab_pat,
+    )
+    print_json(annotation_specs, temp_dir / "annotation_specs.json")
+    output_path = args.output
+
+    if not args.yes:
+        if not prompt_yesno("属性制約の自然言語解析を実行しますか？"):
+            logger.info("終了します。")
+            return
+
+    result = parse_restrictions_from_text(
+        text=restriction_text,
+        annotation_specs=annotation_specs,
+        llm_model=args.model,
+        temp_dir=temp_dir,
+    )
+    print_json(result.model_dump(mode="json"), temp_dir / "parse_result.json")
+
+    for warning in result.warnings:
+        logger.warning(f"属性制約の解析時に注意事項がありました。 :: {warning}")
+    for unresolved_text in result.unresolved_texts:
+        logger.warning(f"属性制約として解釈できないテキストがありました。 :: {unresolved_text}")
+
+    if args.output_format == "human_readable":
+        output_string(to_human_readable_text(result), output=output_path)
+    elif args.output_format == "ast_json":
+        print_json(result.model_dump(mode="json"), output=output_path)
+    else:
+        annofab_restrictions = to_annofab_restrictions(result, annotation_specs)
+        print_json(annofab_restrictions, output=output_path)
+        print_json(annofab_restrictions, temp_dir / "annofab_restrictions.json")
+
+    logger.info("属性制約の自然言語解析が完了しました。")
+
+
+def add_argument_to_parser(parser: argparse.ArgumentParser) -> None:
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
+        "--annotation_specs_json_file",
+        type=Path,
+        help="annotation specs v3 のJSONファイルのパス",
+    )
+    group.add_argument(
+        "-p",
+        "--project_id",
+        type=str,
+        help="AnnofabのプロジェクトID",
+    )
+
+    parser.add_argument(
+        "--restriction_text",
+        type=str,
+        required=True,
+        help="属性制約の情報が記載された自然言語。先頭に`@`を指定すると、`@`以降をファイルパスとみなしてファイルの中身を読み込みます。",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        help="出力先のファイルパス。指定しない場合は、標準出力に出力されます。",
+    )
+    parser.add_argument(
+        "--output_format",
+        type=str,
+        choices=["human_readable", "ast_json", "annofab_json"],
+        required=True,
+        help="出力形式",
+    )
+
+
+def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
+    parser = acl.common.cli.add_parser(subparsers, COMMAND_NAME, "自然言語から属性制約を解析します。")
+    add_argument_to_parser(parser)
+    parser.set_defaults(func=main)
+    return parser
