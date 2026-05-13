@@ -173,6 +173,26 @@ def to_annofab_restrictions(result: RestrictionAstParseResult, annotation_specs:
     return [Restriction.from_ast(ast, annotation_specs).to_dict() for ast in result.asts]
 
 
+def collect_supplements_interactively(unresolved_texts: list[str]) -> list[str]:
+    """
+    未解決テキストに対してユーザーから補足情報をインタラクティブに収集します。
+
+    Args:
+        unresolved_texts: 属性制約として解釈できなかった原文の断片の一覧
+
+    Returns:
+        ユーザーが入力した補足情報の一覧（スキップされた場合は含まない）
+    """
+    supplements: list[str] = []
+    total = len(unresolved_texts)
+    for i, unresolved_text in enumerate(unresolved_texts, start=1):
+        print(f"\n[未解決テキスト {i}/{total}] {unresolved_text!r}")
+        supplement = input("補足情報を入力してください（スキップする場合は空Enterを押してください）: ").strip()
+        if supplement != "":
+            supplements.append(supplement)
+    return supplements
+
+
 def main(args: argparse.Namespace) -> None:
     restriction_text = read_at_file(args.restriction_text)
 
@@ -188,8 +208,9 @@ def main(args: argparse.Namespace) -> None:
     print_json(annotation_specs, temp_dir / "annotation_specs.json")
     output_path = args.output
 
+    current_text = restriction_text
     result = parse_restrictions_from_text(
-        text=restriction_text,
+        text=current_text,
         annotation_specs=annotation_specs,
         llm_model=args.model,
         temp_dir=temp_dir,
@@ -200,6 +221,28 @@ def main(args: argparse.Namespace) -> None:
         logger.warning(f"属性制約の解析時に注意事項がありました。 :: {warning}")
     for unresolved_text in result.unresolved_texts:
         logger.warning(f"属性制約として解釈できないテキストがありました。 :: {unresolved_text}")
+
+    interactive = not args.no_interactive and not args.yes
+    while result.unresolved_texts and interactive:
+        supplements = collect_supplements_interactively(result.unresolved_texts)
+        if len(supplements) == 0:
+            break
+
+        logger.info(f"{len(supplements)}件の補足情報をもとに再解析します。")
+        supplement_text = "\n".join(supplements)
+        current_text = f"{current_text}\n\n## 補足情報\n{supplement_text}"
+        result = parse_restrictions_from_text(
+            text=current_text,
+            annotation_specs=annotation_specs,
+            llm_model=args.model,
+            temp_dir=temp_dir,
+        )
+        print_json(result.model_dump(mode="json"), temp_dir / "parse_result.json")
+
+        for warning in result.warnings:
+            logger.warning(f"属性制約の解析時に注意事項がありました。 :: {warning}")
+        for unresolved_text in result.unresolved_texts:
+            logger.warning(f"属性制約として解釈できないテキストがありました。 :: {unresolved_text}")
 
     if args.output_format == "human_readable":
         output_string(to_human_readable_text(result), output=output_path)
@@ -245,6 +288,12 @@ def add_argument_to_parser(parser: argparse.ArgumentParser) -> None:
         choices=["human_readable", "ast_json", "annofab_json"],
         required=True,
         help="出力形式",
+    )
+    parser.add_argument(
+        "--no-interactive",
+        action="store_true",
+        dest="no_interactive",
+        help="未解決テキストが存在しても、補足情報の入力を求めずに終了します。",
     )
 
 
