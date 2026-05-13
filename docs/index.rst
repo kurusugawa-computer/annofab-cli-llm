@@ -13,7 +13,7 @@ Install
 
 .. code-block:: bash
    
-   $ pip install annofab-cli-llm
+   $ pip install annofabcli-llm
 
 
 Configurations
