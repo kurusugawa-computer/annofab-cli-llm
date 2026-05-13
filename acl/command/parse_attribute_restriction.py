@@ -83,6 +83,10 @@ annotation specsに存在しない属性名・選択肢名・ラベル名は出�
         response_format=RestrictionAstParseResult,
     )
     content = response.choices[0].message.content
+
+    if temp_dir is not None:
+        (temp_dir / "llm_raw_response.txt").write_text(content, encoding="utf-8")
+
     result = RestrictionAstParseResult.model_validate_json(content)
     logger.info(
         f"[LLM] 属性制約を解析しました。 :: ast_count={len(result.asts)}, warnings={len(result.warnings)}, "
