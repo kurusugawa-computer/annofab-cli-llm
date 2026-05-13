@@ -4,15 +4,15 @@ from pathlib import Path
 from typing import Any
 
 import annofabapi
+from annofabapi.util.attribute_restrictions import Restriction, RestrictionAst, get_attribute_restriction_catalog
 from litellm import completion
 from loguru import logger
 from pydantic import BaseModel, Field
 
 import acl.common.cli
-from acl.common.cli import prompt_yesno, read_at_file
+from acl.common.cli import read_at_file
 from acl.common.utils import output_string, print_json
 from acl.common.xdg_util import create_command_temp_dir
-from annofabapi.util.attribute_restrictions import Restriction, RestrictionAst, get_attribute_restriction_catalog
 
 COMMAND_NAME = "parse_attribute_restriction"
 
@@ -28,6 +28,7 @@ class RestrictionAstParseResult(BaseModel):
     """解析時の注意事項です。"""
     unresolved_texts: list[str] = Field(default_factory=list)
     """属性制約として解釈できなかった原文の断片です。"""
+
 
 def parse_restrictions_from_text(
     *,
@@ -147,17 +148,14 @@ def to_human_readable_text(result: RestrictionAstParseResult) -> str:
         lines.append("[restrictions]")
         lines.extend(f"- {ast.to_human_readable()}" for ast in result.asts)
     else:
-        lines.append("[restrictions]")
-        lines.append("(none)")
+        lines.extend(("[restrictions]", "(none)"))
 
     if result.warnings:
-        lines.append("")
-        lines.append("[warnings]")
+        lines.extend(("", "[warnings]"))
         lines.extend(f"- {warning}" for warning in result.warnings)
 
     if result.unresolved_texts:
-        lines.append("")
-        lines.append("[unresolved_texts]")
+        lines.extend(("", "[unresolved_texts]"))
         lines.extend(f"- {text}" for text in result.unresolved_texts)
 
     return "\n".join(lines)
@@ -188,9 +186,8 @@ def collect_supplements_interactively(unresolved_texts: list[str]) -> list[str]:
         ユーザーが入力した補足情報の一覧（スキップされた場合は含まない）
     """
     supplements: list[str] = []
-    total = len(unresolved_texts)
-    for i, unresolved_text in enumerate(unresolved_texts, start=1):
-        print(f"\n[未解決テキスト {i}/{total}] {unresolved_text!r}")
+    len(unresolved_texts)
+    for _i, _unresolved_text in enumerate(unresolved_texts, start=1):
         supplement = input("補足情報を入力してください（スキップする場合は空Enterを押してください）: ").strip()
         if supplement != "":
             supplements.append(supplement)

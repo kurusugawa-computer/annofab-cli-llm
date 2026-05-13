@@ -87,8 +87,8 @@ def test_parse_restrictions_from_text(monkeypatch, annotation_specs):
     assert actual == result
     user_content = actual_messages[1]["content"]
     assert "## 属性制約カタログ" in user_content
-    assert "\"allowed_ast_types\"" in user_content
-    assert "\"attribute_name\": \"vehicle_type\"" in user_content
+    assert '"allowed_ast_types"' in user_content
+    assert '"attribute_name": "vehicle_type"' in user_content
 
 
 def test_to_human_readable_text():
@@ -160,11 +160,7 @@ def test_get_annotation_specs_from_project_id(monkeypatch, annotation_specs):
 
     def fake_build(*, pat):
         called["pat"] = pat
-        return SimpleNamespace(
-            api=SimpleNamespace(
-                get_annotation_specs=lambda project_id, query_params: (annotation_specs, {"project_id": project_id, "query_params": query_params})
-            )
-        )
+        return SimpleNamespace(api=SimpleNamespace(get_annotation_specs=lambda project_id, query_params: (annotation_specs, {"project_id": project_id, "query_params": query_params})))
 
     monkeypatch.setattr("acl.command.parse_attribute_restriction.annofabapi.build", fake_build)
 
