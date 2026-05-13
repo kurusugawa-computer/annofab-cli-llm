@@ -121,7 +121,7 @@ def get_annotation_specs(
     if project_id is None:
         raise ValueError("`annotation_specs_json_file`または`project_id`のいずれかを指定してください。")
 
-    logger.info(f"Annofabからannotation specsを取得します。 :: project_id='{project_id}'")
+    logger.info(f"Annofabからアノテーション仕様を取得します。 :: project_id='{project_id}'")
     service = annofabapi.build(pat=annofab_pat)
     annotation_specs, _ = service.api.get_annotation_specs(project_id, query_params={"v": "3"})
     return annotation_specs
@@ -187,11 +187,6 @@ def main(args: argparse.Namespace) -> None:
     )
     print_json(annotation_specs, temp_dir / "annotation_specs.json")
     output_path = args.output
-
-    if not args.yes:
-        if not prompt_yesno("属性制約の自然言語解析を実行しますか？"):
-            logger.info("終了します。")
-            return
 
     result = parse_restrictions_from_text(
         text=restriction_text,

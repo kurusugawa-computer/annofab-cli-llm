@@ -20,7 +20,7 @@ dependencies = [
     "requests",
     "pyyaml",
     "more-itertools",
-    "annofabapi>=1.7.0",
+    "annofabapi>=1.7.1",
     "pandas>=2,<3",
     "annofabcli>=1.105.2",
 ]
