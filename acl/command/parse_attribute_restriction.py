@@ -290,7 +290,7 @@ def add_argument_to_parser(parser: argparse.ArgumentParser) -> None:
         "--output_format",
         type=str,
         choices=["human_readable", "ast_json", "annofab_json"],
-        required=True,
+        default="human_readable",
         help="出力形式",
     )
     parser.add_argument(

@@ -16,6 +16,8 @@ Examples
 基本的な使い方
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+``--output_format`` を省略した場合は、 ``human_readable`` 形式で出力されます。
+
 .. code-block::
     :caption: restriction.md
 
@@ -27,8 +29,7 @@ Examples
 
     $ annofabcli-llm parse_attribute_restriction \
      --annotation_specs_json_file annotation_specs.json \
-     --restriction_text @restriction.md \
-     --output_format human_readable
+     --restriction_text @restriction.md
 
 
 .. code-block::
