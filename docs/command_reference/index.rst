@@ -24,7 +24,7 @@ Global Options
 --model
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-使用するLLMのモデルを指定します。デフォルトは ``openai/gpt-5.4-nano`` です。
+使用するLLMのモデルを指定します。デフォルトは ``openai/gpt-5.4-mini`` です。
 
 LiteLLMに対応している様々なプロバイダーのモデルを使用できます。
 詳細は `LiteLLM Providers <https://docs.litellm.ai/docs/providers>`_ を参照してください。
