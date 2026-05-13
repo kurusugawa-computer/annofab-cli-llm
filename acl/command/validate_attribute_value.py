@@ -107,7 +107,7 @@ def validate_annotation_attribute_with_llm(
     for chunk_index, (chunk, indices) in enumerate(chunks):
         messages = [
             {
-                "role": "system",
+                "role": "developer",
                 "content": "あなたは、アノテーションの属性値を検証するAIです。",
             },
             {
