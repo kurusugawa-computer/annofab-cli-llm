@@ -7,6 +7,7 @@ Description
 
 自然言語で書かれたアノテーションルールやアノテーション仕様の文章から、Annofabに追加するラベルを解析します。
 出力されるJSONは、 `annofabcli annotation_specs add_labels <https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation_specs/add_labels.html>`_ コマンドの ``--label_json`` 引数にそのまま指定できます。
+``--project_id`` と ``--annotation_specs_json_file`` は省略できます。どちらも省略した場合は、既存ラベル一覧なしで解析します。
 
 
 Examples
@@ -26,6 +27,18 @@ Examples
 
     $ annofabcli-llm parse_label \
      --annotation_specs_json_file annotation_specs.json \
+     --project_type image \
+     --annotation_rule @rule.md
+
+
+既存のannotation specsなしで解析する
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+まだAnnofabプロジェクトを作成していない場合でも、ラベル候補のJSONを生成できます。
+
+.. code-block::
+
+    $ annofabcli-llm parse_label \
      --project_type image \
      --annotation_rule @rule.md
 

@@ -133,6 +133,16 @@ def test_get_annotation_specs_from_file(tmp_path, annotation_specs):
     assert actual == annotation_specs
 
 
+def test_get_annotation_specs_without_project_and_file():
+    actual = get_annotation_specs(
+        annotation_specs_json_file=None,
+        project_id=None,
+        annofab_pat=None,
+    )
+
+    assert actual == {"labels": [], "additionals": []}
+
+
 def test_get_annotation_specs_from_project_id(monkeypatch, annotation_specs):
     called = {}
 

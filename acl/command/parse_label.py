@@ -347,7 +347,8 @@ def get_annotation_specs(
         return json.loads(annotation_specs_json_file.read_text(encoding="utf-8"))
 
     if project_id is None:
-        raise ValueError("`annotation_specs_json_file`または`project_id`のいずれかを指定してください。")
+        logger.info("`annotation_specs_json_file`と`project_id`が未指定のため、既存ラベル一覧なしでラベルを解析します。")
+        return {"labels": [], "additionals": []}
 
     logger.info(f"Annofabからアノテーション仕様を取得します。 :: project_id='{project_id}'")
     service = annofabapi.build(pat=annofab_pat)
@@ -489,7 +490,7 @@ def main(args: argparse.Namespace) -> None:
 
 
 def add_argument_to_parser(parser: argparse.ArgumentParser) -> None:
-    group = parser.add_mutually_exclusive_group(required=True)
+    group = parser.add_mutually_exclusive_group(required=False)
     group.add_argument(
         "--annotation_specs_json_file",
         type=Path,
