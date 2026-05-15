@@ -22,7 +22,7 @@ dependencies = [
     "more-itertools",
     "annofabapi>=1.7.1",
     "pandas>=2,<3",
-    "annofabcli>=1.116.0",
+    "annofabcli>=1.117.0",
 ]
 
 [dependency-groups]
