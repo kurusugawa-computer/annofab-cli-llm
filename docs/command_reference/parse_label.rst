@@ -7,7 +7,6 @@ Description
 
 自然言語で書かれたアノテーションルールやアノテーション仕様の文章から、Annofabに追加するラベルを解析します。
 出力されるJSONは、 `annofabcli annotation_specs add_labels <https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation_specs/add_labels.html>`_ コマンドの ``--label_json`` 引数にそのまま指定できます。
-``--project_id`` と ``--annotation_specs_json_file`` は省略できます。どちらも省略した場合は、既存ラベル一覧なしで解析します。
 
 
 Examples
@@ -19,8 +18,9 @@ Examples
 .. code-block::
     :caption: rule.md
 
-    歩行者と自転車のラベルを追加してください。
-    どちらも bounding_box です。
+    歩行者と自転車を矩形で囲ってください。
+    隠れている場合は、「隠れ」チェックボックスをONにしてください。
+    
 
 
 .. code-block::
