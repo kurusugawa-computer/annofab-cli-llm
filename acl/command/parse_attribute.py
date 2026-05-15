@@ -439,7 +439,7 @@ def to_annofab_attributes(result: AttributeParseResult) -> list[dict[str, Any]]:
 
 
 def main(args: argparse.Namespace) -> None:
-    attribute_rule = read_at_file(args.attribute_rule)
+    annotation_rule = read_at_file(args.annotation_rule)
 
     temp_dir = create_command_temp_dir(COMMAND_NAME)
     logger.info(f"一時ディレクトリ'{temp_dir}'を作成しました。このディレクトリにLLMの入出力情報などを出力します。")
@@ -452,7 +452,7 @@ def main(args: argparse.Namespace) -> None:
     )
     print_json(annotation_specs, temp_dir / "annotation_specs.json")
 
-    current_text = attribute_rule
+    current_text = annotation_rule
     result = parse_attributes_from_text(
         text=current_text,
         annotation_specs=annotation_specs,
@@ -514,7 +514,7 @@ def add_argument_to_parser(parser: argparse.ArgumentParser) -> None:
     )
 
     parser.add_argument(
-        "--attribute_rule",
+        "--annotation_rule",
         type=str,
         required=True,
         help="属性追加に関するアノテーションルールやアノテーション仕様の自然言語。先頭に`@`を指定すると、`@`以降をファイルパスとみなしてファイルの中身を読み込みます。",
