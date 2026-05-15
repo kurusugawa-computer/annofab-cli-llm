@@ -183,7 +183,7 @@ def test_normalize_parsed_attributes(annotation_specs):
             attribute_type=AdditionalDataDefinitionType.FLAG,
             attribute_name_en="truncated",
             label_name_ens=["pedestrian"],
-        )
+        ),
     ]
     assert len(actual.warnings) == 1
 

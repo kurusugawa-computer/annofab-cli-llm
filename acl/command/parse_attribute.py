@@ -389,32 +389,22 @@ def normalize_parsed_attributes(result: AttributeParseResult, annotation_specs: 
     for attribute in result.attributes:
         unknown_label_names = [label_name_en for label_name_en in attribute.label_name_ens if label_name_en not in existing_label_name_ens]
         if unknown_label_names:
-            warnings.append(
-                f"属性'{attribute.attribute_name_en}'には存在しないラベルが含まれていたため、出力から除外しました。 :: label_name_ens={sorted(unknown_label_names)}"
-            )
+            warnings.append(f"属性'{attribute.attribute_name_en}'には存在しないラベルが含まれていたため、出力から除外しました。 :: label_name_ens={sorted(unknown_label_names)}")
             continue
 
         label_name_en_set = set(attribute.label_name_ens)
         existing_label_sets = existing_attribute_labels_by_name.get(attribute.attribute_name_en, [])
-        overlapped_existing_labels = sorted(
-            {label_name_en for existing_label_set in existing_label_sets for label_name_en in (existing_label_set & label_name_en_set)}
-        )
+        overlapped_existing_labels = sorted({label_name_en for existing_label_set in existing_label_sets for label_name_en in (existing_label_set & label_name_en_set)})
         if overlapped_existing_labels:
             warnings.append(
-                f"既存属性'{attribute.attribute_name_en}'と同じラベルに属する属性は add_attributes の追加対象ではないため、出力から除外しました。"
-                f" :: label_name_ens={overlapped_existing_labels}"
+                f"既存属性'{attribute.attribute_name_en}'と同じラベルに属する属性は add_attributes の追加対象ではないため、出力から除外しました。 :: label_name_ens={overlapped_existing_labels}"
             )
             continue
 
         parsed_label_sets = parsed_attribute_labels_by_name.get(attribute.attribute_name_en, [])
-        overlapped_parsed_labels = sorted(
-            {label_name_en for parsed_label_set in parsed_label_sets for label_name_en in (parsed_label_set & label_name_en_set)}
-        )
+        overlapped_parsed_labels = sorted({label_name_en for parsed_label_set in parsed_label_sets for label_name_en in (parsed_label_set & label_name_en_set)})
         if overlapped_parsed_labels:
-            warnings.append(
-                f"属性'{attribute.attribute_name_en}'が同じラベルに対して重複していたため、先頭の1件だけを採用しました。"
-                f" :: label_name_ens={overlapped_parsed_labels}"
-            )
+            warnings.append(f"属性'{attribute.attribute_name_en}'が同じラベルに対して重複していたため、先頭の1件だけを採用しました。 :: label_name_ens={overlapped_parsed_labels}")
             continue
 
         parsed_attribute_labels_by_name.setdefault(attribute.attribute_name_en, []).append(label_name_en_set)
