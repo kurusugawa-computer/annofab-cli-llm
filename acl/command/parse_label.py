@@ -102,12 +102,7 @@ def get_project_type_help() -> str:
     Returns:
         ヘルプ文字列
     """
-    return (
-        "プロジェクト種別。取り得る annotation_type を限定するために使用します。\n\n"
-        " * image : 画像プロジェクト\n"
-        " * video : 動画プロジェクト\n"
-        " * 3d : 3次元プロジェクト"
-    )
+    return "プロジェクト種別。取り得る annotation_type を限定するために使用します。\n\n * image : 画像プロジェクト\n * video : 動画プロジェクト\n * 3d : 3次元プロジェクト"
 
 
 def get_allowed_annotation_types(project_type: ProjectType) -> tuple[AnnotationType, ...]:
@@ -424,9 +419,7 @@ def normalize_parsed_labels(result: LabelParseResult, annotation_specs: dict[str
 
     for label in result.labels:
         if label.annotation_type not in allowed_annotation_types:
-            warnings.append(
-                f"ラベル'{label.label_name_en}'の annotation_type='{label.annotation_type.value}' は project_type='{project_type.value}' では使用できないため、出力から除外しました。"
-            )
+            warnings.append(f"ラベル'{label.label_name_en}'の annotation_type='{label.annotation_type.value}' は project_type='{project_type.value}' では使用できないため、出力から除外しました。")
             continue
         if label.label_name_en in existing_label_name_ens:
             warnings.append(f"既存ラベル'{label.label_name_en}'は追加対象ではないため、出力から除外しました。")
