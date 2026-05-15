@@ -1,5 +1,6 @@
 import argparse
 import json
+import re
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
@@ -17,6 +18,8 @@ from acl.common.utils import print_json
 from acl.common.xdg_util import create_command_temp_dir
 
 COMMAND_NAME = "parse_label"
+HEX_COLOR_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
+"""カラーコードの書式です。"""
 
 
 class ProjectType(StrEnum):
@@ -138,14 +141,17 @@ class LabelCandidate(BaseModel):
     追加候補のラベル情報です。
     """
 
-    label_name_en: str
+    label_name_en: str = Field(description="追加するラベル名（英語）です。")
     """ラベル名（英語）です。"""
 
-    annotation_type: AnnotationType
+    annotation_type: AnnotationType = Field(description="追加するラベルのアノテーション種類です。")
     """アノテーション種類です。"""
 
-    label_name_ja: str | None = None
+    label_name_ja: str | None = Field(default=None, description="追加するラベル名（日本語）です。特定できない場合はnullにしてください。")
     """ラベル名（日本語）です。"""
+
+    color: str | None = Field(default=None, description="ラベル色です。指定する場合は `#RRGGBB` 形式にしてください。")
+    """ラベル色です。 ``#RRGGBB`` 形式です。"""
 
     @field_validator("label_name_en")
     @classmethod
@@ -186,19 +192,43 @@ class LabelCandidate(BaseModel):
             return None
         return normalized
 
+    @field_validator("color")
+    @classmethod
+    def validate_color(cls, value: str | None) -> str | None:
+        """
+        カラーコードを検証します。
+
+        Args:
+            value: 検証対象のカラーコード
+
+        Returns:
+            正規化済みのカラーコード。未指定ならNone
+
+        Raises:
+            ValueError: ``#RRGGBB`` 形式でない場合
+        """
+        if value is None:
+            return None
+        normalized = value.strip()
+        if normalized == "":
+            return None
+        if HEX_COLOR_PATTERN.fullmatch(normalized) is None:
+            raise ValueError("`color` には `#RRGGBB` 形式のカラーコードを指定してください。")
+        return normalized.upper()
+
 
 class LabelParseResult(BaseModel):
     """
     ラベルの自然言語解析結果です。
     """
 
-    labels: list[LabelCandidate]
+    labels: list[LabelCandidate] = Field(description="解析できた追加対象ラベルの一覧です。")
     """解析できたラベル候補の一覧です。"""
 
-    warnings: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list, description="解析時の注意事項です。解析結果に含めたが補足したい内容を入れてください。")
     """解析時の注意事項です。"""
 
-    unresolved_texts: list[str] = Field(default_factory=list)
+    unresolved_texts: list[str] = Field(default_factory=list, description="ラベル追加ルールとして解釈できなかった原文の断片です。曖昧、情報不足、対象外の内容を入れてください。")
     """ラベル追加ルールとして解釈できなかった原文の断片です。"""
 
 
@@ -274,6 +304,7 @@ def parse_labels_from_text(
 追加対象のラベルだけを labels に入れてください。
 既存のannotation specsに存在するラベル名（英語）は出力してはいけません。
 指定されたプロジェクト種別で利用可能な annotation_type だけを使用してください。
+color を出力する場合は、必ず #RRGGBB 形式にしてください。
 label_name_en と annotation_type を特定できない場合は、labelsに入れず unresolved_texts に入れてください。
 曖昧な条件やラベル追加ルールではない文も unresolved_texts に入れてください。
 """.strip(),

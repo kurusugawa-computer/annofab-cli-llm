@@ -50,7 +50,8 @@ Examples
       {
         "label_name_en": "pedestrian",
         "label_name_ja": "歩行者",
-        "annotation_type": "bounding_box"
+        "annotation_type": "bounding_box",
+        "color": "#FF0000"
       },
       {
         "label_name_en": "bicycle",

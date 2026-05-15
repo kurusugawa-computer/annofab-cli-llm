@@ -38,7 +38,7 @@ def annotation_specs() -> dict:
 def test_parse_labels_from_text(monkeypatch, annotation_specs):
     result = LabelParseResult(
         labels=[
-            LabelCandidate(label_name_en="pedestrian", label_name_ja="歩行者", annotation_type="bounding_box"),
+            LabelCandidate(label_name_en="pedestrian", label_name_ja="歩行者", annotation_type="bounding_box", color="#FF0000"),
             LabelCandidate(label_name_en="bicycle", annotation_type="bounding_box"),
         ],
         warnings=["annotation_typeは文脈から補いました。"],
@@ -64,12 +64,14 @@ def test_parse_labels_from_text(monkeypatch, annotation_specs):
     )
 
     assert actual == result
+    developer_content = actual_messages[0]["content"]
     user_content = actual_messages[1]["content"]
     assert "## 既存ラベル一覧" in user_content
     assert "## プロジェクト種別" in user_content
     assert "## 利用可能な annotation_type と説明" in user_content
     assert '"value": "segmentation_v2"' in user_content
     assert '"description": "矩形"' in user_content
+    assert "#RRGGBB" in developer_content
     assert '"label_name_en": "car"' in user_content
     assert '"annotation_type": "bounding_box"' in user_content
 
@@ -105,7 +107,7 @@ def test_normalize_parsed_labels_for_invalid_project_type(annotation_specs):
 def test_to_annofab_labels():
     result = LabelParseResult(
         labels=[
-            LabelCandidate(label_name_en="pedestrian", label_name_ja="歩行者", annotation_type="bounding_box"),
+            LabelCandidate(label_name_en="pedestrian", label_name_ja="歩行者", annotation_type="bounding_box", color="#FF0000"),
         ]
     )
 
@@ -116,8 +118,15 @@ def test_to_annofab_labels():
             "label_name_en": "pedestrian",
             "label_name_ja": "歩行者",
             "annotation_type": "bounding_box",
+            "color": "#FF0000",
         }
     ]
+
+
+def test_label_candidate_color():
+    actual = LabelCandidate(label_name_en="pedestrian", annotation_type="bounding_box", color="#ff00aa")
+
+    assert actual.color == "#FF00AA"
 
 
 def test_get_annotation_specs_from_file(tmp_path, annotation_specs):
