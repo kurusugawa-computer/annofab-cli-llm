@@ -5,6 +5,7 @@ from typing import Any
 
 import annofabapi
 from annofabapi.models import AdditionalDataDefinitionType
+from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_english_message, get_message_with_lang
 from litellm import completion
 from loguru import logger
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -46,9 +47,6 @@ class ChoiceCandidate(BaseModel):
     choice_name_ja: str | None = Field(default=None, description="追加する選択肢名（日本語）です。特定できない場合はnullにしてください。")
     """選択肢名（日本語）です。"""
 
-    choice_id: str | None = Field(default=None, description="選択肢IDです。通常はnullにしてください。明示的に必要な場合だけ指定してください。")
-    """選択肢IDです。"""
-
     is_default: bool = Field(default=False, description="その選択肢をデフォルト値にする場合はtrueです。")
     """デフォルト値かどうかです。"""
 
@@ -60,7 +58,7 @@ class ChoiceCandidate(BaseModel):
             raise ValueError("空文字列は指定できません。")
         return normalized
 
-    @field_validator("choice_name_ja", "choice_id")
+    @field_validator("choice_name_ja")
     @classmethod
     def validate_optional_text(cls, value: str | None) -> str | None:
         if value is None:
@@ -88,9 +86,6 @@ class AttributeCandidate(BaseModel):
     attribute_name_ja: str | None = Field(default=None, description="追加する属性名（日本語）です。特定できない場合はnullにしてください。")
     """属性名（日本語）です。"""
 
-    attribute_id: str | None = Field(default=None, description="属性IDです。通常はnullにしてください。明示的に必要な場合だけ指定してください。")
-    """属性IDです。"""
-
     choices: list[ChoiceCandidate] | None = Field(default=None, description="`attribute_type` が `choice` または `select` のときだけ指定する選択肢一覧です。")
     """選択肢一覧です。"""
 
@@ -102,7 +97,7 @@ class AttributeCandidate(BaseModel):
             raise ValueError("空文字列は指定できません。")
         return normalized
 
-    @field_validator("attribute_name_ja", "attribute_id")
+    @field_validator("attribute_name_ja")
     @classmethod
     def validate_optional_text(cls, value: str | None) -> str | None:
         if value is None:
@@ -168,24 +163,6 @@ class AttributeParseResult(BaseModel):
     """属性追加ルールとして解釈できなかった原文の断片です。"""
 
 
-def get_message(annotation_text: dict[str, Any], *, lang: str) -> str | None:
-    """
-    多言語メッセージから指定言語の文字列を取得します。
-
-    Args:
-        annotation_text: Annofab APIの多言語メッセージ
-        lang: 取得対象の言語コード
-
-    Returns:
-        見つかった文字列。存在しない場合はNone
-    """
-    messages = annotation_text.get("messages", [])
-    for message in messages:
-        if message.get("lang") == lang:
-            return message.get("message")
-    return None
-
-
 def get_attribute_type_details() -> list[dict[str, str]]:
     """
     利用可能な attribute_type と説明を返します。
@@ -206,17 +183,13 @@ def get_label_catalog(annotation_specs: dict[str, Any]) -> list[dict[str, Any]]:
     Returns:
         既存ラベル一覧
     """
-    catalog = []
-    for label in annotation_specs.get("labels", []):
-        label_name = label.get("label_name", {})
-        catalog.append(
-            {
-                "label_id": label.get("label_id"),
-                "label_name_en": get_message(label_name, lang="en-US"),
-                "label_name_ja": get_message(label_name, lang="ja-JP"),
-            }
-        )
-    return catalog
+    return [
+        {
+            "label_name_en": get_english_message(label["label_name"]),
+            "label_name_ja": get_message_with_lang(label["label_name"], "ja-JP"),
+        }
+        for label in annotation_specs.get("labels", [])
+    ]
 
 
 def get_attribute_catalog(annotation_specs: dict[str, Any]) -> list[dict[str, Any]]:
@@ -229,29 +202,24 @@ def get_attribute_catalog(annotation_specs: dict[str, Any]) -> list[dict[str, An
     Returns:
         既存属性一覧
     """
-    label_catalog = get_label_catalog(annotation_specs)
-    label_name_by_id = {label["label_id"]: label["label_name_en"] for label in label_catalog if label["label_id"] is not None}
+    annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
 
     label_names_by_attribute_id: dict[str, list[str]] = {}
-    for label in annotation_specs.get("labels", []):
-        label_name_en = label_name_by_id.get(label.get("label_id"))
-        if label_name_en is None:
-            continue
+    for label in annotation_specs_accessor.labels:
+        label_name_en = get_english_message(label["label_name"])
         for additional_data_definition_id in label.get("additional_data_definitions", []):
             label_names_by_attribute_id.setdefault(additional_data_definition_id, []).append(label_name_en)
 
     catalog = []
-    for additional in annotation_specs.get("additionals", []):
+    for additional in annotation_specs_accessor.additionals:
         choices = additional.get("choices") or []
-        choice_name_ens = [get_message(choice.get("name", {}), lang="en-US") for choice in choices]
         catalog.append(
             {
-                "attribute_id": additional.get("additional_data_definition_id"),
-                "attribute_name_en": get_message(additional.get("name", {}), lang="en-US"),
-                "attribute_name_ja": get_message(additional.get("name", {}), lang="ja-JP"),
+                "attribute_name_en": get_english_message(additional["name"]),
+                "attribute_name_ja": get_message_with_lang(additional["name"], "ja-JP"),
                 "attribute_type": additional.get("type"),
                 "label_name_ens": sorted(label_names_by_attribute_id.get(additional.get("additional_data_definition_id"), [])),
-                "choice_name_ens": [choice_name_en for choice_name_en in choice_name_ens if choice_name_en is not None],
+                "choice_name_ens": [get_english_message(choice["name"]) for choice in choices],
             }
         )
     return catalog
@@ -292,7 +260,6 @@ def parse_attributes_from_text(
 attribute_type を特定できない場合は、attributes に入れず unresolved_texts に入れてください。
 `choice` または `select` の場合は、choices を2件以上出力してください。
 `choice` または `select` 以外では choices を出力してはいけません。
-attribute_id と choice_id は、明示的に必要だと読み取れる場合を除き null にしてください。
 曖昧な条件や属性追加ルールではない文も unresolved_texts に入れてください。
 """.strip(),
         },
@@ -406,9 +373,14 @@ def normalize_parsed_attributes(result: AttributeParseResult, annotation_specs: 
     label_catalog = get_label_catalog(annotation_specs)
     attribute_catalog = get_attribute_catalog(annotation_specs)
     existing_label_name_ens = {label["label_name_en"] for label in label_catalog if label["label_name_en"] is not None}
-    existing_attribute_name_ens = {attribute["attribute_name_en"] for attribute in attribute_catalog if attribute["attribute_name_en"] is not None}
+    existing_attribute_labels_by_name: dict[str, list[set[str]]] = {}
+    for attribute in attribute_catalog:
+        attribute_name_en = attribute["attribute_name_en"]
+        if attribute_name_en is None:
+            continue
+        existing_attribute_labels_by_name.setdefault(attribute_name_en, []).append(set(attribute["label_name_ens"]))
 
-    attribute_name_en_set: set[str] = set()
+    parsed_attribute_labels_by_name: dict[str, list[set[str]]] = {}
     normalized_attributes: list[AttributeCandidate] = []
     warnings = list(result.warnings)
 
@@ -419,14 +391,31 @@ def normalize_parsed_attributes(result: AttributeParseResult, annotation_specs: 
                 f"属性'{attribute.attribute_name_en}'には存在しないラベルが含まれていたため、出力から除外しました。 :: label_name_ens={sorted(unknown_label_names)}"
             )
             continue
-        if attribute.attribute_name_en in existing_attribute_name_ens:
-            warnings.append(f"既存属性'{attribute.attribute_name_en}'は add_attributes の追加対象ではないため、出力から除外しました。")
-            continue
-        if attribute.attribute_name_en in attribute_name_en_set:
-            warnings.append(f"属性'{attribute.attribute_name_en}'が重複していたため、先頭の1件だけを採用しました。")
+
+        label_name_en_set = set(attribute.label_name_ens)
+        existing_label_sets = existing_attribute_labels_by_name.get(attribute.attribute_name_en, [])
+        overlapped_existing_labels = sorted(
+            {label_name_en for existing_label_set in existing_label_sets for label_name_en in (existing_label_set & label_name_en_set)}
+        )
+        if overlapped_existing_labels:
+            warnings.append(
+                f"既存属性'{attribute.attribute_name_en}'と同じラベルに属する属性は add_attributes の追加対象ではないため、出力から除外しました。"
+                f" :: label_name_ens={overlapped_existing_labels}"
+            )
             continue
 
-        attribute_name_en_set.add(attribute.attribute_name_en)
+        parsed_label_sets = parsed_attribute_labels_by_name.get(attribute.attribute_name_en, [])
+        overlapped_parsed_labels = sorted(
+            {label_name_en for parsed_label_set in parsed_label_sets for label_name_en in (parsed_label_set & label_name_en_set)}
+        )
+        if overlapped_parsed_labels:
+            warnings.append(
+                f"属性'{attribute.attribute_name_en}'が同じラベルに対して重複していたため、先頭の1件だけを採用しました。"
+                f" :: label_name_ens={overlapped_parsed_labels}"
+            )
+            continue
+
+        parsed_attribute_labels_by_name.setdefault(attribute.attribute_name_en, []).append(label_name_en_set)
         normalized_attributes.append(attribute)
 
     return AttributeParseResult(
