@@ -376,39 +376,39 @@ def normalize_parsed_attributes(result: AttributeParseResult, annotation_specs: 
     attribute_catalog = get_attribute_catalog(annotation_specs)
     existing_label_name_ens = {label["label_name_en"] for label in label_catalog if label["label_name_en"] is not None}
     existing_attribute_labels_by_name: dict[str, list[set[str]]] = {}
-    for attribute in attribute_catalog:
-        attribute_name_en = attribute["attribute_name_en"]
+    for existing_attribute in attribute_catalog:
+        attribute_name_en = existing_attribute["attribute_name_en"]
         if attribute_name_en is None:
             continue
-        existing_attribute_labels_by_name.setdefault(attribute_name_en, []).append(set(attribute["label_name_ens"]))
+        existing_attribute_labels_by_name.setdefault(attribute_name_en, []).append(set(existing_attribute["label_name_ens"]))
 
     parsed_attribute_labels_by_name: dict[str, list[set[str]]] = {}
     normalized_attributes: list[AttributeCandidate] = []
     warnings = list(result.warnings)
 
-    for attribute in result.attributes:
-        unknown_label_names = [label_name_en for label_name_en in attribute.label_name_ens if label_name_en not in existing_label_name_ens]
+    for parsed_attribute in result.attributes:
+        unknown_label_names = [label_name_en for label_name_en in parsed_attribute.label_name_ens if label_name_en not in existing_label_name_ens]
         if unknown_label_names:
-            warnings.append(f"属性'{attribute.attribute_name_en}'には存在しないラベルが含まれていたため、出力から除外しました。 :: label_name_ens={sorted(unknown_label_names)}")
+            warnings.append(f"属性'{parsed_attribute.attribute_name_en}'には存在しないラベルが含まれていたため、出力から除外しました。 :: label_name_ens={sorted(unknown_label_names)}")
             continue
 
-        label_name_en_set = set(attribute.label_name_ens)
-        existing_label_sets = existing_attribute_labels_by_name.get(attribute.attribute_name_en, [])
+        label_name_en_set = set(parsed_attribute.label_name_ens)
+        existing_label_sets = existing_attribute_labels_by_name.get(parsed_attribute.attribute_name_en, [])
         overlapped_existing_labels = sorted({label_name_en for existing_label_set in existing_label_sets for label_name_en in (existing_label_set & label_name_en_set)})
         if overlapped_existing_labels:
             warnings.append(
-                f"既存属性'{attribute.attribute_name_en}'と同じラベルに属する属性は add_attributes の追加対象ではないため、出力から除外しました。 :: label_name_ens={overlapped_existing_labels}"
+                f"既存属性'{parsed_attribute.attribute_name_en}'と同じラベルに属する属性は add_attributes の追加対象ではないため、出力から除外しました。 :: label_name_ens={overlapped_existing_labels}"
             )
             continue
 
-        parsed_label_sets = parsed_attribute_labels_by_name.get(attribute.attribute_name_en, [])
+        parsed_label_sets = parsed_attribute_labels_by_name.get(parsed_attribute.attribute_name_en, [])
         overlapped_parsed_labels = sorted({label_name_en for parsed_label_set in parsed_label_sets for label_name_en in (parsed_label_set & label_name_en_set)})
         if overlapped_parsed_labels:
-            warnings.append(f"属性'{attribute.attribute_name_en}'が同じラベルに対して重複していたため、先頭の1件だけを採用しました。 :: label_name_ens={overlapped_parsed_labels}")
+            warnings.append(f"属性'{parsed_attribute.attribute_name_en}'が同じラベルに対して重複していたため、先頭の1件だけを採用しました。 :: label_name_ens={overlapped_parsed_labels}")
             continue
 
-        parsed_attribute_labels_by_name.setdefault(attribute.attribute_name_en, []).append(label_name_en_set)
-        normalized_attributes.append(attribute)
+        parsed_attribute_labels_by_name.setdefault(parsed_attribute.attribute_name_en, []).append(label_name_en_set)
+        normalized_attributes.append(parsed_attribute)
 
     return AttributeParseResult(
         attributes=normalized_attributes,
