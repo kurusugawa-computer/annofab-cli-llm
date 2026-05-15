@@ -298,6 +298,7 @@ def parse_labels_from_text(
 抽出した結果は、必ずLabelParseResult形式で返してください。
 追加対象のラベルだけを labels に入れてください。
 既存のannotation specsに存在するラベル名（英語）は出力してはいけません。
+label_name_en はアノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。
 指定されたプロジェクト種別で利用可能な annotation_type だけを使用してください。
 color を出力する場合は、必ず #RRGGBB 形式にしてください。
 label_name_en と annotation_type を特定できない場合は、labelsに入れず unresolved_texts に入れてください。

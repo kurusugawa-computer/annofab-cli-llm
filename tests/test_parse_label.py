@@ -72,6 +72,7 @@ def test_parse_labels_from_text(monkeypatch, annotation_specs):
     assert '"value": "segmentation_v2"' in user_content
     assert '"description": "矩形"' in user_content
     assert "#RRGGBB" in developer_content
+    assert "label_name_en はアノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。" in developer_content
     assert '"label_name_en": "car"' in user_content
     assert '"annotation_type": "bounding_box"' in user_content
 

@@ -168,7 +168,7 @@ wheels = [
 
 [[package]]
 name = "annofabcli"
-version = "1.116.0"
+version = "1.117.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "annofabapi" },
@@ -188,9 +188,9 @@ dependencies = [
     { name = "shapely" },
     { name = "ulid-py" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d8/fb/f7907131518c42d99b621634132b95a0756805ff387ba8ff8ccfd8b374be/annofabcli-1.116.0.tar.gz", hash = "sha256:cd9c7748923b6d42c0c5db9823d714b73b77e7da2c0b7a37682f59dbe00f7b53", size = 2197896, upload-time = "2026-05-15T01:54:36.322Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/df/ff/f87410d4f6c7578e11f9b55623afeab01451ada7d12d2b0e8a03ab593ece/annofabcli-1.117.0.tar.gz", hash = "sha256:969d6af88c043de62a51f29856b26d96e3f1d3490a727184f7fc2abfb750c9e4", size = 2201835, upload-time = "2026-05-15T03:42:07.229Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6b/41/2bede6c0479a2ae75509f0557d742e75eaad7a779b8f60fd2bf1c3bb591d/annofabcli-1.116.0-py3-none-any.whl", hash = "sha256:1b62ee1e88c67882739abc241352de29e5a729703c50bcb0b14407970e2976b5", size = 649344, upload-time = "2026-05-15T01:54:38.083Z" },
+    { url = "https://files.pythonhosted.org/packages/3f/1a/0ad4b350c26ed6fb243a4cd2660b846c0ef8d08a4e620d436a1850c9a88d/annofabcli-1.117.0-py3-none-any.whl", hash = "sha256:0636037f707bfd985ffff60523485590aae723ec094c056a36d2ef783efd16e1", size = 653470, upload-time = "2026-05-15T03:42:09.434Z" },
 ]
 
 [[package]]
@@ -235,7 +235,7 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "annofabapi", specifier = ">=1.7.1" },
-    { name = "annofabcli", specifier = ">=1.116.0" },
+    { name = "annofabcli", specifier = ">=1.117.0" },
     { name = "litellm", specifier = ">=1.83" },
     { name = "loguru" },
     { name = "more-itertools" },
