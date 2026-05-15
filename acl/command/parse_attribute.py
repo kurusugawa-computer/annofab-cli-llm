@@ -256,6 +256,8 @@ def parse_attributes_from_text(
 追加対象の新規属性だけを attributes に入れてください。
 既存のannotation specsに存在するラベル名（英語）だけを label_name_ens に入れてください。
 既存のannotation specsに既に存在する属性名（英語）は出力してはいけません。
+attribute_name_en と label_name_ens に含める label_name_en は、アノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。
+`choice` または `select` の choices に含める choice_name_en も、アノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。
 対象ラベルを特定できない場合は、attributes に入れず unresolved_texts に入れてください。
 attribute_type を特定できない場合は、attributes に入れず unresolved_texts に入れてください。
 `choice` または `select` の場合は、choices を2件以上出力してください。
