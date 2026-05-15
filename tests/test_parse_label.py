@@ -38,8 +38,8 @@ def annotation_specs() -> dict:
 def test_parse_labels_from_text(monkeypatch, annotation_specs):
     result = LabelParseResult(
         labels=[
-            LabelCandidate(label_name_en="pedestrian", label_name_ja="歩行者", annotation_type="bounding_box", color="#FF0000"),
-            LabelCandidate(label_name_en="bicycle", annotation_type="bounding_box"),
+            LabelCandidate(label_name_en="pedestrian", label_name_ja="歩行者", annotation_type=AnnotationType.BOUNDING_BOX, color="#FF0000"),
+            LabelCandidate(label_name_en="bicycle", annotation_type=AnnotationType.BOUNDING_BOX),
         ],
         warnings=["annotation_typeは文脈から補いました。"],
         unresolved_texts=["色の指定は解釈しませんでした。"],
@@ -79,15 +79,15 @@ def test_parse_labels_from_text(monkeypatch, annotation_specs):
 def test_normalize_parsed_labels(annotation_specs):
     result = LabelParseResult(
         labels=[
-            LabelCandidate(label_name_en="pedestrian", annotation_type="bounding_box"),
-            LabelCandidate(label_name_en="car", annotation_type="bounding_box"),
-            LabelCandidate(label_name_en="pedestrian", annotation_type="polygon"),
+            LabelCandidate(label_name_en="pedestrian", annotation_type=AnnotationType.BOUNDING_BOX),
+            LabelCandidate(label_name_en="car", annotation_type=AnnotationType.BOUNDING_BOX),
+            LabelCandidate(label_name_en="pedestrian", annotation_type=AnnotationType.POLYGON),
         ]
     )
 
     actual = normalize_parsed_labels(result, annotation_specs, project_type=ProjectType.IMAGE)
 
-    assert actual.labels == [LabelCandidate(label_name_en="pedestrian", annotation_type="bounding_box")]
+    assert actual.labels == [LabelCandidate(label_name_en="pedestrian", annotation_type=AnnotationType.BOUNDING_BOX)]
     assert len(actual.warnings) == 2
 
 
@@ -107,7 +107,7 @@ def test_normalize_parsed_labels_for_invalid_project_type(annotation_specs):
 def test_to_annofab_labels():
     result = LabelParseResult(
         labels=[
-            LabelCandidate(label_name_en="pedestrian", label_name_ja="歩行者", annotation_type="bounding_box", color="#FF0000"),
+            LabelCandidate(label_name_en="pedestrian", label_name_ja="歩行者", annotation_type=AnnotationType.BOUNDING_BOX, color="#FF0000"),
         ]
     )
 
@@ -124,7 +124,7 @@ def test_to_annofab_labels():
 
 
 def test_label_candidate_color():
-    actual = LabelCandidate(label_name_en="pedestrian", annotation_type="bounding_box", color="#ff00aa")
+    actual = LabelCandidate(label_name_en="pedestrian", annotation_type=AnnotationType.BOUNDING_BOX, color="#ff00aa")
 
     assert actual.color == "#FF00AA"
 
