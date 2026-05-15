@@ -22,7 +22,7 @@ dependencies = [
     "more-itertools",
     "annofabapi>=1.7.1",
     "pandas>=2,<3",
-    "annofabcli>=1.105.2",
+    "annofabcli>=1.116.0",
 ]
 
 [dependency-groups]
@@ -54,6 +54,11 @@ docs = [
 default-groups = ["dev", "test", "linter", "docs"]
 package = true
 
+
+[project.urls]
+Homepage = "https://github.com/kurusugawa-computer/annofab-cli-llm"
+Repository = "https://github.com/kurusugawa-computer/annofab-cli-llm"
+Documentation = "https://annofab-cli-llm.readthedocs.io/"
 
 [project.scripts]
 annofabcli-llm = "acl.__main__:main"

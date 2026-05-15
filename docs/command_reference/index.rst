@@ -11,6 +11,7 @@ Available Commands
    :titlesonly:
 
    parse_attribute_restriction
+   parse_label
    validate_attribute_value
 
 
