@@ -6,6 +6,9 @@ Command Reference
 Available Commands
 =================================
 
+annotation_specs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 .. toctree::
    :maxdepth: 1
    :titlesonly:
@@ -13,6 +16,14 @@ Available Commands
    parse_attribute
    parse_attribute_restriction
    parse_label
+
+annotation_zip
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. toctree::
+   :maxdepth: 1
+   :titlesonly:
+
    validate_attribute_value
 
 
@@ -36,7 +47,7 @@ LiteLLMに対応している様々なプロバイダーのモデルを使用で�
 .. code-block:: bash
 
     # OpenAI GPT-5.4 miniを使用
-    $ annofabcli-llm validate_annotation_attribute --model openai/gpt-5.4-mini ...
+    $ annofabcli-llm annotation_zip validate_attribute_value --model openai/gpt-5.4-mini ...
 
 
 

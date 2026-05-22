@@ -1,6 +1,6 @@
-==========================================
-parse_attribute
-==========================================
+============================================================
+annotation_specs parse_attribute
+============================================================
 
 Description
 =================================
@@ -25,7 +25,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli-llm parse_attribute \
+    $ annofabcli-llm annotation_specs parse_attribute \
      --annotation_specs_json_file annotation_specs.json \
      --annotation_rule @rule.md
 
@@ -71,7 +71,7 @@ Annofabへ属性を追加する
 
 .. code-block::
 
-    $ annofabcli-llm parse_attribute \
+    $ annofabcli-llm annotation_specs parse_attribute \
      --project_id ${PROJECT_ID} \
      --annotation_rule @rule.md \
      --output attributes.json
@@ -91,6 +91,6 @@ Usage Details
 
 .. argparse::
    :ref: acl.command.parse_attribute.add_parser
-   :prog: annofabcli-llm parse_attribute
+   :prog: annofabcli-llm annotation_specs parse_attribute
    :nosubcommands:
    :nodefaultconst:

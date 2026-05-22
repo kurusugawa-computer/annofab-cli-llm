@@ -1,6 +1,6 @@
-==========================================
-parse_label
-==========================================
+============================================================
+annotation_specs parse_label
+============================================================
 
 Description
 =================================
@@ -25,7 +25,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli-llm parse_label \
+    $ annofabcli-llm annotation_specs parse_label \
      --annotation_specs_json_file annotation_specs.json \
      --project_type image \
      --annotation_rule @rule.md
@@ -38,7 +38,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli-llm parse_label \
+    $ annofabcli-llm annotation_specs parse_label \
      --project_type image \
      --annotation_rule @rule.md
 
@@ -65,7 +65,7 @@ Annofabへラベルを追加する
 
 .. code-block::
 
-    $ annofabcli-llm parse_label \
+    $ annofabcli-llm annotation_specs parse_label \
      --project_id ${PROJECT_ID} \
      --project_type image \
      --annotation_rule @rule.md \
@@ -86,6 +86,6 @@ Usage Details
 
 .. argparse::
    :ref: acl.command.parse_label.add_parser
-   :prog: annofabcli-llm parse_label
+   :prog: annofabcli-llm annotation_specs parse_label
    :nosubcommands:
    :nodefaultconst:

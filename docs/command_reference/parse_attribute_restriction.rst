@@ -1,6 +1,6 @@
-==========================================
-parse_attribute_restriction
-==========================================
+============================================================
+annotation_specs parse_attribute_restriction
+============================================================
 
 Description
 =================================
@@ -27,7 +27,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli-llm parse_attribute_restriction \
+    $ annofabcli-llm annotation_specs parse_attribute_restriction \
      --annotation_specs_json_file annotation_specs.json \
      --restriction_text @restriction.md
 
@@ -45,7 +45,7 @@ Annofabに登録可能なJSONを出力する
 
 .. code-block::
 
-    $ annofabcli-llm parse_attribute_restriction \
+    $ annofabcli-llm annotation_specs parse_attribute_restriction \
      --project_id ${PROJECT_ID} \
      --restriction_text @restriction.md \
      --output restriction.json \
@@ -92,7 +92,7 @@ ASTのJSONを出力する
 
 .. code-block::
 
-    $ annofabcli-llm parse_attribute_restriction \
+    $ annofabcli-llm annotation_specs parse_attribute_restriction \
      --annotation_specs_json_file annotation_specs.json \
      --restriction_text @restriction.md \
      --output restriction_ast.json \
@@ -136,6 +136,6 @@ Usage Details
 
 .. argparse::
    :ref: acl.command.parse_attribute_restriction.add_parser
-   :prog: annofabcli-llm parse_attribute_restriction
+   :prog: annofabcli-llm annotation_specs parse_attribute_restriction
    :nosubcommands:
    :nodefaultconst:

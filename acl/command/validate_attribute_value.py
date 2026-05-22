@@ -17,7 +17,7 @@ from acl.common.cli import prompt_yesno, read_at_file
 from acl.common.utils import print_csv, print_json
 from acl.common.xdg_util import create_command_temp_dir
 
-COMMAND_NAME = "validate_annotation_attribute"
+COMMAND_NAME = "validate_attribute_value"
 
 
 class ValidationResult(BaseModel):

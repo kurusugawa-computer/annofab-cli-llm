@@ -1,6 +1,6 @@
-==========================================
-validate_attribute_value
-==========================================
+============================================================
+annotation_zip validate_attribute_value
+============================================================
 
 Description
 =================================
@@ -38,7 +38,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli-llm validate_annotation_attribute --project_id ${PROJECT_ID} \
+    $ annofabcli-llm annotation_zip validate_attribute_value --project_id ${PROJECT_ID} \
      --output validate_result.csv \
      --output_format csv \
      --label_name car \
@@ -54,7 +54,7 @@ Examples
 .. code-block::
 
     # GPT-5.4 miniを使用（より高精度だがコストは上がる）
-    $ annofabcli-llm validate_annotation_attribute --model openai/gpt-5.4-mini \
+    $ annofabcli-llm annotation_zip validate_attribute_value --model openai/gpt-5.4-mini \
      --project_id ${PROJECT_ID} \
      --output validate_result.csv \
      --output_format csv \
@@ -63,7 +63,7 @@ Examples
      --prompt @prompt.md
 
     # Claude-3.5 Sonnetを使用（テキスト処理に優秀）
-    $ annofabcli-llm validate_annotation_attribute --model anthropic/claude-3-5-sonnet-20241022 \
+    $ annofabcli-llm annotation_zip validate_attribute_value --model anthropic/claude-3-5-sonnet-20241022 \
      --project_id ${PROJECT_ID} \
      --output validate_result.csv \
      --output_format csv \
@@ -91,7 +91,7 @@ Examples
 
 .. note::
 
-    検証結果の途中経過は ``$HOME/.cache/annofab-cli-llm/temp/validate_annotation_attribute_*`` に出力されます。
+    検証結果の途中経過は ``$HOME/.cache/annofab-cli-llm/temp/validate_attribute_value_*`` に出力されます。
 
 
 
@@ -114,7 +114,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli-llm validate_annotation_attribute --project_id ${PROJECT_ID} \
+    $ annofabcli-llm annotation_zip validate_attribute_value --project_id ${PROJECT_ID} \
      --output validate_result.csv \
      --output_format csv
      --label_name car \
@@ -132,7 +132,6 @@ Usage Details
 
 .. argparse::
    :ref: acl.command.validate_attribute_value.add_parser
-   :prog: annofabcli-llm validate_attribute_value
+   :prog: annofabcli-llm annotation_zip validate_attribute_value
    :nosubcommands:
    :nodefaultconst:
-

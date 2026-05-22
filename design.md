@@ -6,8 +6,11 @@
 使用するモデルによって、プロンプトに渡す内容を変えたくないので、len関数でチャンクサイズを決めている。
 
 
-### `annotation_zip validate`のようなコマンドにしなかったのは？
-そこまでコマンド数が多くないので、まずは1階層にする。
+### コマンドを2階層にする理由
+対象リソースごとにコマンドを整理するため、以下の2階層構成にする。
+
+* `annotation_specs parse_*`
+* `annotation_zip validate_attribute_value`
 
 
 ### なぜデフォルトのモデルが`o4-mini`か
@@ -15,4 +18,3 @@
 * `gpt-4.1`
 * `gpt-4.1-mini`
 * `gpt-4o-mini`
-
