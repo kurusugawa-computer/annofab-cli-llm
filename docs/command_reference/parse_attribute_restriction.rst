@@ -9,6 +9,9 @@ Description
 アノテーションルールや運用ルールの文章から、属性制約ASTやAnnofabに登録可能なJSONを生成したいときに利用できます。
 ``annofab_json`` 形式で出力したJSONは、 `annofabcli annotation_specs add_attribute_restriction <https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation_specs/add_attribute_restriction.html>`_ コマンドでAnnofabに登録できます。
 
+このコマンドを実行するには、対象のラベルと属性がアノテーション仕様に存在している必要があります。
+新規でアノテーション仕様を作成する場合は、先に ``annotation_specs parse_label`` と ``annotation_specs parse_attribute`` でラベルと属性を追加してください。
+
 
 Examples
 =================================

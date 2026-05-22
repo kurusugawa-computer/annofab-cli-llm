@@ -8,6 +8,8 @@ Description
 自然言語で書かれた属性追加ルールやアノテーション仕様の文章から、Annofabに追加する属性を解析します。
 出力されるJSONは、 `annofabcli annotation_specs add_attributes <https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation_specs/add_attributes.html>`_ コマンドの ``--attribute_json`` 引数にそのまま指定できます。
 
+このコマンドを実行するには、対象のラベルがアノテーション仕様に存在している必要があります。
+新規でアノテーション仕様を作成する場合は、先に ``annotation_specs parse_label`` でラベルを追加してください。
 
 
 Examples

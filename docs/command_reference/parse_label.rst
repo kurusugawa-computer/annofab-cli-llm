@@ -8,6 +8,8 @@ Description
 自然言語で書かれたアノテーションルールやアノテーション仕様の文章から、Annofabに追加するラベルを解析します。
 出力されるJSONは、 `annofabcli annotation_specs add_labels <https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation_specs/add_labels.html>`_ コマンドの ``--label_json`` 引数にそのまま指定できます。
 
+このコマンドは、新規でアノテーション仕様を作成する場合に最初に実行します。
+
 
 Examples
 =================================
