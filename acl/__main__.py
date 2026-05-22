@@ -121,10 +121,27 @@ def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argpa
 
     subparsers = parser.add_subparsers(dest="command_name")
 
-    add_parser_for_parse_attribute(subparsers)
-    add_parser_for_parse_attribute_restriction(subparsers)
-    add_parser_for_parse_label(subparsers)
-    add_parser_for_validate_attribute_value(subparsers)
+    annotation_specs_parser = subparsers.add_parser(
+        "annotation_specs",
+        help="アノテーション仕様に関するコマンドです。",
+        description="アノテーション仕様に関するコマンドです。",
+        formatter_class=acl.common.cli.PrettyHelpFormatter,
+    )
+    annotation_specs_parser.set_defaults(command_help=annotation_specs_parser.print_help)
+    annotation_specs_subparsers = annotation_specs_parser.add_subparsers(dest="subcommand_name")
+    add_parser_for_parse_attribute(annotation_specs_subparsers)
+    add_parser_for_parse_attribute_restriction(annotation_specs_subparsers)
+    add_parser_for_parse_label(annotation_specs_subparsers)
+
+    annotation_zip_parser = subparsers.add_parser(
+        "annotation_zip",
+        help="アノテーションzipに関するコマンドです。",
+        description="アノテーションzipに関するコマンドです。",
+        formatter_class=acl.common.cli.PrettyHelpFormatter,
+    )
+    annotation_zip_parser.set_defaults(command_help=annotation_zip_parser.print_help)
+    annotation_zip_subparsers = annotation_zip_parser.add_subparsers(dest="subcommand_name")
+    add_parser_for_validate_attribute_value(annotation_zip_subparsers)
 
     return parser
 
