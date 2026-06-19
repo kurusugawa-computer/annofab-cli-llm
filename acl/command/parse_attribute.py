@@ -94,6 +94,19 @@ class AttributeCandidate(BaseModel):
     read_only: bool = Field(default=False, description="読み込み専用の属性にする場合はtrueです。")
     """読み込み専用の属性かどうかです。"""
 
+    default_value: str | int | bool | None = Field(
+        default=None,
+        description=("属性の初期値です。attribute_typeがflagの場合はbool型、integerの場合はint型、choiceまたはselectの場合はNone(null)、上記以外の場合はstr型の値です。"),
+    )
+    """
+    属性の初期値です。
+
+    * attribute_typeがflag: bool型の値
+    * attribute_typeがinteger: int型の値
+    * attribute_typeがchoiceかselect: None(null)
+    * attribute_typeが上記以外: str型の値
+    """
+
     choices: list[ChoiceCandidate] | None = Field(default=None, description="`attribute_type` が `choice` または `select` のときだけ指定する選択肢一覧です。")
     """選択肢一覧です。"""
 
@@ -267,6 +280,7 @@ def parse_attributes_from_text(
 attribute_name_en と label_name_ens に含める label_name_en は、アノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。
 `choice` または `select` の choices に含める choice_name_en も、アノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。
 読み込み専用の属性にする指定がある場合は read_only を true にしてください。指定がない場合は false にしてください。
+初期値の指定がある場合は default_value を指定してください。attribute_typeがflagの場合はbool型、integerの場合はint型、choiceまたはselectの場合はNone(null)、上記以外の場合はstr型の値にしてください。
 対象ラベルを特定できない場合は、attributes に入れず unresolved_texts に入れてください。
 attribute_type を特定できない場合は、attributes に入れず unresolved_texts に入れてください。
 `choice` または `select` の場合は、choices を2件以上出力してください。
