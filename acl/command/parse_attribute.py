@@ -91,6 +91,9 @@ class AttributeCandidate(BaseModel):
     attribute_name_ja: str | None = Field(default=None, description="追加する属性名（日本語）です。特定できない場合はnullにしてください。")
     """属性名（日本語）です。"""
 
+    read_only: bool = Field(default=False, description="読み込み専用の属性にする場合はtrueです。")
+    """読み込み専用の属性かどうかです。"""
+
     choices: list[ChoiceCandidate] | None = Field(default=None, description="`attribute_type` が `choice` または `select` のときだけ指定する選択肢一覧です。")
     """選択肢一覧です。"""
 
@@ -263,6 +266,7 @@ def parse_attributes_from_text(
 既存のannotation specsに既に存在する属性名（英語）は出力してはいけません。
 attribute_name_en と label_name_ens に含める label_name_en は、アノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。
 `choice` または `select` の choices に含める choice_name_en も、アノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。
+読み込み専用の属性にする指定がある場合は read_only を true にしてください。指定がない場合は false にしてください。
 対象ラベルを特定できない場合は、attributes に入れず unresolved_texts に入れてください。
 attribute_type を特定できない場合は、attributes に入れず unresolved_texts に入れてください。
 `choice` または `select` の場合は、choices を2件以上出力してください。
