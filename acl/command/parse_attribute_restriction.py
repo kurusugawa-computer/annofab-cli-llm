@@ -15,6 +15,11 @@ from acl.common.utils import output_string, print_json
 from acl.common.xdg_util import create_command_temp_dir
 
 COMMAND_NAME = "parse_attribute_restriction"
+OUTPUT_USAGE_MESSAGE = (
+    "`--output_format annofab_json` で出力されるJSONは、 [annofabcli annotation_specs add_attribute_restriction]"
+    "(https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation_specs/add_attribute_restriction.html) コマンドでAnnofabに登録できます。"
+)
+"""出力JSONの利用方法に関するメッセージです。"""
 
 
 class RestrictionAstParseResult(BaseModel):
@@ -252,6 +257,7 @@ def main(args: argparse.Namespace) -> None:
     else:
         annofab_restrictions = to_annofab_restrictions(result, annotation_specs)
         print_json(annofab_restrictions, output=output_path)
+        logger.info(OUTPUT_USAGE_MESSAGE)
         print_json(annofab_restrictions, temp_dir / "annofab_restrictions.json")
 
     logger.info("属性制約の自然言語解析が完了しました。")
@@ -299,7 +305,12 @@ def add_argument_to_parser(parser: argparse.ArgumentParser) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    parser = acl.common.cli.add_parser(subparsers, COMMAND_NAME, "自然言語から属性制約を解析します。")
+    parser = acl.common.cli.add_parser(
+        subparsers,
+        COMMAND_NAME,
+        "自然言語から属性制約を解析します。",
+        description=f"自然言語から属性制約を解析します。\n{OUTPUT_USAGE_MESSAGE}",
+    )
     add_argument_to_parser(parser)
     parser.set_defaults(func=main)
     return parser

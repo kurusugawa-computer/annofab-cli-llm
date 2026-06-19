@@ -23,6 +23,8 @@ Configurations
 2. 使用するLLMのトークンを環境変数に設定します。
 
    * OpenAIならば、``OPENAI_API_KEY`` にAPIキーを設定します。
+   * Anthropicならば、``ANTHROPIC_API_KEY`` にAPIキーを設定します。
+   * Google AI StudioのGeminiならば、``GEMINI_API_KEY`` にAPIキーを設定します。
    * その他のLLMのトークンについては、 https://github.com/BerriAI/litellm を参照してください。なお、このツールでは `litellm <https://github.com/BerriAI/litellm>`_ を使用してLLMにアクセスしています。
 
 
@@ -36,5 +38,4 @@ Table of Contents
    :maxdepth: 2
 
    command_reference/index
-
 
