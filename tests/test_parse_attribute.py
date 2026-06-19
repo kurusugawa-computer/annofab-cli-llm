@@ -93,6 +93,7 @@ def test_parse_attributes_from_text(monkeypatch, annotation_specs):
                 attribute_name_en="truncated",
                 attribute_name_ja="見切れ",
                 label_name_ens=["car", "pedestrian"],
+                read_only=True,
             ),
             AttributeCandidate(
                 attribute_type=AdditionalDataDefinitionType.SELECT,
@@ -137,6 +138,8 @@ def test_parse_attributes_from_text(monkeypatch, annotation_specs):
     assert '"choice_name_ens": [' in user_content
     assert "attribute_name_en と label_name_ens に含める label_name_en は、アノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。" in developer_content
     assert "`choice` または `select` の choices に含める choice_name_en も、アノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。" in developer_content
+    assert "読み込み専用の属性にする指定がある場合は read_only を true にしてください。" in developer_content
+    assert "初期値の指定がある場合は default_value を指定してください。" in developer_content
     assert "`choice` または `select` の場合は、choices を2件以上出力してください。" in developer_content
 
 
@@ -237,15 +240,21 @@ def test_to_annofab_attributes():
     result = AttributeParseResult(
         attributes=[
             AttributeCandidate(
+                attribute_type=AdditionalDataDefinitionType.FLAG,
+                attribute_name_en="truncated",
+                label_name_ens=["pedestrian"],
+            ),
+            AttributeCandidate(
                 attribute_type=AdditionalDataDefinitionType.SELECT,
                 attribute_name_en="weather",
                 attribute_name_ja="天気",
                 label_name_ens=["car"],
+                read_only=True,
                 choices=[
                     ChoiceCandidate(choice_name_en="sunny", choice_name_ja="晴れ", is_default=True),
                     ChoiceCandidate(choice_name_en="rainy", choice_name_ja="雨"),
                 ],
-            )
+            ),
         ]
     )
 
@@ -253,10 +262,17 @@ def test_to_annofab_attributes():
 
     assert actual == [
         {
+            "attribute_type": "flag",
+            "attribute_name_en": "truncated",
+            "label_name_ens": ["pedestrian"],
+            "read_only": False,
+        },
+        {
             "attribute_type": "select",
             "attribute_name_en": "weather",
             "attribute_name_ja": "天気",
             "label_name_ens": ["car"],
+            "read_only": True,
             "choices": [
                 {
                     "choice_name_en": "sunny",
@@ -269,7 +285,7 @@ def test_to_annofab_attributes():
                     "is_default": False,
                 },
             ],
-        }
+        },
     ]
 
 

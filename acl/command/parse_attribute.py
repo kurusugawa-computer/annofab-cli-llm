@@ -16,6 +16,11 @@ from acl.common.utils import print_json
 from acl.common.xdg_util import create_command_temp_dir
 
 COMMAND_NAME = "parse_attribute"
+OUTPUT_USAGE_MESSAGE = (
+    "出力されるJSONは、 [annofabcli annotation_specs add_attributes]"
+    "(https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation_specs/add_attributes.html) コマンドの --attribute_json 引数にそのまま指定できます。"
+)
+"""出力JSONの利用方法に関するメッセージです。"""
 
 CHOICE_ATTRIBUTE_TYPES = {
     AdditionalDataDefinitionType.CHOICE,
@@ -85,6 +90,22 @@ class AttributeCandidate(BaseModel):
 
     attribute_name_ja: str | None = Field(default=None, description="追加する属性名（日本語）です。特定できない場合はnullにしてください。")
     """属性名（日本語）です。"""
+
+    read_only: bool = Field(default=False, description="読み込み専用の属性にする場合はtrueです。")
+    """読み込み専用の属性かどうかです。"""
+
+    default_value: str | int | bool | None = Field(
+        default=None,
+        description=("属性の初期値です。attribute_typeがflagの場合はbool型、integerの場合はint型、choiceまたはselectの場合はNone(null)、上記以外の場合はstr型の値です。"),
+    )
+    """
+    属性の初期値です。
+
+    * attribute_typeがflag: bool型の値
+    * attribute_typeがinteger: int型の値
+    * attribute_typeがchoiceかselect: None(null)
+    * attribute_typeが上記以外: str型の値
+    """
 
     choices: list[ChoiceCandidate] | None = Field(default=None, description="`attribute_type` が `choice` または `select` のときだけ指定する選択肢一覧です。")
     """選択肢一覧です。"""
@@ -258,6 +279,8 @@ def parse_attributes_from_text(
 既存のannotation specsに既に存在する属性名（英語）は出力してはいけません。
 attribute_name_en と label_name_ens に含める label_name_en は、アノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。
 `choice` または `select` の choices に含める choice_name_en も、アノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。
+読み込み専用の属性にする指定がある場合は read_only を true にしてください。指定がない場合は false にしてください。
+初期値の指定がある場合は default_value を指定してください。attribute_typeがflagの場合はbool型、integerの場合はint型、choiceまたはselectの場合はNone(null)、上記以外の場合はstr型の値にしてください。
 対象ラベルを特定できない場合は、attributes に入れず unresolved_texts に入れてください。
 attribute_type を特定できない場合は、attributes に入れず unresolved_texts に入れてください。
 `choice` または `select` の場合は、choices を2件以上出力してください。
@@ -487,6 +510,7 @@ def main(args: argparse.Namespace) -> None:
         raise ValueError("アノテーション仕様に追加可能な属性を抽出できませんでした。")
 
     print_json(annofab_attributes, output=args.output)
+    logger.info(OUTPUT_USAGE_MESSAGE)
     print_json(annofab_attributes, temp_dir / "annofab_attributes.json")
     logger.info("属性の自然言語解析が完了しました。")
 
@@ -526,7 +550,12 @@ def add_argument_to_parser(parser: argparse.ArgumentParser) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    parser = acl.common.cli.add_parser(subparsers, COMMAND_NAME, "自然言語から追加対象の属性を解析します。")
+    parser = acl.common.cli.add_parser(
+        subparsers,
+        COMMAND_NAME,
+        "自然言語から追加対象の属性を解析します。",
+        description=f"自然言語から追加対象の属性を解析します。\n{OUTPUT_USAGE_MESSAGE}",
+    )
     add_argument_to_parser(parser)
     parser.set_defaults(func=main)
     return parser

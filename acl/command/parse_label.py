@@ -18,6 +18,11 @@ from acl.common.utils import print_json
 from acl.common.xdg_util import create_command_temp_dir
 
 COMMAND_NAME = "parse_label"
+OUTPUT_USAGE_MESSAGE = (
+    "出力されるJSONは、 [annofabcli annotation_specs add_labels]"
+    "(https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation_specs/add_labels.html) コマンドの --label_json 引数にそのまま指定できます。"
+)
+"""出力JSONの利用方法に関するメッセージです。"""
 HEX_COLOR_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
 """カラーコードの書式です。"""
 
@@ -510,6 +515,7 @@ def main(args: argparse.Namespace) -> None:
         raise ValueError("アノテーション仕様に追加可能なラベルを抽出できませんでした。")
 
     print_json(annofab_labels, output=args.output)
+    logger.info(OUTPUT_USAGE_MESSAGE)
     print_json(annofab_labels, temp_dir / "annofab_labels.json")
     logger.info("ラベルの自然言語解析が完了しました。")
 
@@ -556,7 +562,12 @@ def add_argument_to_parser(parser: argparse.ArgumentParser) -> None:
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
-    parser = acl.common.cli.add_parser(subparsers, COMMAND_NAME, "自然言語から追加対象のラベルを解析します。")
+    parser = acl.common.cli.add_parser(
+        subparsers,
+        COMMAND_NAME,
+        "自然言語から追加対象のラベルを解析します。",
+        description=f"自然言語から追加対象のラベルを解析します。\n{OUTPUT_USAGE_MESSAGE}",
+    )
     add_argument_to_parser(parser)
     parser.set_defaults(func=main)
     return parser

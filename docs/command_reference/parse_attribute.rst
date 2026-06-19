@@ -22,7 +22,7 @@ Examples
     :caption: rule.md
 
     車と歩行者には見切れ属性を追加してください。
-    車には天気属性をドロップダウンで追加し、晴れと雨を選べるようにしてください。
+    車には天気属性を読み込み専用のドロップダウンで追加し、晴れと雨を選べるようにしてください。
 
 
 .. code-block::
@@ -43,7 +43,8 @@ Examples
           "car",
           "pedestrian"
         ],
-        "attribute_name_ja": "見切れ"
+        "attribute_name_ja": "見切れ",
+        "read_only": false
       },
       {
         "attribute_type": "select",
@@ -52,6 +53,7 @@ Examples
           "car"
         ],
         "attribute_name_ja": "天気",
+        "read_only": true,
         "choices": [
           {
             "choice_name_en": "sunny",
