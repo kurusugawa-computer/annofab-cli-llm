@@ -13,7 +13,7 @@
 * `annotation_zip validate_attribute_value`
 
 
-### なぜデフォルトのモデルが`o4-mini`か
+### なぜデフォルトのモデルが`gpt-5.6-terra`か
 テストコードで誤字脱字を検出する際、以下のモデルは正しく誤字脱字を検出できなかったため
 * `gpt-4.1`
 * `gpt-4.1-mini`
