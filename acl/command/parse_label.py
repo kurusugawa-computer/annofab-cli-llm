@@ -22,6 +22,29 @@ OUTPUT_USAGE_MESSAGE = "出力されるJSONは、annofabcli annotation_specs add
 """出力JSONの利用方法に関するメッセージです。"""
 HEX_COLOR_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
 """カラーコードの書式です。"""
+ALLOWED_KEYBIND_CODES = {
+    "Digit0",
+    "Digit1",
+    "Digit2",
+    "Digit3",
+    "Digit4",
+    "Digit5",
+    "Digit6",
+    "Digit7",
+    "Digit8",
+    "Digit9",
+    "KeyQ",
+    "KeyW",
+    "KeyE",
+    "KeyR",
+    "KeyT",
+    "KeyY",
+    "KeyU",
+    "KeyI",
+    "KeyO",
+    "KeyP",
+}
+"""keybind.code に指定できる KeyboardEvent.code の値です。"""
 
 
 class ProjectType(StrEnum):
@@ -168,6 +191,8 @@ class KeybindCandidate(BaseModel):
         normalized = value.strip()
         if normalized == "":
             raise ValueError("`keybind.code` には空でない文字列を指定してください。")
+        if normalized not in ALLOWED_KEYBIND_CODES:
+            raise ValueError("`keybind.code` にはキーボード上部2段の数字キーと`Q`~`P`の KeyboardEvent.code を指定してください。")
         return normalized
 
 

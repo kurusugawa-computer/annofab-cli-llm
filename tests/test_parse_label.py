@@ -167,6 +167,11 @@ def test_keybind_candidate_for_empty_code():
         KeybindCandidate(code="")
 
 
+def test_keybind_candidate_for_not_allowed_code():
+    with pytest.raises(ValueError):
+        KeybindCandidate(code="Escape")
+
+
 def test_label_candidate_color():
     actual = LabelCandidate(label_name_en="pedestrian", annotation_type=AnnotationType.BOUNDING_BOX, color="#ff00aa")
 
