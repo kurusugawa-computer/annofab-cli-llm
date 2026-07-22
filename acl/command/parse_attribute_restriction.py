@@ -15,9 +15,7 @@ from acl.common.utils import output_string, print_json
 from acl.common.xdg_util import create_command_temp_dir
 
 COMMAND_NAME = "parse_attribute_restriction"
-OUTPUT_USAGE_MESSAGE = (
-    "--output_format annofab_json で出力されるJSONは、annofabcli annotation_specs add_attribute_restriction コマンドでAnnofabに登録できます。"
-)
+OUTPUT_USAGE_MESSAGE = "--output_format annofab_json で出力されるJSONは、annofabcli annotation_specs add_attribute_restriction コマンドでAnnofabに登録できます。"
 """出力JSONの利用方法に関するメッセージです。"""
 
 

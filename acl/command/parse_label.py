@@ -18,9 +18,7 @@ from acl.common.utils import print_json
 from acl.common.xdg_util import create_command_temp_dir
 
 COMMAND_NAME = "parse_label"
-OUTPUT_USAGE_MESSAGE = (
-    "出力されるJSONは、annofabcli annotation_specs add_labels コマンドの --label_json 引数にそのまま指定できます。"
-)
+OUTPUT_USAGE_MESSAGE = "出力されるJSONは、annofabcli annotation_specs add_labels コマンドの --label_json 引数にそのまま指定できます。"
 """出力JSONの利用方法に関するメッセージです。"""
 HEX_COLOR_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
 """カラーコードの書式です。"""
