@@ -11,6 +11,7 @@ from loguru import logger
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 import acl.common.cli
+from acl.command.parse_label import KeybindCandidate
 from acl.common.cli import read_at_file
 from acl.common.utils import print_json
 from acl.common.xdg_util import create_command_temp_dir
@@ -51,6 +52,9 @@ class ChoiceCandidate(BaseModel):
 
     is_default: bool = Field(default=False, description="その選択肢をデフォルト値にする場合はtrueです。")
     """デフォルト値かどうかです。"""
+
+    keybind: KeybindCandidate | None = Field(default=None, description="選択肢に設定するキーボードショートカットです。")
+    """選択肢に設定するキーボードショートカットです。"""
 
     @field_validator("choice_name_en")
     @classmethod
@@ -106,6 +110,9 @@ class AttributeCandidate(BaseModel):
 
     choices: list[ChoiceCandidate] | None = Field(default=None, description="`attribute_type` が `choice` または `select` のときだけ指定する選択肢一覧です。")
     """選択肢一覧です。"""
+
+    keybind: KeybindCandidate | None = Field(default=None, description="属性に設定するキーボードショートカットです。")
+    """属性に設定するキーボードショートカットです。"""
 
     @field_validator("attribute_name_en")
     @classmethod
@@ -278,6 +285,11 @@ attribute_name_en と label_name_ens に含める label_name_en は、アノテ�
 `choice` または `select` の choices に含める choice_name_en も、アノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。
 読み込み専用の属性にする指定がある場合は read_only を true にしてください。指定がない場合は false にしてください。
 初期値の指定がある場合は default_value を指定してください。attribute_typeがflagの場合はbool型、integerの場合はint型、choiceまたはselectの場合はNone(null)、上記以外の場合はstr型の値にしてください。
+できるだけ属性や選択肢にキーボードショートカットを設定するため、 keybind を出力してください。
+keybind は {"alt": false, "code": "Digit1", "ctrl": true, "shift": false} のようなJSONオブジェクトにしてください。
+keybind.code は KeyboardEvent.code の値を使用してください。例: Digit1, KeyQ, KeyW, KeyP
+たとえば Ctrl+Digit1 は {"alt": false, "code": "Digit1", "ctrl": true, "shift": false} に変換してください。
+既存のショートカットと衝突しないようにし、できるだけ属性や選択肢の順番とキーの順番が対応するようにしてください。
 対象ラベルを特定できない場合は、attributes に入れず unresolved_texts に入れてください。
 attribute_type を特定できない場合は、attributes に入れず unresolved_texts に入れてください。
 `choice` または `select` の場合は、choices を2件以上出力してください。

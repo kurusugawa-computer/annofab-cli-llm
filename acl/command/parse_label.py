@@ -306,6 +306,7 @@ def get_label_catalog(annotation_specs: dict[str, Any]) -> list[dict[str, Any]]:
                 "label_name_en": get_message(label_name, lang="en-US"),
                 "label_name_ja": get_message(label_name, lang="ja-JP"),
                 "annotation_type": label.get("annotation_type"),
+                "keybind": label.get("keybind", []),
             }
         )
     return catalog
@@ -352,6 +353,8 @@ color を出力する場合は、必ず #RRGGBB 形式にしてください。
 できるだけラベルにキーボードショートカットを設定するため、 keybind を出力してください。
 できるだけ、ラベルの順番とキーの順番が対応するようにしてください。
 ただし、既存のラベルのショートカットと重複しないようにしてください。
+keybind.code は KeyboardEvent.code の値を使用してください。例: Digit1, KeyQ, KeyW, KeyP
+たとえば Ctrl+Digit1 は {"alt": false, "code": "Digit1", "ctrl": true, "shift": false} に変換してください。
 
 ラベル定義として解釈できる文だけを解析対象にしてください。
 属性定義、属性制約、作業手順、品質基準など、明らかにラベル定義ではない文は warnings や unresolved_texts に入れず無視してください。

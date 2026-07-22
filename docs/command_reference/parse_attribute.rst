@@ -44,7 +44,13 @@ Examples
           "pedestrian"
         ],
         "attribute_name_ja": "見切れ",
-        "read_only": false
+        "read_only": false,
+        "keybind": {
+          "alt": false,
+          "code": "Digit1",
+          "ctrl": true,
+          "shift": false
+        }
       },
       {
         "attribute_type": "select",
@@ -58,12 +64,24 @@ Examples
           {
             "choice_name_en": "sunny",
             "choice_name_ja": "晴れ",
-            "is_default": true
+            "is_default": true,
+            "keybind": {
+              "alt": false,
+              "code": "KeyQ",
+              "ctrl": false,
+              "shift": false
+            }
           },
           {
             "choice_name_en": "rainy",
             "choice_name_ja": "雨",
-            "is_default": false
+            "is_default": false,
+            "keybind": {
+              "alt": false,
+              "code": "KeyW",
+              "ctrl": false,
+              "shift": false
+            }
           }
         ]
       }
@@ -83,6 +101,9 @@ Annofabへ属性を追加する
     $ annofabcli annotation_specs add_attributes \
      --project_id ${PROJECT_ID} \
      --attribute_json file://attributes.json
+
+属性と選択肢の ``keybind`` のフォーマットは ``annofabcli annotation_specs add_attributes`` コマンドと同じです。
+``code`` には `KeyboardEvent.code <https://developer.mozilla.org/ja/docs/Web/API/KeyboardEvent/code>`_ の値を指定します。
 
 
 .. note::

@@ -29,6 +29,14 @@ def annotation_specs() -> dict:
                     ]
                 },
                 "annotation_type": "bounding_box",
+                "keybind": [
+                    {
+                        "alt": False,
+                        "code": "Digit1",
+                        "ctrl": True,
+                        "shift": False,
+                    }
+                ],
                 "additional_data_definitions": [],
             },
         ],
@@ -81,6 +89,9 @@ def test_parse_labels_from_text(monkeypatch, annotation_specs):
     assert "ラベル定義として解釈できる可能性があるが、label_name_en または annotation_type を特定できない文は labels に入れず unresolved_texts に入れてください。" in developer_content
     assert '"label_name_en": "car"' in user_content
     assert '"annotation_type": "bounding_box"' in user_content
+    assert '"keybind": [' in user_content
+    assert '"code": "Digit1"' in user_content
+    assert '"ctrl": true' in user_content
 
 
 def test_normalize_parsed_labels(annotation_specs):
