@@ -256,7 +256,7 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "annofabapi", specifier = ">=1.7.1" },
-    { name = "annofabcli", specifier = ">=1.117.0" },
+    { name = "annofabcli", specifier = ">=1.124.0" },
     { name = "litellm", specifier = ">=1.83" },
     { name = "loguru" },
     { name = "more-itertools" },
