@@ -141,7 +141,7 @@ class KeybindCandidate(BaseModel):
     alt: bool = Field(default=False, description="Altキーを使用する場合はtrueです。")
     """Altキーを使用するかどうかです。"""
 
-    code: str = Field(description="KeyboardEvent.code の値です。")
+    code: str = Field(description="KeyboardEvent.code の値です。ただし既存のショートカットと衝突しないようにするため、キーボード上部2段の数字キーと`Q`~`P`に限定してください。")
     """KeyboardEvent.code の値です。"""
 
     ctrl: bool = Field(default=False, description="Ctrlキーを使用する場合はtrueです。")
@@ -188,7 +188,7 @@ class LabelCandidate(BaseModel):
     color: str | None = Field(default=None, description="ラベル色です。指定する場合は `#RRGGBB` 形式にしてください。")
     """ラベル色です。 ``#RRGGBB`` 形式です。"""
 
-    keybind: KeybindCandidate | None = Field(default=None, description="ラベルに設定するキーボードショートカットです。指定がない場合はnullにしてください。")
+    keybind: KeybindCandidate | None = Field(default=None, description="ラベルに設定するキーボードショートカットです。")
     """ラベルに設定するキーボードショートカットです。"""
 
     @field_validator("label_name_en")
@@ -340,14 +340,19 @@ def parse_labels_from_text(
 あなたは、自然言語で書かれたアノテーションルールから、Annofabに追加するラベルを抽出するAIです。
 抽出した結果は、必ずLabelParseResult形式で返してください。
 追加対象のラベルだけを labels に入れてください。
+
 既存のannotation specsに存在するラベル名（英語）は出力してはいけません。
+
 label_name_en はアノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。
+
 指定されたプロジェクト種別で利用可能な annotation_type だけを使用してください。
+
 color を出力する場合は、必ず #RRGGBB 形式にしてください。
-ラベルにキーボードショートカットの指定がある場合だけ keybind を出力してください。
-keybind は {"alt": false, "code": "Digit1", "ctrl": true, "shift": false} のようなJSONオブジェクトにしてください。
-keybind.code は KeyboardEvent.code の値を使用してください。例: Digit1, KeyA, Numpad1, Escape
-たとえば Ctrl+Digit1 は {"alt": false, "code": "Digit1", "ctrl": true, "shift": false} に変換してください。
+
+できるだけラベルにキーボードショートカットを設定するため、 keybind を出力してください。
+できるだけ、ラベルの順番とキーの順番が対応するようにしてください。
+ただし、既存のラベルのショートカットと重複しないようにしてください。
+
 ラベル定義として解釈できる文だけを解析対象にしてください。
 属性定義、属性制約、作業手順、品質基準など、明らかにラベル定義ではない文は warnings や unresolved_texts に入れず無視してください。
 ラベル定義として解釈できる可能性があるが、label_name_en または annotation_type を特定できない文は labels に入れず unresolved_texts に入れてください。
