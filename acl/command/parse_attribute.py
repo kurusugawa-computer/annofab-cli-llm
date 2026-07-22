@@ -285,13 +285,6 @@ def parse_attributes_from_text(
 
 既存のannotation specsに既に存在する属性名（英語）は出力してはいけません。
 
-attribute_name_en と label_name_ens に含める label_name_en は、アノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。
-`choice` または `select` の choices に含める choice_name_en も、アノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。
-読み込み専用の属性にする指定がある場合は read_only を true にしてください。指定がない場合は false にしてください。
-初期値の指定がある場合は default_value を指定してください。attribute_typeがflagの場合はbool型、integerの場合はint型、choiceまたはselectの場合はNone(null)、上記以外の場合はstr型の値にしてください。
-できるだけ属性や選択肢にキーボードショートカットを設定するため、 keybind を出力してください。
-keybind.code は KeyboardEvent.code の値を使用してください。例: Digit1, KeyQ, KeyW, KeyP
-たとえば Ctrl+Digit1 は {"alt": false, "code": "Digit1", "ctrl": true, "shift": false} に変換してください。
 既存のショートカットと重複する場合は、warnings に入れてください。
 
 対象ラベルを特定できない場合は、attributes に入れず unresolved_texts に入れてください。
