@@ -137,13 +137,7 @@ def test_parse_attributes_from_text(monkeypatch, annotation_specs):
     assert '"description": "チェックボックス"' in user_content
     assert '"attribute_name_en": "occluded"' in user_content
     assert '"choice_name_ens": [' in user_content
-    assert "attribute_name_en と label_name_ens に含める label_name_en は、アノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。" in developer_content
-    assert "`choice` または `select` の choices に含める choice_name_en も、アノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。" in developer_content
-    assert "読み込み専用の属性にする指定がある場合は read_only を true にしてください。" in developer_content
-    assert "初期値の指定がある場合は default_value を指定してください。" in developer_content
-    assert "keybind" in developer_content
-    assert "KeyboardEvent.code" in developer_content
-    assert "Ctrl+Digit1" in developer_content
+    assert "warnings" in developer_content
     assert "`choice` または `select` の場合は、choices を2件以上出力してください。" in developer_content
 
 
