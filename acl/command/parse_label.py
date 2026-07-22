@@ -262,6 +262,26 @@ class MinimumSize2dWithDefaultInsertPositionFieldValue(BaseModel):
     """field_values の種類です。"""
 
 
+class MinimumSize2dFieldValue(BaseModel):
+    """
+    2次元図形の最小サイズ制約に関する field_values です。
+    """
+
+    model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
+
+    min_warn_rule: MinWarnRule = Field(description="min_width と min_height の制約条件です。")
+    """min_width と min_height の制約条件です。"""
+
+    min_width: int = Field(description="最小幅(ピクセル)です。")
+    """最小幅です。"""
+
+    min_height: int = Field(description="最小高さ(ピクセル)です。")
+    """最小高さです。"""
+
+    type_: Literal["MinimumSize2d"] = Field(alias="_type", description="field_values の種類です。")
+    """field_values の種類です。"""
+
+
 class VertexCountMinMaxFieldValue(BaseModel):
     """
     ポリラインまたはポリゴンの頂点数制約に関する field_values です。
@@ -291,6 +311,12 @@ class FieldValues(BaseModel):
         description="アノテーションの種類が「矩形」の場合の最小サイズ制約です。",
     )
     """アノテーションの種類が「矩形」の場合の最小サイズ制約です。"""
+
+    minimum_size_2d: MinimumSize2dFieldValue | None = Field(
+        default=None,
+        description="アノテーションの種類が「ポリゴン」「ポリライン」「塗りつぶし」「塗りつぶしv2」の場合の最小サイズ制約です。",
+    )
+    """アノテーションの種類が「ポリゴン」「ポリライン」「塗りつぶし」「塗りつぶしv2」の場合の最小サイズ制約です。"""
 
     margin_of_error_tolerance: MarginOfErrorToleranceFieldValue | None = Field(default=None, description="許容誤差に関する設定です。")
     """許容誤差に関する設定です。"""
@@ -493,6 +519,8 @@ def parse_labels_from_text(
 矩形の最小サイズ制約は minimum_size_2d_with_default_insert_position に出力してください。
 たとえば「幅また高さが20px以上」のような矩形サイズ制約は、min_warn_rule._type を Or、min_width と min_height を 20 としてください。
 position_for_minimum_bounding_box_insertion は null、_type は MinimumSize2dWithDefaultInsertPosition として出力してください。
+ポリゴン、ポリライン、塗りつぶし、塗りつぶしv2の最小サイズ制約は minimum_size_2d に出力してください。
+たとえば「幅また高さが3px以上」のような2次元図形サイズ制約は、min_warn_rule._type を Or、min_width と min_height を 3、_type を MinimumSize2d としてください。
 ポリラインまたはポリゴンの頂点数制約は vertex_count_min_max に出力してください。
 たとえば「頂点数は3以上6以下」のような制約は、min を 3、max を 6、_type を VertexCountMinMax として出力してください。
 field_values には、指定された形式に対応しているキーだけを出力してください。

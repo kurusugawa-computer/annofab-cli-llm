@@ -9,6 +9,7 @@ from acl.command.parse_label import (
     KeybindCandidate,
     LabelCandidate,
     LabelParseResult,
+    MinimumSize2dFieldValue,
     MinimumSize2dWithDefaultInsertPositionFieldValue,
     MinWarnRule,
     ProjectType,
@@ -87,6 +88,8 @@ def test_parse_labels_from_text(monkeypatch, annotation_specs):
     assert "keybind" in developer_content
     assert "field_values" in developer_content
     assert "minimum_size_2d_with_default_insert_position" in developer_content
+    assert "minimum_size_2d" in developer_content
+    assert "ポリゴン、ポリライン、塗りつぶし、塗りつぶしv2の最小サイズ制約" in developer_content
     assert "vertex_count_min_max" in developer_content
     assert "属性定義、属性制約、作業手順、品質基準など、明らかにラベル定義ではない文は warnings や unresolved_texts に入れず無視してください。" in developer_content
     assert "ラベル定義として解釈できる可能性があるが、label_name_en または annotation_type を特定できない文は labels に入れず unresolved_texts に入れてください。" in developer_content
@@ -198,6 +201,42 @@ def test_to_annofab_labels_with_minimum_size_field_value():
 def test_min_warn_rule_rejects_unknown_type():
     with pytest.raises(ValueError):
         MinWarnRule(_type="None")
+
+
+def test_to_annofab_labels_with_minimum_size_2d_field_value():
+    result = LabelParseResult(
+        labels=[
+            LabelCandidate(
+                label_name_en="road_area",
+                annotation_type=AnnotationType.POLYGON,
+                field_values=FieldValues(
+                    minimum_size_2d=MinimumSize2dFieldValue(
+                        min_warn_rule=MinWarnRule(_type="Or"),
+                        min_width=3,
+                        min_height=3,
+                        _type="MinimumSize2d",
+                    )
+                ),
+            ),
+        ]
+    )
+
+    actual = to_annofab_labels(result)
+
+    assert actual == [
+        {
+            "label_name_en": "road_area",
+            "annotation_type": "polygon",
+            "field_values": {
+                "minimum_size_2d": {
+                    "min_warn_rule": {"_type": "Or"},
+                    "min_width": 3,
+                    "min_height": 3,
+                    "_type": "MinimumSize2d",
+                }
+            },
+        }
+    ]
 
 
 def test_to_annofab_labels_with_vertex_count_min_max_field_value():
