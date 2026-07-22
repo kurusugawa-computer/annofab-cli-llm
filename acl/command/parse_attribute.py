@@ -11,7 +11,7 @@ from loguru import logger
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 import acl.common.cli
-from acl.command.parse_label import KeybindCandidate
+from acl.command.parse_label import KeybindCandidate, UnresolvedText, format_unresolved_text
 from acl.common.cli import read_at_file
 from acl.common.utils import print_json
 from acl.common.xdg_util import create_command_temp_dir
@@ -184,8 +184,8 @@ class AttributeParseResult(BaseModel):
     warnings: list[str] = Field(default_factory=list, description="解析時の注意事項です。解析結果に含めたが補足したい内容を入れてください。")
     """解析時の注意事項です。"""
 
-    unresolved_texts: list[str] = Field(default_factory=list, description="属性追加ルールとして解釈できなかった原文の断片です。曖昧、情報不足、対象外の内容を入れてください。")
-    """属性追加ルールとして解釈できなかった原文の断片です。"""
+    unresolved_texts: list[UnresolvedText] = Field(default_factory=list, description="属性追加ルールとして解釈できなかった原文、理由、必要な補足情報です。")
+    """属性追加ルールとして解釈できなかった原文、理由、必要な補足情報です。"""
 
 
 def get_attribute_type_details() -> list[dict[str, str]]:
@@ -292,6 +292,8 @@ attribute_type を特定できない場合は、attributes に入れず unresolv
 `choice` または `select` の場合は、choices を2件以上出力してください。
 `choice` または `select` 以外では choices を出力してはいけません。
 曖昧な条件や属性追加ルールではない文も unresolved_texts に入れてください。
+unresolved_texts には、解釈できなかった原文を text、解釈できなかった理由を reason、解釈に必要な補足情報を required_information に出力してください。
+たとえば対象ラベルが不明な場合は、required_information に「label_name_ens」を含めてください。
 """.strip(),
         },
         {
@@ -372,19 +374,39 @@ def get_annotation_specs(
     return annotation_specs
 
 
-def collect_supplements_interactively(unresolved_texts: list[str]) -> list[str]:
+def log_parse_warnings(result: AttributeParseResult) -> None:
+    """
+    属性解析結果の注意事項と未解決テキストをログに出力します。
+
+    Args:
+        result: 属性解析結果
+    """
+    for warning in result.warnings:
+        logger.warning(f"属性解析時に注意事項がありました。 :: {warning}")
+    for unresolved_text in result.unresolved_texts:
+        logger.warning(f"属性追加ルールとして解釈できないテキストがありました。 :: {format_unresolved_text(unresolved_text)}")
+
+
+def collect_supplements_interactively(unresolved_texts: list[UnresolvedText]) -> list[str]:
     """
     未解決テキストに対してユーザーから補足情報をインタラクティブに収集します。
 
     Args:
-        unresolved_texts: 属性追加ルールとして解釈できなかった原文の断片一覧
+        unresolved_texts: 属性追加ルールとして解釈できなかった原文、理由、必要な補足情報の一覧
 
     Returns:
         ユーザーが入力した補足情報の一覧
     """
     supplements: list[str] = []
-    for _i, _unresolved_text in enumerate(unresolved_texts, start=1):
-        supplement = input("補足情報を入力してください（スキップする場合は空Enterを押してください）: ").strip()
+    for _i, unresolved_text in enumerate(unresolved_texts, start=1):
+        prompt_lines = [
+            f"解釈できないテキスト: {unresolved_text.text}",
+            f"理由: {unresolved_text.reason}",
+        ]
+        if unresolved_text.required_information:
+            prompt_lines.append(f"必要な補足情報: {', '.join(unresolved_text.required_information)}")
+        prompt_lines.append("補足情報を入力してください（スキップする場合は空Enterを押してください）: ")
+        supplement = input("\n".join(prompt_lines)).strip()
         if supplement != "":
             supplements.append(supplement)
     return supplements
@@ -483,10 +505,7 @@ def main(args: argparse.Namespace) -> None:
     result = normalize_parsed_attributes(result, annotation_specs)
     print_json(result.model_dump(mode="json"), temp_dir / "parse_result.json")
 
-    for warning in result.warnings:
-        logger.warning(f"属性解析時に注意事項がありました。 :: {warning}")
-    for unresolved_text in result.unresolved_texts:
-        logger.warning(f"属性追加ルールとして解釈できないテキストがありました。 :: {unresolved_text}")
+    log_parse_warnings(result)
 
     interactive = not args.no_interactive and not args.yes
     while result.unresolved_texts and interactive:
@@ -506,10 +525,7 @@ def main(args: argparse.Namespace) -> None:
         result = normalize_parsed_attributes(result, annotation_specs)
         print_json(result.model_dump(mode="json"), temp_dir / "parse_result.json")
 
-        for warning in result.warnings:
-            logger.warning(f"属性解析時に注意事項がありました。 :: {warning}")
-        for unresolved_text in result.unresolved_texts:
-            logger.warning(f"属性追加ルールとして解釈できないテキストがありました。 :: {unresolved_text}")
+        log_parse_warnings(result)
 
     annofab_attributes = to_annofab_attributes(result)
     if len(annofab_attributes) == 0:

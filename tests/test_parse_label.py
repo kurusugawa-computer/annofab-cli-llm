@@ -13,7 +13,9 @@ from acl.command.parse_label import (
     MinimumSize2dWithDefaultInsertPositionFieldValue,
     MinWarnRule,
     ProjectType,
+    UnresolvedText,
     VertexCountMinMaxFieldValue,
+    format_unresolved_text,
     get_annotation_specs,
     normalize_parsed_labels,
     parse_labels_from_text,
@@ -56,7 +58,13 @@ def test_parse_labels_from_text(monkeypatch, annotation_specs):
             LabelCandidate(label_name_en="bicycle", annotation_type=AnnotationType.BOUNDING_BOX),
         ],
         warnings=["annotation_typeは文脈から補いました。"],
-        unresolved_texts=["色の指定は解釈しませんでした。"],
+        unresolved_texts=[
+            UnresolvedText(
+                text="色の指定は解釈しませんでした。",
+                reason="色名をカラーコードに変換できませんでした。",
+                required_information=["color"],
+            )
+        ],
     )
     actual_messages = []
 
@@ -93,6 +101,7 @@ def test_parse_labels_from_text(monkeypatch, annotation_specs):
     assert "vertex_count_min_max" in developer_content
     assert "属性定義、属性制約、作業手順、品質基準など、明らかにラベル定義ではない文は warnings や unresolved_texts に入れず無視してください。" in developer_content
     assert "ラベル定義として解釈できる可能性があるが、label_name_en または annotation_type を特定できない文は labels に入れず unresolved_texts に入れてください。" in developer_content
+    assert "解釈できなかった原文を text、解釈できなかった理由を reason、解釈に必要な補足情報を required_information" in developer_content
     assert '"label_name_en": "car"' in user_content
     assert '"annotation_type": "bounding_box"' in user_content
     assert '"keybind": [' in user_content
@@ -201,6 +210,18 @@ def test_to_annofab_labels_with_minimum_size_field_value():
 def test_min_warn_rule_rejects_unknown_type():
     with pytest.raises(ValueError):
         MinWarnRule(_type="None")
+
+
+def test_format_unresolved_text():
+    actual = format_unresolved_text(
+        UnresolvedText(
+            text="自動車ラベルです。最小サイズは100x200です。",
+            reason="annotation_type と label_name_en を特定できませんでした。",
+            required_information=["annotation_type", "label_name_en"],
+        )
+    )
+
+    assert actual == "text='自動車ラベルです。最小サイズは100x200です。', reason='annotation_type と label_name_en を特定できませんでした。', required_information=[annotation_type, label_name_en]"
 
 
 def test_to_annofab_labels_with_minimum_size_2d_field_value():

@@ -235,7 +235,10 @@ class MinWarnRule(BaseModel):
 
     model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
 
-    type_: Literal["Or", "And"] = Field(alias="_type", description="min_width と min_height に関して警告を出す条件です。「幅が100px以上 AND 高さ200px以上」という制約の場合、`And`でなく`Or`を指定する必要があります。")
+    type_: Literal["Or", "And"] = Field(
+        alias="_type",
+        description="min_width と min_height に関して警告を出す条件です。「幅が100px以上 AND 高さ200px以上」という制約の場合、`And`でなく`Or`を指定する必要があります。",
+    )
     """min_width と min_height の制約条件です。"""
 
 
@@ -417,6 +420,23 @@ class LabelCandidate(BaseModel):
         return normalized.upper()
 
 
+class UnresolvedText(BaseModel):
+    """
+    ラベル追加ルールとして解釈できなかった原文と理由です。
+    """
+
+    model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
+
+    text: str = Field(description="ラベル追加ルールとして解釈できなかった原文の断片です。")
+    """ラベル追加ルールとして解釈できなかった原文の断片です。"""
+
+    reason: str = Field(description="解釈できなかった理由です。")
+    """解釈できなかった理由です。"""
+
+    required_information: list[str] = Field(default_factory=list, description="解釈するために必要な補足情報の一覧です。")
+    """解釈するために必要な補足情報の一覧です。"""
+
+
 class LabelParseResult(BaseModel):
     """
     ラベルの自然言語解析結果です。
@@ -430,8 +450,8 @@ class LabelParseResult(BaseModel):
     warnings: list[str] = Field(default_factory=list, description="解析時の注意事項です。解析結果に含めたが補足したい内容を入れてください。")
     """解析時の注意事項です。"""
 
-    unresolved_texts: list[str] = Field(default_factory=list, description="ラベル追加ルールとして解釈できなかった原文の断片です。曖昧、情報不足、対象外の内容を入れてください。")
-    """ラベル追加ルールとして解釈できなかった原文の断片です。"""
+    unresolved_texts: list[UnresolvedText] = Field(default_factory=list, description="ラベル追加ルールとして解釈できなかった原文、理由、必要な補足情報です。")
+    """ラベル追加ルールとして解釈できなかった原文、理由、必要な補足情報です。"""
 
 
 def get_message(annotation_text: dict[str, Any], *, lang: str) -> str | None:
@@ -529,6 +549,8 @@ field_values には、指定された形式に対応しているキーだけを�
 属性定義、属性制約、作業手順、品質基準など、明らかにラベル定義ではない文は warnings や unresolved_texts に入れず無視してください。
 ラベル定義として解釈できる可能性があるが、label_name_en または annotation_type を特定できない文は labels に入れず unresolved_texts に入れてください。
 ラベル定義として解釈できる可能性があるが曖昧な文も unresolved_texts に入れてください。
+unresolved_texts には、解釈できなかった原文を text、解釈できなかった理由を reason、解釈に必要な補足情報を required_information に出力してください。
+たとえば annotation_type が不明な場合は、required_information に「annotation_type」を含めてください。
 """.strip(),
         },
         {
@@ -609,19 +631,53 @@ def get_annotation_specs(
     return annotation_specs
 
 
-def collect_supplements_interactively(unresolved_texts: list[str]) -> list[str]:
+def format_unresolved_text(unresolved_text: UnresolvedText) -> str:
+    """
+    未解決テキストをログや対話入力用の文字列に変換します。
+
+    Args:
+        unresolved_text: 未解決テキスト
+
+    Returns:
+        未解決テキストの説明
+    """
+    required_information = ", ".join(unresolved_text.required_information) if unresolved_text.required_information else "(none)"
+    return f"text='{unresolved_text.text}', reason='{unresolved_text.reason}', required_information=[{required_information}]"
+
+
+def log_parse_warnings(result: LabelParseResult) -> None:
+    """
+    ラベル解析結果の注意事項と未解決テキストをログに出力します。
+
+    Args:
+        result: ラベル解析結果
+    """
+    for warning in result.warnings:
+        logger.warning(f"ラベル解析時に注意事項がありました。 :: {warning}")
+    for unresolved_text in result.unresolved_texts:
+        logger.warning(f"ラベル追加ルールとして解釈できないテキストがありました。 :: {format_unresolved_text(unresolved_text)}")
+
+
+def collect_supplements_interactively(unresolved_texts: list[UnresolvedText]) -> list[str]:
     """
     未解決テキストに対してユーザーから補足情報をインタラクティブに収集します。
 
     Args:
-        unresolved_texts: ラベル追加ルールとして解釈できなかった原文の断片一覧
+        unresolved_texts: ラベル追加ルールとして解釈できなかった原文、理由、必要な補足情報の一覧
 
     Returns:
         ユーザーが入力した補足情報の一覧
     """
     supplements: list[str] = []
-    for _i, _unresolved_text in enumerate(unresolved_texts, start=1):
-        supplement = input("補足情報を入力してください（スキップする場合は空Enterを押してください）: ").strip()
+    for _i, unresolved_text in enumerate(unresolved_texts, start=1):
+        prompt_lines = [
+            f"解釈できないテキスト: {unresolved_text.text}",
+            f"理由: {unresolved_text.reason}",
+        ]
+        if unresolved_text.required_information:
+            prompt_lines.append(f"必要な補足情報: {', '.join(unresolved_text.required_information)}")
+        prompt_lines.append("補足情報を入力してください（スキップする場合は空Enterを押してください）: ")
+        supplement = input("\n".join(prompt_lines)).strip()
         if supplement != "":
             supplements.append(supplement)
     return supplements
@@ -719,10 +775,7 @@ def main(args: argparse.Namespace) -> None:
     result = normalize_parsed_labels(result, annotation_specs, project_type=args.project_type)
     print_json(result.model_dump(mode="json"), temp_dir / "parse_result.json")
 
-    for warning in result.warnings:
-        logger.warning(f"ラベル解析時に注意事項がありました。 :: {warning}")
-    for unresolved_text in result.unresolved_texts:
-        logger.warning(f"ラベル追加ルールとして解釈できないテキストがありました。 :: {unresolved_text}")
+    log_parse_warnings(result)
 
     interactive = not args.no_interactive and not args.yes
     while result.unresolved_texts and interactive:
@@ -743,10 +796,7 @@ def main(args: argparse.Namespace) -> None:
         result = normalize_parsed_labels(result, annotation_specs, project_type=args.project_type)
         print_json(result.model_dump(mode="json"), temp_dir / "parse_result.json")
 
-        for warning in result.warnings:
-            logger.warning(f"ラベル解析時に注意事項がありました。 :: {warning}")
-        for unresolved_text in result.unresolved_texts:
-            logger.warning(f"ラベル追加ルールとして解釈できないテキストがありました。 :: {unresolved_text}")
+        log_parse_warnings(result)
 
     annofab_labels = to_annofab_labels(result)
     if len(annofab_labels) == 0:

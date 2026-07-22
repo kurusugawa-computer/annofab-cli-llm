@@ -11,6 +11,7 @@ from acl.command.parse_attribute_restriction import (
     to_annofab_restrictions,
     to_human_readable_text,
 )
+from acl.command.parse_label import UnresolvedText
 
 
 @pytest.fixture
@@ -64,7 +65,13 @@ def test_parse_restrictions_from_text(monkeypatch, annotation_specs):
             RestrictionAst(type=RestrictionAstType.HAS_CHOICE, attribute_name="vehicle_type", choice_name="general_car"),
         ],
         warnings=["文末の補足は制約として解釈しませんでした。"],
-        unresolved_texts=["このルールは推奨です。"],
+        unresolved_texts=[
+            UnresolvedText(
+                text="このルールは推奨です。",
+                reason="必須制約として表現するかを特定できませんでした。",
+                required_information=["constraint_type"],
+            )
+        ],
     )
     actual_messages = []
 
@@ -86,9 +93,11 @@ def test_parse_restrictions_from_text(monkeypatch, annotation_specs):
 
     assert actual == result
     user_content = actual_messages[1]["content"]
+    developer_content = actual_messages[0]["content"]
     assert "## 属性制約カタログ" in user_content
     assert '"allowed_ast_types"' in user_content
     assert '"attribute_name": "vehicle_type"' in user_content
+    assert "解釈できなかった原文を text、解釈できなかった理由を reason、解釈に必要な補足情報を required_information" in developer_content
 
 
 def test_to_human_readable_text():
@@ -101,7 +110,13 @@ def test_to_human_readable_text():
             )
         ],
         warnings=["warning1"],
-        unresolved_texts=["text1"],
+        unresolved_texts=[
+            UnresolvedText(
+                text="text1",
+                reason="reason1",
+                required_information=["attribute_name"],
+            )
+        ],
     )
 
     actual = to_human_readable_text(result)
@@ -112,6 +127,8 @@ def test_to_human_readable_text():
     assert "warning1" in actual
     assert "[unresolved_texts]" in actual
     assert "text1" in actual
+    assert "reason1" in actual
+    assert "required_information=[attribute_name]" in actual
 
 
 def test_to_annofab_restrictions(annotation_specs):
