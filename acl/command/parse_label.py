@@ -237,7 +237,11 @@ class MinWarnRule(BaseModel):
 
     type_: Literal["Or", "And"] = Field(
         alias="_type",
-        description="min_width と min_height に関して警告を出す条件です。「幅が100px以上 AND 高さ200px以上」という制約の場合は`Or`、「幅が100px以上 OR 高さ200px以上」という制約の場合は`And`を指定する必要があります。",
+        description=(
+            "min_width と min_height に関して警告を出す条件です。"
+            "「幅が100px以上 AND 高さ200px以上」という制約の場合は`Or`、"
+            "「幅が100px以上 OR 高さ200px以上」という制約の場合は`And`を指定する必要があります。"
+        ),
     )
     """min_width と min_height の制約条件です。"""
 
@@ -285,6 +289,20 @@ class MinimumSize2dFieldValue(BaseModel):
     """field_values の種類です。"""
 
 
+class MinimumArea2dFieldValue(BaseModel):
+    """
+    ポリゴンの最小面積制約に関する field_values です。
+    """
+
+    model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
+
+    min_area: int = Field(description="最小面積(平方ピクセル)です。")
+    """最小面積です。"""
+
+    type_: Literal["MinimumArea2d"] = Field(alias="_type", description="field_values の種類です。")
+    """field_values の種類です。"""
+
+
 class VertexCountMinMaxFieldValue(BaseModel):
     """
     ポリラインまたはポリゴンの頂点数制約に関する field_values です。
@@ -320,6 +338,12 @@ class FieldValues(BaseModel):
         description="アノテーションの種類が「ポリゴン」「ポリライン」「塗りつぶし」「塗りつぶしv2」の場合の最小サイズ制約です。",
     )
     """アノテーションの種類が「ポリゴン」「ポリライン」「塗りつぶし」「塗りつぶしv2」の場合の最小サイズ制約です。"""
+
+    minimum_area_2d: MinimumArea2dFieldValue | None = Field(
+        default=None,
+        description="アノテーションの種類が「ポリゴン」の場合の最小面積制約です。",
+    )
+    """アノテーションの種類が「ポリゴン」の場合の最小面積制約です。"""
 
     margin_of_error_tolerance: MarginOfErrorToleranceFieldValue | None = Field(default=None, description="許容誤差に関する設定です。")
     """許容誤差に関する設定です。"""
@@ -541,6 +565,8 @@ def parse_labels_from_text(
 position_for_minimum_bounding_box_insertion は null、_type は MinimumSize2dWithDefaultInsertPosition として出力してください。
 ポリゴン、ポリライン、塗りつぶし、塗りつぶしv2の最小サイズ制約は minimum_size_2d に出力してください。
 たとえば「幅また高さが3px以上」のような2次元図形サイズ制約は、min_warn_rule._type を Or、min_width と min_height を 3、_type を MinimumSize2d としてください。
+ポリゴンの最小面積制約は minimum_area_2d に出力してください。
+たとえば「面積が33px以上」のようなポリゴン面積制約は、min_area を 33、_type を MinimumArea2d としてください。
 ポリラインまたはポリゴンの頂点数制約は vertex_count_min_max に出力してください。
 たとえば「頂点数は3以上6以下」のような制約は、min を 3、max を 6、_type を VertexCountMinMax として出力してください。
 field_values には、指定された形式に対応しているキーだけを出力してください。
