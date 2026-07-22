@@ -90,6 +90,11 @@ Annofabに登録可能なJSONを出力する
     ]
 
 
+.. note::
+
+    解析結果の途中経過は ``$HOME/.cache/annofab-cli-llm/temp/parse_attribute_restriction_*`` に出力されます。
+
+
 ASTのJSONを出力する
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -128,10 +133,6 @@ ASTのJSONを出力する
       "unresolved_texts": []
     }
 
-
-.. note::
-
-    解析結果の途中経過は ``$HOME/.cache/annofab-cli-llm/temp/parse_attribute_restriction_*`` に出力されます。
 
 
 Usage Details
