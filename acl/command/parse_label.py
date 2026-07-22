@@ -237,7 +237,7 @@ class MinWarnRule(BaseModel):
 
     type_: Literal["Or", "And"] = Field(
         alias="_type",
-        description="min_width と min_height に関して警告を出す条件です。「幅が100px以上 AND 高さ200px以上」という制約の場合、`And`でなく`Or`を指定する必要があります。",
+        description="min_width と min_height に関して警告を出す条件です。「幅が100px以上 AND 高さ200px以上」という制約の場合は`Or`、「幅が100px以上 OR 高さ200px以上」という制約の場合は`And`を指定する必要があります。",
     )
     """min_width と min_height の制約条件です。"""
 
