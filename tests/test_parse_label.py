@@ -181,9 +181,7 @@ def test_to_annofab_labels_with_minimum_size_field_value():
             "annotation_type": "bounding_box",
             "field_values": {
                 "minimum_size_2d_with_default_insert_position": {
-                    "min_warn_rule": {
-                        "_type": "Or",
-                    },
+                    "min_warn_rule": "and",
                     "min_width": 20,
                     "min_height": 20,
                     "position_for_minimum_bounding_box_insertion": None,
@@ -194,26 +192,21 @@ def test_to_annofab_labels_with_minimum_size_field_value():
     ]
 
 
-def test_label_candidate_discards_unknown_field_value():
-    label = LabelCandidate.model_validate(
-        {
-            "label_name_en": "pedestrian",
-            "annotation_type": AnnotationType.BOUNDING_BOX,
-            "field_values": {
-                "future_field_value": {
-                    "_type": "FutureFieldValue",
-                    "enabled": True,
-                    "nested": {"threshold": 0.5},
-                }
-            },
-        }
-    )
-
-    assert label.model_dump(mode="json")["field_values"] == {
-        "minimum_size_2d_with_default_insert_position": None,
-        "margin_of_error_tolerance": None,
-        "display_line_direction": None,
-    }
+def test_label_candidate_rejects_unknown_field_value():
+    with pytest.raises(ValueError):
+        LabelCandidate.model_validate(
+            {
+                "label_name_en": "pedestrian",
+                "annotation_type": AnnotationType.BOUNDING_BOX,
+                "field_values": {
+                    "future_field_value": {
+                        "_type": "FutureFieldValue",
+                        "enabled": True,
+                        "nested": {"threshold": 0.5},
+                    }
+                },
+            }
+        )
 
 
 def test_label_candidate_rejects_mismatched_field_value():
@@ -229,6 +222,27 @@ def test_label_candidate_rejects_mismatched_field_value():
                 },
             }
         )
+
+
+def test_label_parse_result_schema_can_be_used_for_openai_structured_outputs():
+    schema = LabelParseResult.model_json_schema()
+
+    def collect_object_schemas_without_additional_properties_false(target, path="#"):
+        if isinstance(target, dict):
+            results = []
+            if target.get("type") == "object" and target.get("additionalProperties") is not False:
+                results.append(path)
+            for key, value in target.items():
+                results.extend(collect_object_schemas_without_additional_properties_false(value, f"{path}/{key}"))
+            return results
+        if isinstance(target, list):
+            results = []
+            for index, value in enumerate(target):
+                results.extend(collect_object_schemas_without_additional_properties_false(value, f"{path}/{index}"))
+            return results
+        return []
+
+    assert collect_object_schemas_without_additional_properties_false(schema) == []
 
 
 def test_keybind_candidate():

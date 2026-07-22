@@ -45,6 +45,8 @@ ALLOWED_KEYBIND_CODES = {
     "KeyP",
 }
 """keybind.code に指定できる KeyboardEvent.code の値です。"""
+STRUCTURED_OUTPUT_MODEL_CONFIG = ConfigDict(extra="forbid", serialize_by_alias=True)
+"""OpenAIのStructured Outputsで利用できるJSON SchemaにするためのPydantic設定です。"""
 
 
 class ProjectType(StrEnum):
@@ -161,6 +163,8 @@ class KeybindCandidate(BaseModel):
     ラベルに設定するキーボードショートカットです。
     """
 
+    model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
+
     alt: bool = Field(default=False, description="Altキーを使用する場合はtrueです。")
     """Altキーを使用するかどうかです。"""
 
@@ -201,7 +205,7 @@ class MarginOfErrorToleranceFieldValue(BaseModel):
     許容誤差に関する field_values です。
     """
 
-    model_config = ConfigDict(extra="allow", serialize_by_alias=True)
+    model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
 
     type_: Literal["MarginOfErrorTolerance"] = Field(alias="_type", description="field_values の種類です。")
     """field_values の種類です。"""
@@ -215,7 +219,7 @@ class DisplayLineDirectionFieldValue(BaseModel):
     ポリラインの方向の表示に関する field_values です。
     """
 
-    model_config = ConfigDict(extra="allow", serialize_by_alias=True)
+    model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
 
     type_: Literal["DisplayLineDirection"] = Field(alias="_type", description="field_values の種類です。")
     """field_values の種類です。"""
@@ -229,7 +233,7 @@ class MinimumSize2dWithDefaultInsertPositionFieldValue(BaseModel):
     2次元図形の最小サイズ制約に関する field_values です。
     """
 
-    model_config = ConfigDict(extra="allow", serialize_by_alias=True)
+    model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
 
     min_warn_rule: Literal["or", "and"] = Field(description="min_width と min_height の制約条件")
     """"min_width と min_height の制約条件"""
@@ -252,6 +256,8 @@ class FieldValues(BaseModel):
     ラベルごとの制約、表示設定、許容誤差などの field_values です。
     """
 
+    model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
+
     minimum_size_2d_with_default_insert_position: MinimumSize2dWithDefaultInsertPositionFieldValue | None = Field(
         default=None,
         description="アノテーションの種類が「矩形」の場合の最小サイズ制約です。",
@@ -269,6 +275,8 @@ class LabelCandidate(BaseModel):
     """
     追加候補のラベル情報です。
     """
+
+    model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
 
     label_name_en: str = Field(description="追加するラベル名（英語）です。特に指定がない限り、英語小文字のスネークケースで記述してください。")
     """ラベル名（英語）です。"""
@@ -357,6 +365,8 @@ class LabelParseResult(BaseModel):
     ラベルの自然言語解析結果です。
     """
 
+    model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
+
     labels: list[LabelCandidate] = Field(description="解析できた追加対象ラベルの一覧です。")
     """解析できたラベル候補の一覧です。"""
 
@@ -396,14 +406,14 @@ def get_label_catalog(annotation_specs: dict[str, Any]) -> list[dict[str, Any]]:
         既存ラベル一覧
     """
     catalog = []
-    for label in annotation_specs.get("labels", []):
-        label_name = label.get("label_name", {})
+    for label in annotation_specs["labels"]:
+        label_name = label["label_name"]
         catalog.append(
             {
                 "label_name_en": get_message(label_name, lang="en-US"),
                 "label_name_ja": get_message(label_name, lang="ja-JP"),
-                "annotation_type": label.get("annotation_type"),
-                "keybind": label.get("keybind"),
+                "annotation_type": label["annotation_type"],
+                "keybind": label["keybind"],
             }
         )
     return catalog
