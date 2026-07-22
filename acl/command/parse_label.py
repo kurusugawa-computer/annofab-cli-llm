@@ -235,7 +235,7 @@ class MinWarnRule(BaseModel):
 
     model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
 
-    type_: Literal["Or", "And"] = Field(alias="_type", description="min_width と min_height の制約条件です。")
+    type_: Literal["Or", "And"] = Field(alias="_type", description="min_width と min_height に関して警告を出す条件です。「幅が100px以上 AND 高さ200px以上」という制約の場合、`And`でなく`Or`を指定する必要があります。")
     """min_width と min_height の制約条件です。"""
 
 
@@ -246,8 +246,8 @@ class MinimumSize2dWithDefaultInsertPositionFieldValue(BaseModel):
 
     model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
 
-    min_warn_rule: MinWarnRule = Field(description="min_width と min_height の制約条件です。")
-    """min_width と min_height の制約条件です。"""
+    min_warn_rule: MinWarnRule = Field(description="min_width と min_height に関して警告を出す条件です。")
+    """min_width と min_height に関して警告を出す条件です。"""
 
     min_width: int = Field(description="最小幅(ピクセル)です。")
     """最小幅です。"""
