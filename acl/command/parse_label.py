@@ -3,14 +3,14 @@ import json
 import re
 from enum import StrEnum
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import annofabapi
 from annofabapi.models import DefaultAnnotationType
 from annofabapi.plugin import ThreeDimensionAnnotationType
 from litellm import completion
 from loguru import logger
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 import acl.common.cli
 from acl.common.cli import read_at_file
@@ -196,6 +196,69 @@ class KeybindCandidate(BaseModel):
         return normalized
 
 
+class MarginOfErrorToleranceFieldValue(BaseModel):
+    """
+    許容誤差に関する field_values です。
+    """
+
+    model_config = ConfigDict(extra="allow", serialize_by_alias=True)
+
+    type_: Literal["MarginOfErrorTolerance"] = Field(alias="_type", description="field_values の種類です。")
+    """field_values の種類です。"""
+
+
+class DisplayLineDirectionFieldValue(BaseModel):
+    """
+    線分方向の表示に関する field_values です。
+    """
+
+    model_config = ConfigDict(extra="allow", serialize_by_alias=True)
+
+    type_: Literal["DisplayLineDirection"] = Field(alias="_type", description="field_values の種類です。")
+    """field_values の種類です。"""
+
+
+class MinimumSize2dWithDefaultInsertPositionFieldValue(BaseModel):
+    """
+    2次元図形の最小サイズ制約に関する field_values です。
+    """
+
+    model_config = ConfigDict(extra="allow", serialize_by_alias=True)
+
+    min_warn_rule: dict[str, Any] = Field(description="最小サイズ制約の警告条件です。")
+    """最小サイズ制約の警告条件です。"""
+
+    min_width: int | float | None = Field(default=None, description="最小幅です。")
+    """最小幅です。"""
+
+    min_height: int | float | None = Field(default=None, description="最小高さです。")
+    """最小高さです。"""
+
+    position_for_minimum_bounding_box_insertion: str | None = Field(default=None, description="最小矩形を挿入するときの位置です。")
+    """最小矩形を挿入するときの位置です。"""
+
+    type_: Literal["MinimumSize2dWithDefaultInsertPosition"] = Field(alias="_type", description="field_values の種類です。")
+    """field_values の種類です。"""
+
+
+class FieldValues(BaseModel):
+    """
+    ラベルごとの制約、表示設定、許容誤差などの field_values です。
+    """
+
+    minimum_size_2d_with_default_insert_position: MinimumSize2dWithDefaultInsertPositionFieldValue | None = Field(
+        default=None,
+        description="2次元図形の最小サイズ制約です。",
+    )
+    """2次元図形の最小サイズ制約です。"""
+
+    margin_of_error_tolerance: MarginOfErrorToleranceFieldValue | None = Field(default=None, description="許容誤差に関する設定です。")
+    """許容誤差に関する設定です。"""
+
+    display_line_direction: DisplayLineDirectionFieldValue | None = Field(default=None, description="線分方向の表示に関する設定です。")
+    """線分方向の表示に関する設定です。"""
+
+
 class LabelCandidate(BaseModel):
     """
     追加候補のラベル情報です。
@@ -215,6 +278,9 @@ class LabelCandidate(BaseModel):
 
     keybind: KeybindCandidate | None = Field(default=None, description="ラベルに設定するキーボードショートカットです。")
     """ラベルに設定するキーボードショートカットです。"""
+
+    field_values: FieldValues = Field(default_factory=FieldValues, description="ラベルごとの制約、表示設定、許容誤差などの field_values です。")
+    """ラベルごとの制約、表示設定、許容誤差などの field_values です。"""
 
     @field_validator("label_name_en")
     @classmethod
@@ -376,6 +442,12 @@ def parse_labels_from_text(
 できるだけ、ラベルの順番とキーの順番が対応するようにしてください。
 ただし、既存のラベルのショートカットと重複しないようにしてください。既存のショートカットと重複する場合は、warnings に入れてください。
 
+ラベルごとの制約、表示設定、許容誤差などは field_values に出力してください。
+矩形の最小サイズ制約は minimum_size_2d_with_default_insert_position に出力してください。
+たとえば「幅また高さが20px以上」のような矩形サイズ制約は、min_warn_rule._type を Or、min_width と min_height を 20 としてください。
+position_for_minimum_bounding_box_insertion は null、_type は MinimumSize2dWithDefaultInsertPosition として出力してください。
+field_values には、指定された形式に対応しているキーだけを出力してください。
+
 ラベル定義として解釈できる文だけを解析対象にしてください。
 属性定義、属性制約、作業手順、品質基準など、明らかにラベル定義ではない文は warnings や unresolved_texts に入れず無視してください。
 ラベル定義として解釈できる可能性があるが、label_name_en または annotation_type を特定できない文は labels に入れず unresolved_texts に入れてください。
@@ -515,6 +587,23 @@ def normalize_parsed_labels(result: LabelParseResult, annotation_specs: dict[str
     )
 
 
+def dump_label_for_annofab(label: LabelCandidate) -> dict[str, Any]:
+    """
+    ラベル候補をAnnofab CLIへ渡すための辞書に変換します。
+
+    Args:
+        label: ラベル候補
+
+    Returns:
+        Annofab CLIに渡すラベル辞書
+    """
+    dumped = label.model_dump(mode="json")
+    field_values = dumped.get("field_values")
+    if isinstance(field_values, dict):
+        dumped["field_values"] = {key: value for key, value in field_values.items() if value is not None}
+    return {key: value for key, value in dumped.items() if value is not None}
+
+
 def to_annofab_labels(result: LabelParseResult) -> list[dict[str, Any]]:
     """
     解析結果を ``annotation_specs add_labels --label_json`` に渡せるJSONへ変換します。
@@ -525,7 +614,7 @@ def to_annofab_labels(result: LabelParseResult) -> list[dict[str, Any]]:
     Returns:
         add_labels向けのJSON配列
     """
-    return [label.model_dump(mode="json", exclude_none=True) for label in result.labels]
+    return [dump_label_for_annofab(label) for label in result.labels]
 
 
 def main(args: argparse.Namespace) -> None:

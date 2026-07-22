@@ -5,9 +5,11 @@ import pytest
 
 from acl.command.parse_label import (
     AnnotationType,
+    FieldValues,
     KeybindCandidate,
     LabelCandidate,
     LabelParseResult,
+    MinimumSize2dWithDefaultInsertPositionFieldValue,
     ProjectType,
     get_annotation_specs,
     normalize_parsed_labels,
@@ -81,6 +83,8 @@ def test_parse_labels_from_text(monkeypatch, annotation_specs):
     assert '"value": "segmentation_v2"' in user_content
     assert '"description": "矩形"' in user_content
     assert "keybind" in developer_content
+    assert "field_values" in developer_content
+    assert "minimum_size_2d_with_default_insert_position" in developer_content
     assert "属性定義、属性制約、作業手順、品質基準など、明らかにラベル定義ではない文は warnings や unresolved_texts に入れず無視してください。" in developer_content
     assert "ラベル定義として解釈できる可能性があるが、label_name_en または annotation_type を特定できない文は labels に入れず unresolved_texts に入れてください。" in developer_content
     assert '"label_name_en": "car"' in user_content
@@ -145,8 +149,86 @@ def test_to_annofab_labels():
                 "ctrl": True,
                 "shift": False,
             },
+            "field_values": {},
         }
     ]
+
+
+def test_to_annofab_labels_with_minimum_size_field_value():
+    result = LabelParseResult(
+        labels=[
+            LabelCandidate(
+                label_name_en="pedestrian",
+                annotation_type=AnnotationType.BOUNDING_BOX,
+                field_values=FieldValues(
+                    minimum_size_2d_with_default_insert_position=MinimumSize2dWithDefaultInsertPositionFieldValue(
+                        min_warn_rule={"_type": "Or"},
+                        min_width=20,
+                        min_height=20,
+                        position_for_minimum_bounding_box_insertion=None,
+                        _type="MinimumSize2dWithDefaultInsertPosition",
+                    )
+                ),
+            ),
+        ]
+    )
+
+    actual = to_annofab_labels(result)
+
+    assert actual == [
+        {
+            "label_name_en": "pedestrian",
+            "annotation_type": "bounding_box",
+            "field_values": {
+                "minimum_size_2d_with_default_insert_position": {
+                    "min_warn_rule": {
+                        "_type": "Or",
+                    },
+                    "min_width": 20,
+                    "min_height": 20,
+                    "position_for_minimum_bounding_box_insertion": None,
+                    "_type": "MinimumSize2dWithDefaultInsertPosition",
+                }
+            },
+        }
+    ]
+
+
+def test_label_candidate_discards_unknown_field_value():
+    label = LabelCandidate.model_validate(
+        {
+            "label_name_en": "pedestrian",
+            "annotation_type": AnnotationType.BOUNDING_BOX,
+            "field_values": {
+                "future_field_value": {
+                    "_type": "FutureFieldValue",
+                    "enabled": True,
+                    "nested": {"threshold": 0.5},
+                }
+            },
+        }
+    )
+
+    assert label.model_dump(mode="json")["field_values"] == {
+        "minimum_size_2d_with_default_insert_position": None,
+        "margin_of_error_tolerance": None,
+        "display_line_direction": None,
+    }
+
+
+def test_label_candidate_rejects_mismatched_field_value():
+    with pytest.raises(ValueError):
+        LabelCandidate.model_validate(
+            {
+                "label_name_en": "pedestrian",
+                "annotation_type": AnnotationType.BOUNDING_BOX,
+                "field_values": {
+                    "minimum_size_2d_with_default_insert_position": {
+                        "_type": "MarginOfErrorTolerance",
+                    }
+                },
+            }
+        )
 
 
 def test_keybind_candidate():
