@@ -212,7 +212,7 @@ def test_to_annofab_labels_with_minimum_size_field_value():
 
 def test_min_warn_rule_rejects_unknown_type():
     with pytest.raises(ValueError):
-        MinWarnRule(_type="None")
+        MinWarnRule(_type="None")  # type: ignore[arg-type]
 
 
 def test_format_unresolved_text():
