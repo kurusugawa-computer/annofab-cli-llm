@@ -44,10 +44,10 @@ class ChoiceCandidate(BaseModel):
     追加候補の選択肢情報です。
     """
 
-    choice_name_en: str = Field(description="追加する選択肢名（英語）です。")
+    choice_name_en: str = Field(description="追加する選択肢名（英語）です。特に指定がない限り、英語小文字のスネークケースで記述してください。")
     """選択肢名（英語）です。"""
 
-    choice_name_ja: str | None = Field(default=None, description="追加する選択肢名（日本語）です。特定できない場合はnullにしてください。")
+    choice_name_ja: str | None = Field(default=None, description="追加する選択肢名（日本語）です。")
     """選択肢名（日本語）です。"""
 
     is_default: bool = Field(default=False, description="その選択肢をデフォルト値にする場合はtrueです。")
@@ -83,13 +83,13 @@ class AttributeCandidate(BaseModel):
     attribute_type: AdditionalDataDefinitionType = Field(description="追加する属性の種類です。")
     """属性種類です。"""
 
-    attribute_name_en: str = Field(description="追加する属性名（英語）です。")
+    attribute_name_en: str = Field(description="追加する属性名（英語）です。特に指定がない限り、英語小文字のスネークケースで記述してください。")
     """属性名（英語）です。"""
 
     label_name_ens: list[str] = Field(description="属性を追加する対象ラベル名（英語）の一覧です。")
     """属性を追加する対象ラベル名（英語）の一覧です。"""
 
-    attribute_name_ja: str | None = Field(default=None, description="追加する属性名（日本語）です。特定できない場合はnullにしてください。")
+    attribute_name_ja: str | None = Field(default=None, description="追加する属性名（日本語）です。")
     """属性名（日本語）です。"""
 
     read_only: bool = Field(default=False, description="読み込み専用の属性にする場合はtrueです。")
@@ -108,7 +108,7 @@ class AttributeCandidate(BaseModel):
     * attribute_typeが上記以外: str型の値
     """
 
-    choices: list[ChoiceCandidate] | None = Field(default=None, description="`attribute_type` が `choice` または `select` のときだけ指定する選択肢一覧です。")
+    choices: list[ChoiceCandidate] | None = Field(default=None, description="`attribute_type` が `choice` または `select` のときだけ指定する選択肢一覧です。2件以上必要です。")
     """選択肢一覧です。"""
 
     keybind: KeybindCandidate | None = Field(default=None, description="属性に設定するキーボードショートカットです。")
@@ -278,18 +278,15 @@ def parse_attributes_from_text(
             "content": """
 あなたは、自然言語で書かれたアノテーションルールから、Annofabに追加する属性を抽出するAIです。
 抽出した結果は、必ずAttributeParseResult形式で返してください。
+
 追加対象の新規属性だけを attributes に入れてください。
+
 既存のannotation specsに存在するラベル名（英語）だけを label_name_ens に入れてください。
+
 既存のannotation specsに既に存在する属性名（英語）は出力してはいけません。
-attribute_name_en と label_name_ens に含める label_name_en は、アノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。
-`choice` または `select` の choices に含める choice_name_en も、アノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。
-読み込み専用の属性にする指定がある場合は read_only を true にしてください。指定がない場合は false にしてください。
-初期値の指定がある場合は default_value を指定してください。attribute_typeがflagの場合はbool型、integerの場合はint型、choiceまたはselectの場合はNone(null)、上記以外の場合はstr型の値にしてください。
-できるだけ属性や選択肢にキーボードショートカットを設定するため、 keybind を出力してください。
-keybind は {"alt": false, "code": "Digit1", "ctrl": true, "shift": false} のようなJSONオブジェクトにしてください。
-keybind.code は KeyboardEvent.code の値を使用してください。例: Digit1, KeyQ, KeyW, KeyP
-たとえば Ctrl+Digit1 は {"alt": false, "code": "Digit1", "ctrl": true, "shift": false} に変換してください。
-既存のショートカットと衝突しないようにし、できるだけ属性や選択肢の順番とキーの順番が対応するようにしてください。
+
+既存のショートカットと重複する場合は、unresolved_texts に入れてください。
+
 対象ラベルを特定できない場合は、attributes に入れず unresolved_texts に入れてください。
 attribute_type を特定できない場合は、attributes に入れず unresolved_texts に入れてください。
 `choice` または `select` の場合は、choices を2件以上出力してください。

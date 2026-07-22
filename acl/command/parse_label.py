@@ -176,13 +176,13 @@ class LabelCandidate(BaseModel):
     追加候補のラベル情報です。
     """
 
-    label_name_en: str = Field(description="追加するラベル名（英語）です。")
+    label_name_en: str = Field(description="追加するラベル名（英語）です。特に指定がない限り、英語小文字のスネークケースで記述してください。")
     """ラベル名（英語）です。"""
 
     annotation_type: AnnotationType = Field(description="追加するラベルのアノテーション種類です。")
     """アノテーション種類です。"""
 
-    label_name_ja: str | None = Field(default=None, description="追加するラベル名（日本語）です。特定できない場合はnullにしてください。")
+    label_name_ja: str | None = Field(default=None, description="追加するラベル名（日本語）です。")
     """ラベル名（日本語）です。"""
 
     color: str | None = Field(default=None, description="ラベル色です。指定する場合は `#RRGGBB` 形式にしてください。")
@@ -306,7 +306,7 @@ def get_label_catalog(annotation_specs: dict[str, Any]) -> list[dict[str, Any]]:
                 "label_name_en": get_message(label_name, lang="en-US"),
                 "label_name_ja": get_message(label_name, lang="ja-JP"),
                 "annotation_type": label.get("annotation_type"),
-                "keybind": label.get("keybind", []),
+                "keybind": label.get("keybind"),
             }
         )
     return catalog
@@ -344,17 +344,11 @@ def parse_labels_from_text(
 
 既存のannotation specsに存在するラベル名（英語）は出力してはいけません。
 
-label_name_en はアノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。
-
 指定されたプロジェクト種別で利用可能な annotation_type だけを使用してください。
-
-color を出力する場合は、必ず #RRGGBB 形式にしてください。
 
 できるだけラベルにキーボードショートカットを設定するため、 keybind を出力してください。
 できるだけ、ラベルの順番とキーの順番が対応するようにしてください。
-ただし、既存のラベルのショートカットと重複しないようにしてください。
-keybind.code は KeyboardEvent.code の値を使用してください。例: Digit1, KeyQ, KeyW, KeyP
-たとえば Ctrl+Digit1 は {"alt": false, "code": "Digit1", "ctrl": true, "shift": false} に変換してください。
+ただし、既存のラベルのショートカットと重複しないようにしてください。既存のショートカットと重複する場合は、unresolved_texts に入れてください。
 
 ラベル定義として解釈できる文だけを解析対象にしてください。
 属性定義、属性制約、作業手順、品質基準など、明らかにラベル定義ではない文は warnings や unresolved_texts に入れず無視してください。
