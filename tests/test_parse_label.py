@@ -162,7 +162,7 @@ def test_to_annofab_labels_with_minimum_size_field_value():
                 annotation_type=AnnotationType.BOUNDING_BOX,
                 field_values=FieldValues(
                     minimum_size_2d_with_default_insert_position=MinimumSize2dWithDefaultInsertPositionFieldValue(
-                        min_warn_rule={"_type": "Or"},
+                        min_warn_rule="and",
                         min_width=20,
                         min_height=20,
                         position_for_minimum_bounding_box_insertion=None,
