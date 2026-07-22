@@ -753,6 +753,10 @@ def main(args: argparse.Namespace) -> None:
         raise ValueError("アノテーション仕様に追加可能なラベルを抽出できませんでした。")
 
     print_json(annofab_labels, output=args.output)
+    if args.output is None:
+        logger.info("追加対象ラベルのJSONを標準出力に出力しました。")
+    else:
+        logger.info(f"追加対象ラベルのJSONをファイルに出力しました。 :: output='{args.output}'")
     logger.info(OUTPUT_USAGE_MESSAGE)
     print_json(annofab_labels, temp_dir / "annofab_labels.json")
     logger.info("ラベルの自然言語解析が完了しました。")
