@@ -285,7 +285,7 @@ def parse_attributes_from_text(
 
 既存のannotation specsに既に存在する属性名（英語）は出力してはいけません。
 
-既存のショートカットと重複する場合は、unresolved_texts に入れてください。
+既存のショートカットと重複する場合は、warnings に入れてください。
 
 対象ラベルを特定できない場合は、attributes に入れず unresolved_texts に入れてください。
 attribute_type を特定できない場合は、attributes に入れず unresolved_texts に入れてください。
