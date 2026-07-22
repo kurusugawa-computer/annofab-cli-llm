@@ -18,10 +18,7 @@ from acl.common.utils import print_json
 from acl.common.xdg_util import create_command_temp_dir
 
 COMMAND_NAME = "parse_label"
-OUTPUT_USAGE_MESSAGE = (
-    "出力されるJSONは、 [annofabcli annotation_specs add_labels]"
-    "(https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation_specs/add_labels.html) コマンドの --label_json 引数にそのまま指定できます。"
-)
+OUTPUT_USAGE_MESSAGE = "出力されるJSONは、annofabcli annotation_specs add_labels コマンドの --label_json 引数にそのまま指定できます。"
 """出力JSONの利用方法に関するメッセージです。"""
 HEX_COLOR_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
 """カラーコードの書式です。"""
@@ -306,8 +303,10 @@ def parse_labels_from_text(
 label_name_en はアノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。
 指定されたプロジェクト種別で利用可能な annotation_type だけを使用してください。
 color を出力する場合は、必ず #RRGGBB 形式にしてください。
-label_name_en と annotation_type を特定できない場合は、labelsに入れず unresolved_texts に入れてください。
-曖昧な条件やラベル追加ルールではない文も unresolved_texts に入れてください。
+ラベル定義として解釈できる文だけを解析対象にしてください。
+属性定義、属性制約、作業手順、品質基準など、明らかにラベル定義ではない文は warnings や unresolved_texts に入れず無視してください。
+ラベル定義として解釈できる可能性があるが、label_name_en または annotation_type を特定できない文は labels に入れず unresolved_texts に入れてください。
+ラベル定義として解釈できる可能性があるが曖昧な文も unresolved_texts に入れてください。
 """.strip(),
         },
         {

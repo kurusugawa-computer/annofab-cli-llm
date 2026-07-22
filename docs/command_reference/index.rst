@@ -37,7 +37,7 @@ Global Options
 --model
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-使用するLLMのモデルを指定します。デフォルトは ``openai/gpt-5.4-mini`` です。
+使用するLLMのモデルを指定します。デフォルトは ``openai/gpt-5.6-terra`` です。
 
 より高性能なモデルを使用したい場合や、特定の用途に適したモデルを選択したい場合に指定します。
 LiteLLMに対応している様々なプロバイダーのモデルを使用できます。
@@ -51,9 +51,9 @@ Gemini APIをAPIキーで利用する場合は、 ``gemini/`` から始まるモ
 
 .. code-block:: bash
 
-    # OpenAI GPT-5.4 miniを使用
+    # OpenAI GPT-5.6 Terraを使用
     $ export OPENAI_API_KEY=...
-    $ annofabcli-llm annotation_zip validate_attribute_value --model openai/gpt-5.4-mini \
+    $ annofabcli-llm annotation_zip validate_attribute_value --model openai/gpt-5.6-terra \
      --project_id ${PROJECT_ID} \
      --output validate_result.csv \
      --output_format csv \

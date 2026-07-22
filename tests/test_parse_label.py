@@ -73,6 +73,8 @@ def test_parse_labels_from_text(monkeypatch, annotation_specs):
     assert '"description": "矩形"' in user_content
     assert "#RRGGBB" in developer_content
     assert "label_name_en はアノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。" in developer_content
+    assert "属性定義、属性制約、作業手順、品質基準など、明らかにラベル定義ではない文は warnings や unresolved_texts に入れず無視してください。" in developer_content
+    assert "ラベル定義として解釈できる可能性があるが、label_name_en または annotation_type を特定できない文は labels に入れず unresolved_texts に入れてください。" in developer_content
     assert '"label_name_en": "car"' in user_content
     assert '"annotation_type": "bounding_box"' in user_content
 

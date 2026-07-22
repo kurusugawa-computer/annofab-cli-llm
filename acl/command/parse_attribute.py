@@ -16,10 +16,7 @@ from acl.common.utils import print_json
 from acl.common.xdg_util import create_command_temp_dir
 
 COMMAND_NAME = "parse_attribute"
-OUTPUT_USAGE_MESSAGE = (
-    "出力されるJSONは、 [annofabcli annotation_specs add_attributes]"
-    "(https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation_specs/add_attributes.html) コマンドの --attribute_json 引数にそのまま指定できます。"
-)
+OUTPUT_USAGE_MESSAGE = "出力されるJSONは、annofabcli annotation_specs add_attributes コマンドの --attribute_json 引数にそのまま指定できます。"
 """出力JSONの利用方法に関するメッセージです。"""
 
 CHOICE_ATTRIBUTE_TYPES = {
