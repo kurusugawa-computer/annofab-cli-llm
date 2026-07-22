@@ -206,16 +206,22 @@ class MarginOfErrorToleranceFieldValue(BaseModel):
     type_: Literal["MarginOfErrorTolerance"] = Field(alias="_type", description="field_values の種類です。")
     """field_values の種類です。"""
 
+    max_pixel: int = Field(description="許容誤差の最大ピクセル数です。")
+    """許容誤差の最大ピクセル数です。"""
+
 
 class DisplayLineDirectionFieldValue(BaseModel):
     """
-    線分方向の表示に関する field_values です。
+    ポリラインの方向の表示に関する field_values です。
     """
 
     model_config = ConfigDict(extra="allow", serialize_by_alias=True)
 
     type_: Literal["DisplayLineDirection"] = Field(alias="_type", description="field_values の種類です。")
     """field_values の種類です。"""
+
+    has_direction: bool = Field(default=False, description="ポリラインに向きがある場合はtrueです。")
+    """ポリラインに向きがある場合はtrueです。"""
 
 
 class MinimumSize2dWithDefaultInsertPositionFieldValue(BaseModel):
@@ -225,16 +231,16 @@ class MinimumSize2dWithDefaultInsertPositionFieldValue(BaseModel):
 
     model_config = ConfigDict(extra="allow", serialize_by_alias=True)
 
-    min_warn_rule: dict[str, Any] = Field(description="最小サイズ制約の警告条件です。")
-    """最小サイズ制約の警告条件です。"""
+    min_warn_rule: Literal["or", "and"] = Field(description="min_width と min_height の制約条件")
+    """"min_width と min_height の制約条件"""
 
-    min_width: int | float | None = Field(default=None, description="最小幅です。")
+    min_width: int = Field(description="最小幅(ピクセル)です。")
     """最小幅です。"""
 
-    min_height: int | float | None = Field(default=None, description="最小高さです。")
+    min_height: int = Field(description="最小高さ(ピクセル)です。")
     """最小高さです。"""
 
-    position_for_minimum_bounding_box_insertion: str | None = Field(default=None, description="最小矩形を挿入するときの位置です。")
+    position_for_minimum_bounding_box_insertion: list[int] | None = Field(default=None, description="最小矩形を挿入するときの位置です。")
     """最小矩形を挿入するときの位置です。"""
 
     type_: Literal["MinimumSize2dWithDefaultInsertPosition"] = Field(alias="_type", description="field_values の種類です。")
@@ -248,15 +254,15 @@ class FieldValues(BaseModel):
 
     minimum_size_2d_with_default_insert_position: MinimumSize2dWithDefaultInsertPositionFieldValue | None = Field(
         default=None,
-        description="2次元図形の最小サイズ制約です。",
+        description="アノテーションの種類が「矩形」の場合の最小サイズ制約です。",
     )
-    """2次元図形の最小サイズ制約です。"""
+    """アノテーションの種類が「矩形」の場合の最小サイズ制約です。"""
 
     margin_of_error_tolerance: MarginOfErrorToleranceFieldValue | None = Field(default=None, description="許容誤差に関する設定です。")
     """許容誤差に関する設定です。"""
 
-    display_line_direction: DisplayLineDirectionFieldValue | None = Field(default=None, description="線分方向の表示に関する設定です。")
-    """線分方向の表示に関する設定です。"""
+    display_line_direction: DisplayLineDirectionFieldValue | None = Field(default=None, description="アノテーションの種類が「ポリライン」の場合の線分方向の表示に関する設定です。")
+    """アノテーションの種類が「ポリライン」の場合の線分方向の表示に関する設定です。"""
 
 
 class LabelCandidate(BaseModel):
