@@ -11,6 +11,7 @@ from acl.command.parse_label import (
     LabelParseResult,
     MinimumSize2dWithDefaultInsertPositionFieldValue,
     ProjectType,
+    VertexCountMinMaxFieldValue,
     get_annotation_specs,
     normalize_parsed_labels,
     parse_labels_from_text,
@@ -85,6 +86,7 @@ def test_parse_labels_from_text(monkeypatch, annotation_specs):
     assert "keybind" in developer_content
     assert "field_values" in developer_content
     assert "minimum_size_2d_with_default_insert_position" in developer_content
+    assert "vertex_count_min_max" in developer_content
     assert "属性定義、属性制約、作業手順、品質基準など、明らかにラベル定義ではない文は warnings や unresolved_texts に入れず無視してください。" in developer_content
     assert "ラベル定義として解釈できる可能性があるが、label_name_en または annotation_type を特定できない文は labels に入れず unresolved_texts に入れてください。" in developer_content
     assert '"label_name_en": "car"' in user_content
@@ -186,6 +188,40 @@ def test_to_annofab_labels_with_minimum_size_field_value():
                     "min_height": 20,
                     "position_for_minimum_bounding_box_insertion": None,
                     "_type": "MinimumSize2dWithDefaultInsertPosition",
+                }
+            },
+        }
+    ]
+
+
+def test_to_annofab_labels_with_vertex_count_min_max_field_value():
+    result = LabelParseResult(
+        labels=[
+            LabelCandidate(
+                label_name_en="traffic_lane",
+                annotation_type=AnnotationType.POLYLINE,
+                field_values=FieldValues(
+                    vertex_count_min_max=VertexCountMinMaxFieldValue(
+                        min=3,
+                        max=6,
+                        _type="VertexCountMinMax",
+                    )
+                ),
+            ),
+        ]
+    )
+
+    actual = to_annofab_labels(result)
+
+    assert actual == [
+        {
+            "label_name_en": "traffic_lane",
+            "annotation_type": "polyline",
+            "field_values": {
+                "vertex_count_min_max": {
+                    "min": 3,
+                    "max": 6,
+                    "_type": "VertexCountMinMax",
                 }
             },
         }

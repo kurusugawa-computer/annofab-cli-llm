@@ -251,6 +251,23 @@ class MinimumSize2dWithDefaultInsertPositionFieldValue(BaseModel):
     """field_values の種類です。"""
 
 
+class VertexCountMinMaxFieldValue(BaseModel):
+    """
+    ポリラインまたはポリゴンの頂点数制約に関する field_values です。
+    """
+
+    model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
+
+    min: int | None = Field(default=None, description="頂点数の最小値です。")
+    """頂点数の最小値です。"""
+
+    max: int | None = Field(default=None, description="頂点数の最大値です。")
+    """頂点数の最大値です。"""
+
+    type_: Literal["VertexCountMinMax"] = Field(alias="_type", description="field_values の種類です。")
+    """field_values の種類です。"""
+
+
 class FieldValues(BaseModel):
     """
     ラベルごとの制約、表示設定、許容誤差などの field_values です。
@@ -269,6 +286,9 @@ class FieldValues(BaseModel):
 
     display_line_direction: DisplayLineDirectionFieldValue | None = Field(default=None, description="アノテーションの種類が「ポリライン」の場合の線分方向の表示に関する設定です。")
     """アノテーションの種類が「ポリライン」の場合の線分方向の表示に関する設定です。"""
+
+    vertex_count_min_max: VertexCountMinMaxFieldValue | None = Field(default=None, description="アノテーションの種類が「ポリライン」または「ポリゴン」の場合の頂点数制約です。")
+    """アノテーションの種類が「ポリライン」または「ポリゴン」の場合の頂点数制約です。"""
 
 
 class LabelCandidate(BaseModel):
@@ -462,6 +482,8 @@ def parse_labels_from_text(
 矩形の最小サイズ制約は minimum_size_2d_with_default_insert_position に出力してください。
 たとえば「幅また高さが20px以上」のような矩形サイズ制約は、min_warn_rule._type を Or、min_width と min_height を 20 としてください。
 position_for_minimum_bounding_box_insertion は null、_type は MinimumSize2dWithDefaultInsertPosition として出力してください。
+ポリラインまたはポリゴンの頂点数制約は vertex_count_min_max に出力してください。
+たとえば「頂点数は3以上6以下」のような制約は、min を 3、max を 6、_type を VertexCountMinMax として出力してください。
 field_values には、指定された形式に対応しているキーだけを出力してください。
 
 ラベル定義として解釈できる文だけを解析対象にしてください。
