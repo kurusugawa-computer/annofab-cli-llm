@@ -13,6 +13,7 @@ from acl.command.parse_attribute import (
     parse_attributes_from_text,
     to_annofab_attributes,
 )
+from acl.command.parse_label import KeybindCandidate
 
 
 @pytest.fixture
@@ -136,10 +137,7 @@ def test_parse_attributes_from_text(monkeypatch, annotation_specs):
     assert '"description": "チェックボックス"' in user_content
     assert '"attribute_name_en": "occluded"' in user_content
     assert '"choice_name_ens": [' in user_content
-    assert "attribute_name_en と label_name_ens に含める label_name_en は、アノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。" in developer_content
-    assert "`choice` または `select` の choices に含める choice_name_en も、アノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。" in developer_content
-    assert "読み込み専用の属性にする指定がある場合は read_only を true にしてください。" in developer_content
-    assert "初期値の指定がある場合は default_value を指定してください。" in developer_content
+    assert "warnings" in developer_content
     assert "`choice` または `select` の場合は、choices を2件以上出力してください。" in developer_content
 
 
@@ -243,6 +241,7 @@ def test_to_annofab_attributes():
                 attribute_type=AdditionalDataDefinitionType.FLAG,
                 attribute_name_en="truncated",
                 label_name_ens=["pedestrian"],
+                keybind=KeybindCandidate(code="Digit1", ctrl=True),
             ),
             AttributeCandidate(
                 attribute_type=AdditionalDataDefinitionType.SELECT,
@@ -251,8 +250,8 @@ def test_to_annofab_attributes():
                 label_name_ens=["car"],
                 read_only=True,
                 choices=[
-                    ChoiceCandidate(choice_name_en="sunny", choice_name_ja="晴れ", is_default=True),
-                    ChoiceCandidate(choice_name_en="rainy", choice_name_ja="雨"),
+                    ChoiceCandidate(choice_name_en="sunny", choice_name_ja="晴れ", is_default=True, keybind=KeybindCandidate(code="KeyQ")),
+                    ChoiceCandidate(choice_name_en="rainy", choice_name_ja="雨", keybind=KeybindCandidate(code="KeyW")),
                 ],
             ),
         ]
@@ -266,6 +265,12 @@ def test_to_annofab_attributes():
             "attribute_name_en": "truncated",
             "label_name_ens": ["pedestrian"],
             "read_only": False,
+            "keybind": {
+                "alt": False,
+                "code": "Digit1",
+                "ctrl": True,
+                "shift": False,
+            },
         },
         {
             "attribute_type": "select",
@@ -278,11 +283,23 @@ def test_to_annofab_attributes():
                     "choice_name_en": "sunny",
                     "choice_name_ja": "晴れ",
                     "is_default": True,
+                    "keybind": {
+                        "alt": False,
+                        "code": "KeyQ",
+                        "ctrl": False,
+                        "shift": False,
+                    },
                 },
                 {
                     "choice_name_en": "rainy",
                     "choice_name_ja": "雨",
                     "is_default": False,
+                    "keybind": {
+                        "alt": False,
+                        "code": "KeyW",
+                        "ctrl": False,
+                        "shift": False,
+                    },
                 },
             ],
         },

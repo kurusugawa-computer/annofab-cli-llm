@@ -22,6 +22,29 @@ OUTPUT_USAGE_MESSAGE = "出力されるJSONは、annofabcli annotation_specs add
 """出力JSONの利用方法に関するメッセージです。"""
 HEX_COLOR_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
 """カラーコードの書式です。"""
+ALLOWED_KEYBIND_CODES = {
+    "Digit0",
+    "Digit1",
+    "Digit2",
+    "Digit3",
+    "Digit4",
+    "Digit5",
+    "Digit6",
+    "Digit7",
+    "Digit8",
+    "Digit9",
+    "KeyQ",
+    "KeyW",
+    "KeyE",
+    "KeyR",
+    "KeyT",
+    "KeyY",
+    "KeyU",
+    "KeyI",
+    "KeyO",
+    "KeyP",
+}
+"""keybind.code に指定できる KeyboardEvent.code の値です。"""
 
 
 class ProjectType(StrEnum):
@@ -133,22 +156,65 @@ def get_allowed_annotation_type_details(project_type: ProjectType) -> list[dict[
     return [{"value": annotation_type.value, "description": ANNOTATION_TYPE_DESCRIPTIONS[annotation_type]} for annotation_type in get_allowed_annotation_types(project_type)]
 
 
+class KeybindCandidate(BaseModel):
+    """
+    ラベルに設定するキーボードショートカットです。
+    """
+
+    alt: bool = Field(default=False, description="Altキーを使用する場合はtrueです。")
+    """Altキーを使用するかどうかです。"""
+
+    code: str = Field(description="KeyboardEvent.code の値です。ただし既存のショートカットと衝突しないようにするため、キーボード上部2段の数字キーと`Q`~`P`に限定してください。")
+    """KeyboardEvent.code の値です。"""
+
+    ctrl: bool = Field(default=False, description="Ctrlキーを使用する場合はtrueです。")
+    """Ctrlキーを使用するかどうかです。"""
+
+    shift: bool = Field(default=False, description="Shiftキーを使用する場合はtrueです。")
+    """Shiftキーを使用するかどうかです。"""
+
+    @field_validator("code")
+    @classmethod
+    def validate_code(cls, value: str) -> str:
+        """
+        キーコードを検証します。
+
+        Args:
+            value: 検証対象のキーコード
+
+        Returns:
+            前後空白を除去したキーコード
+
+        Raises:
+            ValueError: 空文字列の場合
+        """
+        normalized = value.strip()
+        if normalized == "":
+            raise ValueError("`keybind.code` には空でない文字列を指定してください。")
+        if normalized not in ALLOWED_KEYBIND_CODES:
+            raise ValueError("`keybind.code` にはキーボード上部2段の数字キーと`Q`~`P`の KeyboardEvent.code を指定してください。")
+        return normalized
+
+
 class LabelCandidate(BaseModel):
     """
     追加候補のラベル情報です。
     """
 
-    label_name_en: str = Field(description="追加するラベル名（英語）です。")
+    label_name_en: str = Field(description="追加するラベル名（英語）です。特に指定がない限り、英語小文字のスネークケースで記述してください。")
     """ラベル名（英語）です。"""
 
     annotation_type: AnnotationType = Field(description="追加するラベルのアノテーション種類です。")
     """アノテーション種類です。"""
 
-    label_name_ja: str | None = Field(default=None, description="追加するラベル名（日本語）です。特定できない場合はnullにしてください。")
+    label_name_ja: str | None = Field(default=None, description="追加するラベル名（日本語）です。")
     """ラベル名（日本語）です。"""
 
     color: str | None = Field(default=None, description="ラベル色です。指定する場合は `#RRGGBB` 形式にしてください。")
     """ラベル色です。 ``#RRGGBB`` 形式です。"""
+
+    keybind: KeybindCandidate | None = Field(default=None, description="ラベルに設定するキーボードショートカットです。")
+    """ラベルに設定するキーボードショートカットです。"""
 
     @field_validator("label_name_en")
     @classmethod
@@ -265,6 +331,7 @@ def get_label_catalog(annotation_specs: dict[str, Any]) -> list[dict[str, Any]]:
                 "label_name_en": get_message(label_name, lang="en-US"),
                 "label_name_ja": get_message(label_name, lang="ja-JP"),
                 "annotation_type": label.get("annotation_type"),
+                "keybind": label.get("keybind"),
             }
         )
     return catalog
@@ -299,10 +366,16 @@ def parse_labels_from_text(
 あなたは、自然言語で書かれたアノテーションルールから、Annofabに追加するラベルを抽出するAIです。
 抽出した結果は、必ずLabelParseResult形式で返してください。
 追加対象のラベルだけを labels に入れてください。
+
 既存のannotation specsに存在するラベル名（英語）は出力してはいけません。
-label_name_en はアノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。
+
 指定されたプロジェクト種別で利用可能な annotation_type だけを使用してください。
-color を出力する場合は、必ず #RRGGBB 形式にしてください。
+
+
+できるだけラベルにキーボードショートカットを設定するため、 keybind を出力してください。
+できるだけ、ラベルの順番とキーの順番が対応するようにしてください。
+ただし、既存のラベルのショートカットと重複しないようにしてください。既存のショートカットと重複する場合は、warnings に入れてください。
+
 ラベル定義として解釈できる文だけを解析対象にしてください。
 属性定義、属性制約、作業手順、品質基準など、明らかにラベル定義ではない文は warnings や unresolved_texts に入れず無視してください。
 ラベル定義として解釈できる可能性があるが、label_name_en または annotation_type を特定できない文は labels に入れず unresolved_texts に入れてください。
