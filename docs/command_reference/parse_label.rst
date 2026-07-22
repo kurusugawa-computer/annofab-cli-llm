@@ -53,7 +53,13 @@ Examples
         "label_name_en": "pedestrian",
         "label_name_ja": "歩行者",
         "annotation_type": "bounding_box",
-        "color": "#FF0000"
+        "color": "#FF0000",
+        "keybind": {
+          "alt": false,
+          "code": "Digit1",
+          "ctrl": true,
+          "shift": false
+        }
       },
       {
         "label_name_en": "bicycle",
@@ -76,6 +82,9 @@ Annofabへラベルを追加する
     $ annofabcli annotation_specs add_labels \
      --project_id ${PROJECT_ID} \
      --label_json file://labels.json
+
+``keybind`` のフォーマットは ``annofabcli annotation_specs add_labels`` コマンドと同じです。
+``code`` には `KeyboardEvent.code <https://developer.mozilla.org/ja/docs/Web/API/KeyboardEvent/code>`_ の値を指定します。
 
 
 .. note::

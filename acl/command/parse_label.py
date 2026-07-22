@@ -133,6 +133,44 @@ def get_allowed_annotation_type_details(project_type: ProjectType) -> list[dict[
     return [{"value": annotation_type.value, "description": ANNOTATION_TYPE_DESCRIPTIONS[annotation_type]} for annotation_type in get_allowed_annotation_types(project_type)]
 
 
+class KeybindCandidate(BaseModel):
+    """
+    ラベルに設定するキーボードショートカットです。
+    """
+
+    alt: bool = Field(default=False, description="Altキーを使用する場合はtrueです。")
+    """Altキーを使用するかどうかです。"""
+
+    code: str = Field(description="KeyboardEvent.code の値です。")
+    """KeyboardEvent.code の値です。"""
+
+    ctrl: bool = Field(default=False, description="Ctrlキーを使用する場合はtrueです。")
+    """Ctrlキーを使用するかどうかです。"""
+
+    shift: bool = Field(default=False, description="Shiftキーを使用する場合はtrueです。")
+    """Shiftキーを使用するかどうかです。"""
+
+    @field_validator("code")
+    @classmethod
+    def validate_code(cls, value: str) -> str:
+        """
+        キーコードを検証します。
+
+        Args:
+            value: 検証対象のキーコード
+
+        Returns:
+            前後空白を除去したキーコード
+
+        Raises:
+            ValueError: 空文字列の場合
+        """
+        normalized = value.strip()
+        if normalized == "":
+            raise ValueError("`keybind.code` には空でない文字列を指定してください。")
+        return normalized
+
+
 class LabelCandidate(BaseModel):
     """
     追加候補のラベル情報です。
@@ -149,6 +187,9 @@ class LabelCandidate(BaseModel):
 
     color: str | None = Field(default=None, description="ラベル色です。指定する場合は `#RRGGBB` 形式にしてください。")
     """ラベル色です。 ``#RRGGBB`` 形式です。"""
+
+    keybind: KeybindCandidate | None = Field(default=None, description="ラベルに設定するキーボードショートカットです。指定がない場合はnullにしてください。")
+    """ラベルに設定するキーボードショートカットです。"""
 
     @field_validator("label_name_en")
     @classmethod
@@ -303,6 +344,10 @@ def parse_labels_from_text(
 label_name_en はアノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。
 指定されたプロジェクト種別で利用可能な annotation_type だけを使用してください。
 color を出力する場合は、必ず #RRGGBB 形式にしてください。
+ラベルにキーボードショートカットの指定がある場合だけ keybind を出力してください。
+keybind は {"alt": false, "code": "Digit1", "ctrl": true, "shift": false} のようなJSONオブジェクトにしてください。
+keybind.code は KeyboardEvent.code の値を使用してください。例: Digit1, KeyA, Numpad1, Escape
+たとえば Ctrl+Digit1 は {"alt": false, "code": "Digit1", "ctrl": true, "shift": false} に変換してください。
 ラベル定義として解釈できる文だけを解析対象にしてください。
 属性定義、属性制約、作業手順、品質基準など、明らかにラベル定義ではない文は warnings や unresolved_texts に入れず無視してください。
 ラベル定義として解釈できる可能性があるが、label_name_en または annotation_type を特定できない文は labels に入れず unresolved_texts に入れてください。

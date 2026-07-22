@@ -5,6 +5,7 @@ import pytest
 
 from acl.command.parse_label import (
     AnnotationType,
+    KeybindCandidate,
     LabelCandidate,
     LabelParseResult,
     ProjectType,
@@ -72,6 +73,9 @@ def test_parse_labels_from_text(monkeypatch, annotation_specs):
     assert '"value": "segmentation_v2"' in user_content
     assert '"description": "矩形"' in user_content
     assert "#RRGGBB" in developer_content
+    assert "keybind" in developer_content
+    assert "KeyboardEvent.code" in developer_content
+    assert "Ctrl+Digit1" in developer_content
     assert "label_name_en はアノテーションJSONに出力される値なので、英語小文字のスネークケースで出力してください。" in developer_content
     assert "属性定義、属性制約、作業手順、品質基準など、明らかにラベル定義ではない文は warnings や unresolved_texts に入れず無視してください。" in developer_content
     assert "ラベル定義として解釈できる可能性があるが、label_name_en または annotation_type を特定できない文は labels に入れず unresolved_texts に入れてください。" in developer_content
@@ -110,7 +114,13 @@ def test_normalize_parsed_labels_for_invalid_project_type(annotation_specs):
 def test_to_annofab_labels():
     result = LabelParseResult(
         labels=[
-            LabelCandidate(label_name_en="pedestrian", label_name_ja="歩行者", annotation_type=AnnotationType.BOUNDING_BOX, color="#FF0000"),
+            LabelCandidate(
+                label_name_en="pedestrian",
+                label_name_ja="歩行者",
+                annotation_type=AnnotationType.BOUNDING_BOX,
+                color="#FF0000",
+                keybind=KeybindCandidate(code="Digit1", ctrl=True),
+            ),
         ]
     )
 
@@ -122,8 +132,28 @@ def test_to_annofab_labels():
             "label_name_ja": "歩行者",
             "annotation_type": "bounding_box",
             "color": "#FF0000",
+            "keybind": {
+                "alt": False,
+                "code": "Digit1",
+                "ctrl": True,
+                "shift": False,
+            },
         }
     ]
+
+
+def test_keybind_candidate():
+    actual = KeybindCandidate(code=" Digit1 ")
+
+    assert actual.code == "Digit1"
+    assert actual.alt is False
+    assert actual.ctrl is False
+    assert actual.shift is False
+
+
+def test_keybind_candidate_for_empty_code():
+    with pytest.raises(ValueError):
+        KeybindCandidate(code="")
 
 
 def test_label_candidate_color():
