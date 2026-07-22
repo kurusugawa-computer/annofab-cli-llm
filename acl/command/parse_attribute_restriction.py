@@ -10,6 +10,7 @@ from loguru import logger
 from pydantic import BaseModel, Field
 
 import acl.common.cli
+from acl.command.parse_label import UnresolvedText, format_unresolved_text
 from acl.common.cli import read_at_file
 from acl.common.utils import output_string, print_json
 from acl.common.xdg_util import create_command_temp_dir
@@ -28,8 +29,8 @@ class RestrictionAstParseResult(BaseModel):
     """解析できた属性制約ASTの一覧です。"""
     warnings: list[str] = Field(default_factory=list)
     """解析時の注意事項です。"""
-    unresolved_texts: list[str] = Field(default_factory=list)
-    """属性制約として解釈できなかった原文の断片です。"""
+    unresolved_texts: list[UnresolvedText] = Field(default_factory=list)
+    """属性制約として解釈できなかった原文、理由、必要な補足情報です。"""
 
 
 def parse_restrictions_from_text(
@@ -61,6 +62,8 @@ def parse_restrictions_from_text(
 推測で属性名・選択肢名・ラベル名を補完してはいけません。
 annotation specsに存在しない属性名・選択肢名・ラベル名は出力してはいけません。
 表現できない条件、曖昧な条件、属性制約ではない文は unresolved_texts に入れてください。
+unresolved_texts には、解釈できなかった原文を text、解釈できなかった理由を reason、解釈に必要な補足情報を required_information に出力してください。
+たとえば対象属性を特定できない場合は、required_information に「attribute_name」を含めてください。
 """.strip(),
         },
         {
@@ -158,7 +161,7 @@ def to_human_readable_text(result: RestrictionAstParseResult) -> str:
 
     if result.unresolved_texts:
         lines.extend(("", "[unresolved_texts]"))
-        lines.extend(f"- {text}" for text in result.unresolved_texts)
+        lines.extend(f"- {format_unresolved_text(unresolved_text)}" for unresolved_text in result.unresolved_texts)
 
     return "\n".join(lines)
 
@@ -177,20 +180,39 @@ def to_annofab_restrictions(result: RestrictionAstParseResult, annotation_specs:
     return [Restriction.from_ast(ast, annotation_specs).to_dict() for ast in result.asts]
 
 
-def collect_supplements_interactively(unresolved_texts: list[str]) -> list[str]:
+def log_parse_warnings(result: RestrictionAstParseResult) -> None:
+    """
+    属性制約解析結果の注意事項と未解決テキストをログに出力します。
+
+    Args:
+        result: 属性制約解析結果
+    """
+    for warning in result.warnings:
+        logger.warning(f"属性制約の解析時に注意事項がありました。 :: {warning}")
+    for unresolved_text in result.unresolved_texts:
+        logger.warning(f"属性制約として解釈できないテキストがありました。 :: {format_unresolved_text(unresolved_text)}")
+
+
+def collect_supplements_interactively(unresolved_texts: list[UnresolvedText]) -> list[str]:
     """
     未解決テキストに対してユーザーから補足情報をインタラクティブに収集します。
 
     Args:
-        unresolved_texts: 属性制約として解釈できなかった原文の断片の一覧
+        unresolved_texts: 属性制約として解釈できなかった原文、理由、必要な補足情報の一覧
 
     Returns:
         ユーザーが入力した補足情報の一覧（スキップされた場合は含まない）
     """
     supplements: list[str] = []
-    len(unresolved_texts)
-    for _i, _unresolved_text in enumerate(unresolved_texts, start=1):
-        supplement = input("補足情報を入力してください（スキップする場合は空Enterを押してください）: ").strip()
+    for _i, unresolved_text in enumerate(unresolved_texts, start=1):
+        prompt_lines = [
+            f"解釈できないテキスト: {unresolved_text.text}",
+            f"理由: {unresolved_text.reason}",
+        ]
+        if unresolved_text.required_information:
+            prompt_lines.append(f"必要な補足情報: {', '.join(unresolved_text.required_information)}")
+        prompt_lines.append("補足情報を入力してください（スキップする場合は空Enterを押してください）: ")
+        supplement = input("\n".join(prompt_lines)).strip()
         if supplement != "":
             supplements.append(supplement)
     return supplements
@@ -220,10 +242,7 @@ def main(args: argparse.Namespace) -> None:
     )
     print_json(result.model_dump(mode="json"), temp_dir / "parse_result.json")
 
-    for warning in result.warnings:
-        logger.warning(f"属性制約の解析時に注意事項がありました。 :: {warning}")
-    for unresolved_text in result.unresolved_texts:
-        logger.warning(f"属性制約として解釈できないテキストがありました。 :: {unresolved_text}")
+    log_parse_warnings(result)
 
     interactive = not args.no_interactive and not args.yes
     while result.unresolved_texts and interactive:
@@ -242,10 +261,7 @@ def main(args: argparse.Namespace) -> None:
         )
         print_json(result.model_dump(mode="json"), temp_dir / "parse_result.json")
 
-        for warning in result.warnings:
-            logger.warning(f"属性制約の解析時に注意事項がありました。 :: {warning}")
-        for unresolved_text in result.unresolved_texts:
-            logger.warning(f"属性制約として解釈できないテキストがありました。 :: {unresolved_text}")
+        log_parse_warnings(result)
 
     if args.output_format == "human_readable":
         output_string(to_human_readable_text(result), output=output_path)

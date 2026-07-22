@@ -3,14 +3,14 @@ import json
 import re
 from enum import StrEnum
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import annofabapi
 from annofabapi.models import DefaultAnnotationType
 from annofabapi.plugin import ThreeDimensionAnnotationType
 from litellm import completion
 from loguru import logger
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 import acl.common.cli
 from acl.common.cli import read_at_file
@@ -45,6 +45,8 @@ ALLOWED_KEYBIND_CODES = {
     "KeyP",
 }
 """keybind.code に指定できる KeyboardEvent.code の値です。"""
+STRUCTURED_OUTPUT_MODEL_CONFIG = ConfigDict(extra="forbid", serialize_by_alias=True)
+"""OpenAIのStructured Outputsで利用できるJSON SchemaにするためのPydantic設定です。"""
 
 
 class ProjectType(StrEnum):
@@ -161,6 +163,8 @@ class KeybindCandidate(BaseModel):
     ラベルに設定するキーボードショートカットです。
     """
 
+    model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
+
     alt: bool = Field(default=False, description="Altキーを使用する場合はtrueです。")
     """Altキーを使用するかどうかです。"""
 
@@ -196,10 +200,167 @@ class KeybindCandidate(BaseModel):
         return normalized
 
 
+class MarginOfErrorToleranceFieldValue(BaseModel):
+    """
+    許容誤差に関する field_values です。
+    """
+
+    model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
+
+    type_: Literal["MarginOfErrorTolerance"] = Field(alias="_type", description="field_values の種類です。")
+    """field_values の種類です。"""
+
+    max_pixel: int = Field(description="許容誤差の最大ピクセル数です。")
+    """許容誤差の最大ピクセル数です。"""
+
+
+class DisplayLineDirectionFieldValue(BaseModel):
+    """
+    ポリラインの方向の表示に関する field_values です。
+    """
+
+    model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
+
+    type_: Literal["DisplayLineDirection"] = Field(alias="_type", description="field_values の種類です。")
+    """field_values の種類です。"""
+
+    has_direction: bool = Field(default=False, description="ポリラインに向きがある場合はtrueです。")
+    """ポリラインに向きがある場合はtrueです。"""
+
+
+class MinWarnRule(BaseModel):
+    """
+    最小サイズ制約の幅と高さの判定ルールです。
+    """
+
+    model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
+
+    type_: Literal["Or", "And"] = Field(
+        alias="_type",
+        description=(
+            "min_width と min_height に関して警告を出す条件です。"
+            "「幅が100px以上 AND 高さ200px以上」という制約の場合は`Or`、"
+            "「幅が100px以上 OR 高さ200px以上」という制約の場合は`And`を指定する必要があります。"
+        ),
+    )
+    """min_width と min_height の制約条件です。"""
+
+
+class MinimumSize2dWithDefaultInsertPositionFieldValue(BaseModel):
+    """
+    2次元図形の最小サイズ制約に関する field_values です。
+    """
+
+    model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
+
+    min_warn_rule: MinWarnRule = Field(description="min_width と min_height に関して警告を出す条件です。")
+    """min_width と min_height に関して警告を出す条件です。"""
+
+    min_width: int = Field(description="最小幅(ピクセル)です。")
+    """最小幅です。"""
+
+    min_height: int = Field(description="最小高さ(ピクセル)です。")
+    """最小高さです。"""
+
+    position_for_minimum_bounding_box_insertion: list[int] | None = Field(default=None, description="最小矩形を挿入するときの位置です。")
+    """最小矩形を挿入するときの位置です。"""
+
+    type_: Literal["MinimumSize2dWithDefaultInsertPosition"] = Field(alias="_type", description="field_values の種類です。")
+    """field_values の種類です。"""
+
+
+class MinimumSize2dFieldValue(BaseModel):
+    """
+    2次元図形の最小サイズ制約に関する field_values です。
+    """
+
+    model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
+
+    min_warn_rule: MinWarnRule = Field(description="min_width と min_height の制約条件です。")
+    """min_width と min_height の制約条件です。"""
+
+    min_width: int = Field(description="最小幅(ピクセル)です。")
+    """最小幅です。"""
+
+    min_height: int = Field(description="最小高さ(ピクセル)です。")
+    """最小高さです。"""
+
+    type_: Literal["MinimumSize2d"] = Field(alias="_type", description="field_values の種類です。")
+    """field_values の種類です。"""
+
+
+class MinimumArea2dFieldValue(BaseModel):
+    """
+    ポリゴンの最小面積制約に関する field_values です。
+    """
+
+    model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
+
+    min_area: int = Field(description="最小面積(平方ピクセル)です。")
+    """最小面積です。"""
+
+    type_: Literal["MinimumArea2d"] = Field(alias="_type", description="field_values の種類です。")
+    """field_values の種類です。"""
+
+
+class VertexCountMinMaxFieldValue(BaseModel):
+    """
+    ポリラインまたはポリゴンの頂点数制約に関する field_values です。
+    """
+
+    model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
+
+    min: int | None = Field(default=None, description="頂点数の最小値です。")
+    """頂点数の最小値です。"""
+
+    max: int | None = Field(default=None, description="頂点数の最大値です。")
+    """頂点数の最大値です。"""
+
+    type_: Literal["VertexCountMinMax"] = Field(alias="_type", description="field_values の種類です。")
+    """field_values の種類です。"""
+
+
+class FieldValues(BaseModel):
+    """
+    ラベルごとの制約、表示設定、許容誤差などの field_values です。
+    """
+
+    model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
+
+    minimum_size_2d_with_default_insert_position: MinimumSize2dWithDefaultInsertPositionFieldValue | None = Field(
+        default=None,
+        description="アノテーションの種類が「矩形」の場合の最小サイズ制約です。",
+    )
+    """アノテーションの種類が「矩形」の場合の最小サイズ制約です。"""
+
+    minimum_size_2d: MinimumSize2dFieldValue | None = Field(
+        default=None,
+        description="アノテーションの種類が「ポリゴン」「ポリライン」「塗りつぶし」「塗りつぶしv2」の場合の最小サイズ制約です。",
+    )
+    """アノテーションの種類が「ポリゴン」「ポリライン」「塗りつぶし」「塗りつぶしv2」の場合の最小サイズ制約です。"""
+
+    minimum_area_2d: MinimumArea2dFieldValue | None = Field(
+        default=None,
+        description="アノテーションの種類が「ポリゴン」の場合の最小面積制約です。",
+    )
+    """アノテーションの種類が「ポリゴン」の場合の最小面積制約です。"""
+
+    margin_of_error_tolerance: MarginOfErrorToleranceFieldValue | None = Field(default=None, description="許容誤差に関する設定です。")
+    """許容誤差に関する設定です。"""
+
+    display_line_direction: DisplayLineDirectionFieldValue | None = Field(default=None, description="アノテーションの種類が「ポリライン」の場合の線分方向の表示に関する設定です。")
+    """アノテーションの種類が「ポリライン」の場合の線分方向の表示に関する設定です。"""
+
+    vertex_count_min_max: VertexCountMinMaxFieldValue | None = Field(default=None, description="アノテーションの種類が「ポリライン」または「ポリゴン」の場合の頂点数制約です。")
+    """アノテーションの種類が「ポリライン」または「ポリゴン」の場合の頂点数制約です。"""
+
+
 class LabelCandidate(BaseModel):
     """
     追加候補のラベル情報です。
     """
+
+    model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
 
     label_name_en: str = Field(description="追加するラベル名（英語）です。特に指定がない限り、英語小文字のスネークケースで記述してください。")
     """ラベル名（英語）です。"""
@@ -215,6 +376,9 @@ class LabelCandidate(BaseModel):
 
     keybind: KeybindCandidate | None = Field(default=None, description="ラベルに設定するキーボードショートカットです。")
     """ラベルに設定するキーボードショートカットです。"""
+
+    field_values: FieldValues = Field(default_factory=FieldValues, description="ラベルごとの制約、表示設定、許容誤差などの field_values です。")
+    """ラベルごとの制約、表示設定、許容誤差などの field_values です。"""
 
     @field_validator("label_name_en")
     @classmethod
@@ -280,10 +444,29 @@ class LabelCandidate(BaseModel):
         return normalized.upper()
 
 
+class UnresolvedText(BaseModel):
+    """
+    ラベル追加ルールとして解釈できなかった原文と理由です。
+    """
+
+    model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
+
+    text: str = Field(description="ラベル追加ルールとして解釈できなかった原文の断片です。")
+    """ラベル追加ルールとして解釈できなかった原文の断片です。"""
+
+    reason: str = Field(description="解釈できなかった理由です。")
+    """解釈できなかった理由です。"""
+
+    required_information: list[str] = Field(default_factory=list, description="解釈するために必要な補足情報の一覧です。")
+    """解釈するために必要な補足情報の一覧です。"""
+
+
 class LabelParseResult(BaseModel):
     """
     ラベルの自然言語解析結果です。
     """
+
+    model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
 
     labels: list[LabelCandidate] = Field(description="解析できた追加対象ラベルの一覧です。")
     """解析できたラベル候補の一覧です。"""
@@ -291,8 +474,8 @@ class LabelParseResult(BaseModel):
     warnings: list[str] = Field(default_factory=list, description="解析時の注意事項です。解析結果に含めたが補足したい内容を入れてください。")
     """解析時の注意事項です。"""
 
-    unresolved_texts: list[str] = Field(default_factory=list, description="ラベル追加ルールとして解釈できなかった原文の断片です。曖昧、情報不足、対象外の内容を入れてください。")
-    """ラベル追加ルールとして解釈できなかった原文の断片です。"""
+    unresolved_texts: list[UnresolvedText] = Field(default_factory=list, description="ラベル追加ルールとして解釈できなかった原文、理由、必要な補足情報です。")
+    """ラベル追加ルールとして解釈できなかった原文、理由、必要な補足情報です。"""
 
 
 def get_message(annotation_text: dict[str, Any], *, lang: str) -> str | None:
@@ -324,14 +507,14 @@ def get_label_catalog(annotation_specs: dict[str, Any]) -> list[dict[str, Any]]:
         既存ラベル一覧
     """
     catalog = []
-    for label in annotation_specs.get("labels", []):
-        label_name = label.get("label_name", {})
+    for label in annotation_specs["labels"]:
+        label_name = label["label_name"]
         catalog.append(
             {
                 "label_name_en": get_message(label_name, lang="en-US"),
                 "label_name_ja": get_message(label_name, lang="ja-JP"),
-                "annotation_type": label.get("annotation_type"),
-                "keybind": label.get("keybind"),
+                "annotation_type": label["annotation_type"],
+                "keybind": label["keybind"],
             }
         )
     return catalog
@@ -376,10 +559,24 @@ def parse_labels_from_text(
 できるだけ、ラベルの順番とキーの順番が対応するようにしてください。
 ただし、既存のラベルのショートカットと重複しないようにしてください。既存のショートカットと重複する場合は、warnings に入れてください。
 
+ラベルごとの制約、表示設定、許容誤差などは field_values に出力してください。
+矩形の最小サイズ制約は minimum_size_2d_with_default_insert_position に出力してください。
+たとえば「幅また高さが20px以上」のような矩形サイズ制約は、min_warn_rule._type を Or、min_width と min_height を 20 としてください。
+position_for_minimum_bounding_box_insertion は null、_type は MinimumSize2dWithDefaultInsertPosition として出力してください。
+ポリゴン、ポリライン、塗りつぶし、塗りつぶしv2の最小サイズ制約は minimum_size_2d に出力してください。
+たとえば「幅また高さが3px以上」のような2次元図形サイズ制約は、min_warn_rule._type を Or、min_width と min_height を 3、_type を MinimumSize2d としてください。
+ポリゴンの最小面積制約は minimum_area_2d に出力してください。
+たとえば「面積が33px以上」のようなポリゴン面積制約は、min_area を 33、_type を MinimumArea2d としてください。
+ポリラインまたはポリゴンの頂点数制約は vertex_count_min_max に出力してください。
+たとえば「頂点数は3以上6以下」のような制約は、min を 3、max を 6、_type を VertexCountMinMax として出力してください。
+field_values には、指定された形式に対応しているキーだけを出力してください。
+
 ラベル定義として解釈できる文だけを解析対象にしてください。
 属性定義、属性制約、作業手順、品質基準など、明らかにラベル定義ではない文は warnings や unresolved_texts に入れず無視してください。
 ラベル定義として解釈できる可能性があるが、label_name_en または annotation_type を特定できない文は labels に入れず unresolved_texts に入れてください。
 ラベル定義として解釈できる可能性があるが曖昧な文も unresolved_texts に入れてください。
+unresolved_texts には、解釈できなかった原文を text、解釈できなかった理由を reason、解釈に必要な補足情報を required_information に出力してください。
+たとえば annotation_type が不明な場合は、required_information に「annotation_type」を含めてください。
 """.strip(),
         },
         {
@@ -460,19 +657,53 @@ def get_annotation_specs(
     return annotation_specs
 
 
-def collect_supplements_interactively(unresolved_texts: list[str]) -> list[str]:
+def format_unresolved_text(unresolved_text: UnresolvedText) -> str:
+    """
+    未解決テキストをログや対話入力用の文字列に変換します。
+
+    Args:
+        unresolved_text: 未解決テキスト
+
+    Returns:
+        未解決テキストの説明
+    """
+    required_information = ", ".join(unresolved_text.required_information) if unresolved_text.required_information else "(none)"
+    return f"text='{unresolved_text.text}', reason='{unresolved_text.reason}', required_information=[{required_information}]"
+
+
+def log_parse_warnings(result: LabelParseResult) -> None:
+    """
+    ラベル解析結果の注意事項と未解決テキストをログに出力します。
+
+    Args:
+        result: ラベル解析結果
+    """
+    for warning in result.warnings:
+        logger.warning(f"ラベル解析時に注意事項がありました。 :: {warning}")
+    for unresolved_text in result.unresolved_texts:
+        logger.warning(f"ラベル追加ルールとして解釈できないテキストがありました。 :: {format_unresolved_text(unresolved_text)}")
+
+
+def collect_supplements_interactively(unresolved_texts: list[UnresolvedText]) -> list[str]:
     """
     未解決テキストに対してユーザーから補足情報をインタラクティブに収集します。
 
     Args:
-        unresolved_texts: ラベル追加ルールとして解釈できなかった原文の断片一覧
+        unresolved_texts: ラベル追加ルールとして解釈できなかった原文、理由、必要な補足情報の一覧
 
     Returns:
         ユーザーが入力した補足情報の一覧
     """
     supplements: list[str] = []
-    for _i, _unresolved_text in enumerate(unresolved_texts, start=1):
-        supplement = input("補足情報を入力してください（スキップする場合は空Enterを押してください）: ").strip()
+    for _i, unresolved_text in enumerate(unresolved_texts, start=1):
+        prompt_lines = [
+            f"解釈できないテキスト: {unresolved_text.text}",
+            f"理由: {unresolved_text.reason}",
+        ]
+        if unresolved_text.required_information:
+            prompt_lines.append(f"必要な補足情報: {', '.join(unresolved_text.required_information)}")
+        prompt_lines.append("補足情報を入力してください（スキップする場合は空Enterを押してください）: ")
+        supplement = input("\n".join(prompt_lines)).strip()
         if supplement != "":
             supplements.append(supplement)
     return supplements
@@ -515,6 +746,23 @@ def normalize_parsed_labels(result: LabelParseResult, annotation_specs: dict[str
     )
 
 
+def dump_label_for_annofab(label: LabelCandidate) -> dict[str, Any]:
+    """
+    ラベル候補をAnnofab CLIへ渡すための辞書に変換します。
+
+    Args:
+        label: ラベル候補
+
+    Returns:
+        Annofab CLIに渡すラベル辞書
+    """
+    dumped = label.model_dump(mode="json")
+    field_values = dumped.get("field_values")
+    if isinstance(field_values, dict):
+        dumped["field_values"] = {key: value for key, value in field_values.items() if value is not None}
+    return {key: value for key, value in dumped.items() if value is not None}
+
+
 def to_annofab_labels(result: LabelParseResult) -> list[dict[str, Any]]:
     """
     解析結果を ``annotation_specs add_labels --label_json`` に渡せるJSONへ変換します。
@@ -525,7 +773,7 @@ def to_annofab_labels(result: LabelParseResult) -> list[dict[str, Any]]:
     Returns:
         add_labels向けのJSON配列
     """
-    return [label.model_dump(mode="json", exclude_none=True) for label in result.labels]
+    return [dump_label_for_annofab(label) for label in result.labels]
 
 
 def main(args: argparse.Namespace) -> None:
@@ -553,10 +801,7 @@ def main(args: argparse.Namespace) -> None:
     result = normalize_parsed_labels(result, annotation_specs, project_type=args.project_type)
     print_json(result.model_dump(mode="json"), temp_dir / "parse_result.json")
 
-    for warning in result.warnings:
-        logger.warning(f"ラベル解析時に注意事項がありました。 :: {warning}")
-    for unresolved_text in result.unresolved_texts:
-        logger.warning(f"ラベル追加ルールとして解釈できないテキストがありました。 :: {unresolved_text}")
+    log_parse_warnings(result)
 
     interactive = not args.no_interactive and not args.yes
     while result.unresolved_texts and interactive:
@@ -577,16 +822,17 @@ def main(args: argparse.Namespace) -> None:
         result = normalize_parsed_labels(result, annotation_specs, project_type=args.project_type)
         print_json(result.model_dump(mode="json"), temp_dir / "parse_result.json")
 
-        for warning in result.warnings:
-            logger.warning(f"ラベル解析時に注意事項がありました。 :: {warning}")
-        for unresolved_text in result.unresolved_texts:
-            logger.warning(f"ラベル追加ルールとして解釈できないテキストがありました。 :: {unresolved_text}")
+        log_parse_warnings(result)
 
     annofab_labels = to_annofab_labels(result)
     if len(annofab_labels) == 0:
         raise ValueError("アノテーション仕様に追加可能なラベルを抽出できませんでした。")
 
     print_json(annofab_labels, output=args.output)
+    if args.output is None:
+        logger.info("追加対象ラベルのJSONを標準出力に出力しました。")
+    else:
+        logger.info(f"追加対象ラベルのJSONをファイルに出力しました。 :: output='{args.output}'")
     logger.info(OUTPUT_USAGE_MESSAGE)
     print_json(annofab_labels, temp_dir / "annofab_labels.json")
     logger.info("ラベルの自然言語解析が完了しました。")

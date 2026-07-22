@@ -5,10 +5,18 @@ import pytest
 
 from acl.command.parse_label import (
     AnnotationType,
+    FieldValues,
     KeybindCandidate,
     LabelCandidate,
     LabelParseResult,
+    MinimumArea2dFieldValue,
+    MinimumSize2dFieldValue,
+    MinimumSize2dWithDefaultInsertPositionFieldValue,
+    MinWarnRule,
     ProjectType,
+    UnresolvedText,
+    VertexCountMinMaxFieldValue,
+    format_unresolved_text,
     get_annotation_specs,
     normalize_parsed_labels,
     parse_labels_from_text,
@@ -51,7 +59,13 @@ def test_parse_labels_from_text(monkeypatch, annotation_specs):
             LabelCandidate(label_name_en="bicycle", annotation_type=AnnotationType.BOUNDING_BOX),
         ],
         warnings=["annotation_typeは文脈から補いました。"],
-        unresolved_texts=["色の指定は解釈しませんでした。"],
+        unresolved_texts=[
+            UnresolvedText(
+                text="色の指定は解釈しませんでした。",
+                reason="色名をカラーコードに変換できませんでした。",
+                required_information=["color"],
+            )
+        ],
     )
     actual_messages = []
 
@@ -81,8 +95,16 @@ def test_parse_labels_from_text(monkeypatch, annotation_specs):
     assert '"value": "segmentation_v2"' in user_content
     assert '"description": "矩形"' in user_content
     assert "keybind" in developer_content
+    assert "field_values" in developer_content
+    assert "minimum_size_2d_with_default_insert_position" in developer_content
+    assert "minimum_size_2d" in developer_content
+    assert "ポリゴン、ポリライン、塗りつぶし、塗りつぶしv2の最小サイズ制約" in developer_content
+    assert "minimum_area_2d" in developer_content
+    assert "ポリゴンの最小面積制約" in developer_content
+    assert "vertex_count_min_max" in developer_content
     assert "属性定義、属性制約、作業手順、品質基準など、明らかにラベル定義ではない文は warnings や unresolved_texts に入れず無視してください。" in developer_content
     assert "ラベル定義として解釈できる可能性があるが、label_name_en または annotation_type を特定できない文は labels に入れず unresolved_texts に入れてください。" in developer_content
+    assert "解釈できなかった原文を text、解釈できなかった理由を reason、解釈に必要な補足情報を required_information" in developer_content
     assert '"label_name_en": "car"' in user_content
     assert '"annotation_type": "bounding_box"' in user_content
     assert '"keybind": [' in user_content
@@ -145,8 +167,219 @@ def test_to_annofab_labels():
                 "ctrl": True,
                 "shift": False,
             },
+            "field_values": {},
         }
     ]
+
+
+def test_to_annofab_labels_with_minimum_size_field_value():
+    result = LabelParseResult(
+        labels=[
+            LabelCandidate(
+                label_name_en="pedestrian",
+                annotation_type=AnnotationType.BOUNDING_BOX,
+                field_values=FieldValues(
+                    minimum_size_2d_with_default_insert_position=MinimumSize2dWithDefaultInsertPositionFieldValue(
+                        min_warn_rule=MinWarnRule(_type="And"),
+                        min_width=20,
+                        min_height=20,
+                        position_for_minimum_bounding_box_insertion=None,
+                        _type="MinimumSize2dWithDefaultInsertPosition",
+                    )
+                ),
+            ),
+        ]
+    )
+
+    actual = to_annofab_labels(result)
+
+    assert actual == [
+        {
+            "label_name_en": "pedestrian",
+            "annotation_type": "bounding_box",
+            "field_values": {
+                "minimum_size_2d_with_default_insert_position": {
+                    "min_warn_rule": {"_type": "And"},
+                    "min_width": 20,
+                    "min_height": 20,
+                    "position_for_minimum_bounding_box_insertion": None,
+                    "_type": "MinimumSize2dWithDefaultInsertPosition",
+                }
+            },
+        }
+    ]
+
+
+def test_min_warn_rule_rejects_unknown_type():
+    with pytest.raises(ValueError):
+        MinWarnRule(_type="None")  # type: ignore[arg-type]
+
+
+def test_format_unresolved_text():
+    actual = format_unresolved_text(
+        UnresolvedText(
+            text="自動車ラベルです。最小サイズは100x200です。",
+            reason="annotation_type と label_name_en を特定できませんでした。",
+            required_information=["annotation_type", "label_name_en"],
+        )
+    )
+
+    assert actual == "text='自動車ラベルです。最小サイズは100x200です。', reason='annotation_type と label_name_en を特定できませんでした。', required_information=[annotation_type, label_name_en]"
+
+
+def test_to_annofab_labels_with_minimum_size_2d_field_value():
+    result = LabelParseResult(
+        labels=[
+            LabelCandidate(
+                label_name_en="road_area",
+                annotation_type=AnnotationType.POLYGON,
+                field_values=FieldValues(
+                    minimum_size_2d=MinimumSize2dFieldValue(
+                        min_warn_rule=MinWarnRule(_type="Or"),
+                        min_width=3,
+                        min_height=3,
+                        _type="MinimumSize2d",
+                    )
+                ),
+            ),
+        ]
+    )
+
+    actual = to_annofab_labels(result)
+
+    assert actual == [
+        {
+            "label_name_en": "road_area",
+            "annotation_type": "polygon",
+            "field_values": {
+                "minimum_size_2d": {
+                    "min_warn_rule": {"_type": "Or"},
+                    "min_width": 3,
+                    "min_height": 3,
+                    "_type": "MinimumSize2d",
+                }
+            },
+        }
+    ]
+
+
+def test_to_annofab_labels_with_minimum_area_2d_field_value():
+    result = LabelParseResult(
+        labels=[
+            LabelCandidate(
+                label_name_en="road_area",
+                annotation_type=AnnotationType.POLYGON,
+                field_values=FieldValues(
+                    minimum_area_2d=MinimumArea2dFieldValue(
+                        min_area=33,
+                        _type="MinimumArea2d",
+                    )
+                ),
+            ),
+        ]
+    )
+
+    actual = to_annofab_labels(result)
+
+    assert actual == [
+        {
+            "label_name_en": "road_area",
+            "annotation_type": "polygon",
+            "field_values": {
+                "minimum_area_2d": {
+                    "min_area": 33,
+                    "_type": "MinimumArea2d",
+                }
+            },
+        }
+    ]
+
+
+def test_to_annofab_labels_with_vertex_count_min_max_field_value():
+    result = LabelParseResult(
+        labels=[
+            LabelCandidate(
+                label_name_en="traffic_lane",
+                annotation_type=AnnotationType.POLYLINE,
+                field_values=FieldValues(
+                    vertex_count_min_max=VertexCountMinMaxFieldValue(
+                        min=3,
+                        max=6,
+                        _type="VertexCountMinMax",
+                    )
+                ),
+            ),
+        ]
+    )
+
+    actual = to_annofab_labels(result)
+
+    assert actual == [
+        {
+            "label_name_en": "traffic_lane",
+            "annotation_type": "polyline",
+            "field_values": {
+                "vertex_count_min_max": {
+                    "min": 3,
+                    "max": 6,
+                    "_type": "VertexCountMinMax",
+                }
+            },
+        }
+    ]
+
+
+def test_label_candidate_rejects_unknown_field_value():
+    with pytest.raises(ValueError):
+        LabelCandidate.model_validate(
+            {
+                "label_name_en": "pedestrian",
+                "annotation_type": AnnotationType.BOUNDING_BOX,
+                "field_values": {
+                    "future_field_value": {
+                        "_type": "FutureFieldValue",
+                        "enabled": True,
+                        "nested": {"threshold": 0.5},
+                    }
+                },
+            }
+        )
+
+
+def test_label_candidate_rejects_mismatched_field_value():
+    with pytest.raises(ValueError):
+        LabelCandidate.model_validate(
+            {
+                "label_name_en": "pedestrian",
+                "annotation_type": AnnotationType.BOUNDING_BOX,
+                "field_values": {
+                    "minimum_size_2d_with_default_insert_position": {
+                        "_type": "MarginOfErrorTolerance",
+                    }
+                },
+            }
+        )
+
+
+def test_label_parse_result_schema_can_be_used_for_openai_structured_outputs():
+    schema = LabelParseResult.model_json_schema()
+
+    def collect_object_schemas_without_additional_properties_false(target, path="#"):
+        if isinstance(target, dict):
+            results = []
+            if target.get("type") == "object" and target.get("additionalProperties") is not False:
+                results.append(path)
+            for key, value in target.items():
+                results.extend(collect_object_schemas_without_additional_properties_false(value, f"{path}/{key}"))
+            return results
+        if isinstance(target, list):
+            results = []
+            for index, value in enumerate(target):
+                results.extend(collect_object_schemas_without_additional_properties_false(value, f"{path}/{index}"))
+            return results
+        return []
+
+    assert collect_object_schemas_without_additional_properties_false(schema) == []
 
 
 def test_keybind_candidate():

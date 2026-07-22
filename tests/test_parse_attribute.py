@@ -13,7 +13,7 @@ from acl.command.parse_attribute import (
     parse_attributes_from_text,
     to_annofab_attributes,
 )
-from acl.command.parse_label import KeybindCandidate
+from acl.command.parse_label import KeybindCandidate, UnresolvedText
 
 
 @pytest.fixture
@@ -107,7 +107,13 @@ def test_parse_attributes_from_text(monkeypatch, annotation_specs):
             ),
         ],
         warnings=["weather の attribute_type は文脈から補いました。"],
-        unresolved_texts=["注記の扱いが不明でした。"],
+        unresolved_texts=[
+            UnresolvedText(
+                text="注記の扱いが不明でした。",
+                reason="対象ラベルと attribute_type を特定できませんでした。",
+                required_information=["label_name_ens", "attribute_type"],
+            )
+        ],
     )
     actual_messages = []
 
@@ -139,6 +145,7 @@ def test_parse_attributes_from_text(monkeypatch, annotation_specs):
     assert '"choice_name_ens": [' in user_content
     assert "warnings" in developer_content
     assert "`choice` または `select` の場合は、choices を2件以上出力してください。" in developer_content
+    assert "解釈できなかった原文を text、解釈できなかった理由を reason、解釈に必要な補足情報を required_information" in developer_content
 
 
 def test_normalize_parsed_attributes(annotation_specs):
