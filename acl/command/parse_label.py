@@ -228,6 +228,17 @@ class DisplayLineDirectionFieldValue(BaseModel):
     """ポリラインに向きがある場合はtrueです。"""
 
 
+class MinWarnRule(BaseModel):
+    """
+    最小サイズ制約の幅と高さの判定ルールです。
+    """
+
+    model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
+
+    type_: Literal["Or", "And"] = Field(alias="_type", description="min_width と min_height の制約条件です。")
+    """min_width と min_height の制約条件です。"""
+
+
 class MinimumSize2dWithDefaultInsertPositionFieldValue(BaseModel):
     """
     2次元図形の最小サイズ制約に関する field_values です。
@@ -235,8 +246,8 @@ class MinimumSize2dWithDefaultInsertPositionFieldValue(BaseModel):
 
     model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
 
-    min_warn_rule: Literal["or", "and"] = Field(description="min_width と min_height の制約条件")
-    """"min_width と min_height の制約条件"""
+    min_warn_rule: MinWarnRule = Field(description="min_width と min_height の制約条件です。")
+    """min_width と min_height の制約条件です。"""
 
     min_width: int = Field(description="最小幅(ピクセル)です。")
     """最小幅です。"""

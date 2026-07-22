@@ -10,6 +10,7 @@ from acl.command.parse_label import (
     LabelCandidate,
     LabelParseResult,
     MinimumSize2dWithDefaultInsertPositionFieldValue,
+    MinWarnRule,
     ProjectType,
     VertexCountMinMaxFieldValue,
     get_annotation_specs,
@@ -164,7 +165,7 @@ def test_to_annofab_labels_with_minimum_size_field_value():
                 annotation_type=AnnotationType.BOUNDING_BOX,
                 field_values=FieldValues(
                     minimum_size_2d_with_default_insert_position=MinimumSize2dWithDefaultInsertPositionFieldValue(
-                        min_warn_rule="and",
+                        min_warn_rule=MinWarnRule(_type="And"),
                         min_width=20,
                         min_height=20,
                         position_for_minimum_bounding_box_insertion=None,
@@ -183,7 +184,7 @@ def test_to_annofab_labels_with_minimum_size_field_value():
             "annotation_type": "bounding_box",
             "field_values": {
                 "minimum_size_2d_with_default_insert_position": {
-                    "min_warn_rule": "and",
+                    "min_warn_rule": {"_type": "And"},
                     "min_width": 20,
                     "min_height": 20,
                     "position_for_minimum_bounding_box_insertion": None,
@@ -192,6 +193,11 @@ def test_to_annofab_labels_with_minimum_size_field_value():
             },
         }
     ]
+
+
+def test_min_warn_rule_rejects_unknown_type():
+    with pytest.raises(ValueError):
+        MinWarnRule(_type="None")
 
 
 def test_to_annofab_labels_with_vertex_count_min_max_field_value():
