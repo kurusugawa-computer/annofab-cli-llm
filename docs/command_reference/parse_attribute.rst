@@ -30,10 +30,11 @@ Examples
     $ annofabcli-llm annotation_specs parse_attribute \
      --annotation_specs_json_file annotation_specs.json \
      --annotation_rule @rule.md
+     --output attributes.json
 
 
 .. code-block:: json
-    :caption: 標準出力
+    :caption: attributes.json
 
     [
       {
@@ -88,8 +89,6 @@ Examples
     ]
 
 
-Annofabへ属性を追加する
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block::
 

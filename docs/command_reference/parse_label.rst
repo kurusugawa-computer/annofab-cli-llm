@@ -98,6 +98,9 @@ Examples
 
 ``parse_label`` コマンドで出力された ``labels.json`` は、以下のコマンドでAnnofabのアノテーション仕様にラベルを追加できます。
 
+
+.. code-block::
+  
     $ annofabcli annotation_specs add_labels \
      --project_id ${PROJECT_ID} \
      --label_json file://labels.json
