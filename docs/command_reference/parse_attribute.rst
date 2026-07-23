@@ -30,10 +30,11 @@ Examples
     $ annofabcli-llm annotation_specs parse_attribute \
      --annotation_specs_json_file annotation_specs.json \
      --annotation_rule @rule.md
+     --output attributes.json
 
 
 .. code-block:: json
-    :caption: 標準出力
+    :caption: attributes.json
 
     [
       {
@@ -88,27 +89,19 @@ Examples
     ]
 
 
-Annofabへ属性を追加する
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block::
 
-    $ annofabcli-llm annotation_specs parse_attribute \
-     --project_id ${PROJECT_ID} \
-     --annotation_rule @rule.md \
-     --output attributes.json
 
     $ annofabcli annotation_specs add_attributes \
      --project_id ${PROJECT_ID} \
      --attribute_json file://attributes.json
 
-属性と選択肢の ``keybind`` のフォーマットは ``annofabcli annotation_specs add_attributes`` コマンドと同じです。
-``code`` には `KeyboardEvent.code <https://developer.mozilla.org/ja/docs/Web/API/KeyboardEvent/code>`_ の値を指定します。
-
 
 .. note::
 
     解析結果の途中経過は ``$HOME/.cache/annofab-cli-llm/temp/parse_attribute_*`` に出力されます。
+
 
 
 Usage Details

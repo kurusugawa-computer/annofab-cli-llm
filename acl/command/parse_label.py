@@ -559,18 +559,6 @@ def parse_labels_from_text(
 できるだけ、ラベルの順番とキーの順番が対応するようにしてください。
 ただし、既存のラベルのショートカットと重複しないようにしてください。既存のショートカットと重複する場合は、warnings に入れてください。
 
-ラベルごとの制約、表示設定、許容誤差などは field_values に出力してください。
-矩形の最小サイズ制約は minimum_size_2d_with_default_insert_position に出力してください。
-たとえば「幅また高さが20px以上」のような矩形サイズ制約は、min_warn_rule._type を Or、min_width と min_height を 20 としてください。
-position_for_minimum_bounding_box_insertion は null、_type は MinimumSize2dWithDefaultInsertPosition として出力してください。
-ポリゴン、ポリライン、塗りつぶし、塗りつぶしv2の最小サイズ制約は minimum_size_2d に出力してください。
-たとえば「幅また高さが3px以上」のような2次元図形サイズ制約は、min_warn_rule._type を Or、min_width と min_height を 3、_type を MinimumSize2d としてください。
-ポリゴンの最小面積制約は minimum_area_2d に出力してください。
-たとえば「面積が33px以上」のようなポリゴン面積制約は、min_area を 33、_type を MinimumArea2d としてください。
-ポリラインまたはポリゴンの頂点数制約は vertex_count_min_max に出力してください。
-たとえば「頂点数は3以上6以下」のような制約は、min を 3、max を 6、_type を VertexCountMinMax として出力してください。
-field_values には、指定された形式に対応しているキーだけを出力してください。
-
 ラベル定義として解釈できる文だけを解析対象にしてください。
 属性定義、属性制約、作業手順、品質基準など、明らかにラベル定義ではない文は warnings や unresolved_texts に入れず無視してください。
 ラベル定義として解釈できる可能性があるが、label_name_en または annotation_type を特定できない文は labels に入れず unresolved_texts に入れてください。
