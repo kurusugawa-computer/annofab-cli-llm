@@ -9,6 +9,8 @@ from loguru import logger
 from pydantic import BaseModel, ConfigDict, Field
 
 import acl.common.cli
+from acl.common.annofab.annotation_type import get_annotation_type_details
+from acl.common.annofab.attribute_type import get_attribute_type_details
 from acl.common.cli import read_at_file
 from acl.common.utils import output_string, print_json
 from acl.common.xdg_util import create_command_temp_dir
@@ -287,6 +289,8 @@ def review_annotation_specs_with_llm(
         レビュー結果
     """
     specs_json_schema = get_specs_json_schema()
+    annotation_type_details = get_annotation_type_details()
+    attribute_type_details = get_attribute_type_details()
     dumped_labels = dump_specs(labels)
     dumped_attributes = dump_specs(attributes)
     annotation_rule_section = annotation_rule if annotation_rule is not None else "指定されていません。アノテーション仕様単体で判断できる範囲だけレビューしてください。"
@@ -306,8 +310,14 @@ def review_annotation_specs_with_llm(
 ## ラベル一覧
 {json.dumps(dumped_labels, ensure_ascii=False, indent=2)}
 
+## 利用可能な annotation_type と説明
+{json.dumps(annotation_type_details, ensure_ascii=False, indent=2)}
+
 ## 属性一覧
 {json.dumps(dumped_attributes, ensure_ascii=False, indent=2)}
+
+## 利用可能な attribute_type と説明
+{json.dumps(attribute_type_details, ensure_ascii=False, indent=2)}
 
 ## 属性制約一覧
 以下は `annofabcli annotation_specs list_attribute_restriction --format text_with_ids` の出力です。

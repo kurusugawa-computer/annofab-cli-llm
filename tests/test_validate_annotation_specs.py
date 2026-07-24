@@ -138,6 +138,12 @@ def test_review_annotation_specs_with_llm_for_markdown(monkeypatch):
     assert "アノテーション仕様JSON Schema" in user_content
     assert "既存ラベル名（英語）です。" in user_content
     assert '"label_name_en": "car"' in user_content
+    assert "利用可能な annotation_type と説明" in user_content
+    assert '"value": "bounding_box"' in user_content
+    assert '"description": "矩形"' in user_content
+    assert "利用可能な attribute_type と説明" in user_content
+    assert '"value": "flag"' in user_content
+    assert '"description": "チェックボックス"' in user_content
 
 
 def test_review_annotation_specs_with_llm_for_json(monkeypatch):
@@ -147,6 +153,10 @@ def test_review_annotation_specs_with_llm_for_json(monkeypatch):
         assert "属性制約一覧" in messages[1]["content"]
         assert "text_with_ids" in messages[1]["content"]
         assert "restriction_id: r1" in messages[1]["content"]
+        assert '"value": "segmentation_v2"' in messages[1]["content"]
+        assert '"description": "塗りつぶしv2（セマンティックセグメンテーション用）"' in messages[1]["content"]
+        assert '"value": "choice"' in messages[1]["content"]
+        assert '"description": "ラジオボタン（排他選択）"' in messages[1]["content"]
         return SimpleNamespace(
             choices=[
                 SimpleNamespace(
