@@ -6,7 +6,6 @@ from acl.command import validate_annotation_specs
 from acl.command.validate_annotation_specs import (
     DEFAULT_REVIEW_POINT,
     AnnotationSpecsReviewResult,
-    AttributeRestrictionSpec,
     AttributeSpec,
     LabelSpec,
     get_review_point,
@@ -14,6 +13,7 @@ from acl.command.validate_annotation_specs import (
     parse_specs,
     review_annotation_specs_with_llm,
     run_annofabcli_annotation_specs_list,
+    run_annofabcli_annotation_specs_text,
 )
 
 
@@ -53,6 +53,29 @@ def test_run_annofabcli_annotation_specs_list(monkeypatch):
     assert actual == [{"label_name_en": "car"}]
 
 
+def test_run_annofabcli_annotation_specs_text(monkeypatch):
+    def mock_run(command, check, capture_output, text):  # noqa: ANN001, ANN202
+        assert command == [
+            "annofabcli",
+            "annotation_specs",
+            "list_attribute_restriction",
+            "--project_id",
+            "prj",
+            "--format",
+            "text_with_ids",
+        ]
+        assert check
+        assert capture_output
+        assert text
+        return SimpleNamespace(stdout="[restriction_id: r1] car.truncated is required")
+
+    monkeypatch.setattr(validate_annotation_specs.subprocess, "run", mock_run)
+
+    actual = run_annofabcli_annotation_specs_text(project_id="prj", subcommand_name="list_attribute_restriction", output_format="text_with_ids")
+
+    assert actual == "[restriction_id: r1] car.truncated is required"
+
+
 def test_parse_specs_keeps_unknown_fields():
     actual = parse_specs(
         [
@@ -75,7 +98,7 @@ def test_get_specs_json_schema_has_descriptions():
 
     assert actual["labels"]["properties"]["label_name_en"]["description"] == "既存ラベル名（英語）です。"
     assert actual["attributes"]["properties"]["attribute_name_en"]["description"] == "既存属性名（英語）です。"
-    assert actual["attribute_restrictions"]["properties"]["attribute_name_en"]["description"] == "属性制約の対象属性名（英語）です。"
+    assert "attribute_restrictions" not in actual
 
 
 def test_review_annotation_specs_with_llm_for_markdown(monkeypatch):
@@ -96,7 +119,7 @@ def test_review_annotation_specs_with_llm_for_markdown(monkeypatch):
         review_point="名前をレビューしてください。",
         labels=[LabelSpec(label_name_en="car", label_name_ja="車", annotation_type="bounding_box")],
         attributes=[],
-        attribute_restrictions=[],
+        attribute_restrictions_text="",
         llm_model="openai/test",
         output_format="markdown",
     )
@@ -115,6 +138,8 @@ def test_review_annotation_specs_with_llm_for_json(monkeypatch):
         assert model == "openai/test"
         assert response_format == AnnotationSpecsReviewResult
         assert "属性制約一覧" in messages[1]["content"]
+        assert "text_with_ids" in messages[1]["content"]
+        assert "restriction_id: r1" in messages[1]["content"]
         return SimpleNamespace(
             choices=[
                 SimpleNamespace(
@@ -147,7 +172,7 @@ def test_review_annotation_specs_with_llm_for_json(monkeypatch):
         review_point="属性制約をレビューしてください。",
         labels=[],
         attributes=[AttributeSpec(attribute_type="flag", attribute_name_en="truncated", attribute_name_ja="見切れ", label_name_ens=["car"], read_only=True)],
-        attribute_restrictions=[AttributeRestrictionSpec(attribute_name_en="truncated")],
+        attribute_restrictions_text="[restriction_id: r1] car.truncated is required",
         llm_model="openai/test",
         output_format="json",
     )
@@ -175,7 +200,7 @@ def test_review_annotation_specs_with_llm_without_annotation_rule(monkeypatch):
         review_point="名前をレビューしてください。",
         labels=[LabelSpec(label_name_en="car", label_name_ja="車", annotation_type="bounding_box")],
         attributes=[],
-        attribute_restrictions=[],
+        attribute_restrictions_text="",
         llm_model="openai/test",
         output_format="markdown",
     )

@@ -12,7 +12,7 @@ Annofabプロジェクトのアノテーション仕様を、レビュー観点�
 
 * ``annofabcli annotation_specs list_label --format json``
 * ``annofabcli annotation_specs list_attribute --format json``
-* ``annofabcli annotation_specs list_attribute_restriction --format json``
+* ``annofabcli annotation_specs list_attribute_restriction --format text_with_ids``
 
 
 Examples

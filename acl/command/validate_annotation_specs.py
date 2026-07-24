@@ -104,25 +104,6 @@ class AttributeSpec(BaseModel):
     """属性に設定されたキーボードショートカットです。"""
 
 
-class AttributeRestrictionSpec(BaseModel):
-    """
-    既存属性制約の仕様です。
-    """
-
-    model_config = SPEC_MODEL_CONFIG
-
-    label_name_en: str | None = Field(default=None, description="属性制約の対象ラベル名（英語）です。")
-    """属性制約の対象ラベル名（英語）です。"""
-    attribute_name_en: str | None = Field(default=None, description="属性制約の対象属性名（英語）です。")
-    """属性制約の対象属性名（英語）です。"""
-    choice_name_en: str | None = Field(default=None, description="属性制約の対象選択肢名（英語）です。")
-    """属性制約の対象選択肢名（英語）です。"""
-    condition: str | dict[str, object] | None = Field(default=None, description="属性制約の条件です。")
-    """属性制約の条件です。"""
-    restriction: str | dict[str, object] | None = Field(default=None, description="属性制約の内容です。")
-    """属性制約の内容です。"""
-
-
 class AnnotationSpecsReviewFinding(BaseModel):
     """
     アノテーション仕様レビューの指摘です。
@@ -190,6 +171,32 @@ def run_annofabcli_annotation_specs_list(*, project_id: str, subcommand_name: st
     return json.loads(completed_process.stdout)
 
 
+def run_annofabcli_annotation_specs_text(*, project_id: str, subcommand_name: str, output_format: str) -> str:
+    """
+    annofabcliでアノテーション仕様の情報をテキスト形式で取得します。
+
+    Args:
+        project_id: AnnofabのプロジェクトID
+        subcommand_name: 実行するannotation_specs配下のサブコマンド名
+        output_format: annofabcliの --format に指定する値
+
+    Returns:
+        annofabcliが出力したテキスト
+    """
+    command = [
+        "annofabcli",
+        "annotation_specs",
+        subcommand_name,
+        "--project_id",
+        project_id,
+        "--format",
+        output_format,
+    ]
+    logger.info(f"annofabcliコマンドを実行します。 :: command={command}")
+    completed_process = subprocess.run(command, check=True, capture_output=True, text=True)
+    return completed_process.stdout
+
+
 def parse_specs[SpecModel: BaseModel](raw_items: list[dict[str, object]], model_class: type[SpecModel]) -> list[SpecModel]:
     """
     annofabcliのJSON出力をレビュー用Specモデルへ変換します。
@@ -227,7 +234,6 @@ def get_specs_json_schema() -> dict[str, dict[str, Any]]:
     return {
         "labels": LabelSpec.model_json_schema(),
         "attributes": AttributeSpec.model_json_schema(),
-        "attribute_restrictions": AttributeRestrictionSpec.model_json_schema(),
     }
 
 
@@ -253,7 +259,7 @@ def review_annotation_specs_with_llm(
     review_point: str,
     labels: list[LabelSpec],
     attributes: list[AttributeSpec],
-    attribute_restrictions: list[AttributeRestrictionSpec],
+    attribute_restrictions_text: str,
     llm_model: str,
     output_format: Literal["markdown", "json"],
     temp_dir: Path | None = None,
@@ -266,7 +272,7 @@ def review_annotation_specs_with_llm(
         review_point: レビュー観点
         labels: ラベル一覧
         attributes: 属性一覧
-        attribute_restrictions: 属性制約一覧
+        attribute_restrictions_text: 属性制約一覧のテキスト
         llm_model: 使用するLLMのモデル
         output_format: 出力形式
         temp_dir: 任意の一時ディレクトリ
@@ -277,7 +283,6 @@ def review_annotation_specs_with_llm(
     specs_json_schema = get_specs_json_schema()
     dumped_labels = dump_specs(labels)
     dumped_attributes = dump_specs(attributes)
-    dumped_attribute_restrictions = dump_specs(attribute_restrictions)
     annotation_rule_section = annotation_rule if annotation_rule is not None else "指定されていません。アノテーション仕様単体で判断できる範囲だけレビューしてください。"
     user_content = f"""
 以下のアノテーション仕様を、アノテーションルールとレビュー観点に基づいてレビューしてください。
@@ -299,7 +304,9 @@ def review_annotation_specs_with_llm(
 {json.dumps(dumped_attributes, ensure_ascii=False, indent=2)}
 
 ## 属性制約一覧
-{json.dumps(dumped_attribute_restrictions, ensure_ascii=False, indent=2)}
+以下は `annofabcli annotation_specs list_attribute_restriction --format text_with_ids` の出力です。
+IDはレビュー指摘で対象の属性制約を特定するために使用してください。
+{attribute_restrictions_text}
 """.strip()
 
     messages = [
@@ -356,13 +363,12 @@ def main(args: argparse.Namespace) -> None:
 
     raw_labels = run_annofabcli_annotation_specs_list(project_id=args.project_id, subcommand_name="list_label")
     raw_attributes = run_annofabcli_annotation_specs_list(project_id=args.project_id, subcommand_name="list_attribute")
-    raw_attribute_restrictions = run_annofabcli_annotation_specs_list(project_id=args.project_id, subcommand_name="list_attribute_restriction")
+    attribute_restrictions_text = run_annofabcli_annotation_specs_text(project_id=args.project_id, subcommand_name="list_attribute_restriction", output_format="text_with_ids")
     labels = parse_specs(raw_labels, LabelSpec)
     attributes = parse_specs(raw_attributes, AttributeSpec)
-    attribute_restrictions = parse_specs(raw_attribute_restrictions, AttributeRestrictionSpec)
     print_json(dump_specs(labels), temp_dir / "labels.json")
     print_json(dump_specs(attributes), temp_dir / "attributes.json")
-    print_json(dump_specs(attribute_restrictions), temp_dir / "attribute_restrictions.json")
+    (temp_dir / "attribute_restrictions.txt").write_text(attribute_restrictions_text, encoding="utf-8")
     print_json(get_specs_json_schema(), temp_dir / "annotation_specs_json_schema.json")
 
     result = review_annotation_specs_with_llm(
@@ -370,7 +376,7 @@ def main(args: argparse.Namespace) -> None:
         review_point=review_point,
         labels=labels,
         attributes=attributes,
-        attribute_restrictions=attribute_restrictions,
+        attribute_restrictions_text=attribute_restrictions_text,
         llm_model=args.model,
         output_format=args.output_format,
         temp_dir=temp_dir,
