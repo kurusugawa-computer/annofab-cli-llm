@@ -126,13 +126,14 @@ def call_llm_completion(**kwargs: object) -> Any:  # noqa: ANN401
     return completion(**kwargs)
 
 
-def run_annofabcli_annotation_specs_list(*, project_id: str, subcommand_name: str) -> list[dict[str, object]]:
+def run_annofabcli_annotation_specs_list(*, project_id: str, subcommand_name: str, annofab_pat: str | None) -> list[dict[str, object]]:
     """
     annofabcliでアノテーション仕様の一覧をJSON形式で取得します。
 
     Args:
         project_id: AnnofabのプロジェクトID
         subcommand_name: 実行するannotation_specs配下のサブコマンド名
+        annofab_pat: AnnofabのPAT
 
     Returns:
         annofabcliが出力したJSON
@@ -146,12 +147,14 @@ def run_annofabcli_annotation_specs_list(*, project_id: str, subcommand_name: st
         "--format",
         "json",
     ]
+    if annofab_pat is not None:
+        command.extend(["--annofab_pat", annofab_pat])
     logger.info(f"annofabcliコマンドを実行します。 :: command={command}")
     completed_process = subprocess.run(command, check=True, capture_output=True, text=True)
     return json.loads(completed_process.stdout)
 
 
-def run_annofabcli_annotation_specs_text(*, project_id: str, subcommand_name: str, output_format: str) -> str:
+def run_annofabcli_annotation_specs_text(*, project_id: str, subcommand_name: str, output_format: str, annofab_pat: str | None) -> str:
     """
     annofabcliでアノテーション仕様の情報をテキスト形式で取得します。
 
@@ -159,6 +162,7 @@ def run_annofabcli_annotation_specs_text(*, project_id: str, subcommand_name: st
         project_id: AnnofabのプロジェクトID
         subcommand_name: 実行するannotation_specs配下のサブコマンド名
         output_format: annofabcliの --format に指定する値
+        annofab_pat: AnnofabのPAT
 
     Returns:
         annofabcliが出力したテキスト
@@ -172,6 +176,8 @@ def run_annofabcli_annotation_specs_text(*, project_id: str, subcommand_name: st
         "--format",
         output_format,
     ]
+    if annofab_pat is not None:
+        command.extend(["--annofab_pat", annofab_pat])
     logger.info(f"annofabcliコマンドを実行します。 :: command={command}")
     completed_process = subprocess.run(command, check=True, capture_output=True, text=True)
     return completed_process.stdout
@@ -334,9 +340,14 @@ def main(args: argparse.Namespace) -> None:
     logger.info(f"一時ディレクトリ'{temp_dir}'を作成しました。このディレクトリにLLMの入出力情報などを出力します。")
     temp_dir.mkdir(exist_ok=True)
 
-    raw_labels = run_annofabcli_annotation_specs_list(project_id=args.project_id, subcommand_name="list_label")
-    raw_attributes = run_annofabcli_annotation_specs_list(project_id=args.project_id, subcommand_name="list_attribute")
-    attribute_restrictions_text = run_annofabcli_annotation_specs_text(project_id=args.project_id, subcommand_name="list_attribute_restriction", output_format="text_with_ids")
+    raw_labels = run_annofabcli_annotation_specs_list(project_id=args.project_id, subcommand_name="list_label", annofab_pat=args.annofab_pat)
+    raw_attributes = run_annofabcli_annotation_specs_list(project_id=args.project_id, subcommand_name="list_attribute", annofab_pat=args.annofab_pat)
+    attribute_restrictions_text = run_annofabcli_annotation_specs_text(
+        project_id=args.project_id,
+        subcommand_name="list_attribute_restriction",
+        output_format="text_with_ids",
+        annofab_pat=args.annofab_pat,
+    )
     labels = parse_specs(raw_labels, LabelSpec)
     attributes = parse_specs(raw_attributes, AttributeSpec)
     print_json(dump_specs(labels), temp_dir / "labels.json")

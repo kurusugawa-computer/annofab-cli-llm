@@ -50,9 +50,34 @@ def test_run_annofabcli_annotation_specs_list(monkeypatch):
 
     monkeypatch.setattr(validate_annotation_specs.subprocess, "run", mock_run)
 
-    actual = run_annofabcli_annotation_specs_list(project_id="prj", subcommand_name="list_label")
+    actual = run_annofabcli_annotation_specs_list(project_id="prj", subcommand_name="list_label", annofab_pat=None)
 
     assert actual == [{"label_name_en": "car"}]
+
+
+def test_run_annofabcli_annotation_specs_list_with_annofab_pat(monkeypatch):
+    def mock_run(command, check, capture_output, text):  # noqa: ANN001, ANN202
+        assert command == [
+            "annofabcli",
+            "annotation_specs",
+            "list_attribute",
+            "--project_id",
+            "prj",
+            "--format",
+            "json",
+            "--annofab_pat",
+            "pat1",
+        ]
+        assert check
+        assert capture_output
+        assert text
+        return SimpleNamespace(stdout=json.dumps([{"attribute_name_en": "truncated"}]))
+
+    monkeypatch.setattr(validate_annotation_specs.subprocess, "run", mock_run)
+
+    actual = run_annofabcli_annotation_specs_list(project_id="prj", subcommand_name="list_attribute", annofab_pat="pat1")
+
+    assert actual == [{"attribute_name_en": "truncated"}]
 
 
 def test_run_annofabcli_annotation_specs_text(monkeypatch):
@@ -73,7 +98,32 @@ def test_run_annofabcli_annotation_specs_text(monkeypatch):
 
     monkeypatch.setattr(validate_annotation_specs.subprocess, "run", mock_run)
 
-    actual = run_annofabcli_annotation_specs_text(project_id="prj", subcommand_name="list_attribute_restriction", output_format="text_with_ids")
+    actual = run_annofabcli_annotation_specs_text(project_id="prj", subcommand_name="list_attribute_restriction", output_format="text_with_ids", annofab_pat=None)
+
+    assert actual == "[restriction_id: r1] car.truncated is required"
+
+
+def test_run_annofabcli_annotation_specs_text_with_annofab_pat(monkeypatch):
+    def mock_run(command, check, capture_output, text):  # noqa: ANN001, ANN202
+        assert command == [
+            "annofabcli",
+            "annotation_specs",
+            "list_attribute_restriction",
+            "--project_id",
+            "prj",
+            "--format",
+            "text_with_ids",
+            "--annofab_pat",
+            "pat1",
+        ]
+        assert check
+        assert capture_output
+        assert text
+        return SimpleNamespace(stdout="[restriction_id: r1] car.truncated is required")
+
+    monkeypatch.setattr(validate_annotation_specs.subprocess, "run", mock_run)
+
+    actual = run_annofabcli_annotation_specs_text(project_id="prj", subcommand_name="list_attribute_restriction", output_format="text_with_ids", annofab_pat="pat1")
 
     assert actual == "[restriction_id: r1] car.truncated is required"
 
