@@ -10,12 +10,12 @@ from acl.command.validate_annotation_specs import (
     add_parser,
     get_review_point,
     get_specs_json_schema,
-    mask_command_options,
     parse_specs,
     review_annotation_specs_with_llm,
     run_annofabcli_annotation_specs_list,
     run_annofabcli_annotation_specs_text,
 )
+from acl.common.command import mask_command_options
 
 
 def test_get_review_point_uses_default():

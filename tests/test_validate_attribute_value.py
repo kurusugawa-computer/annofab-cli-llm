@@ -1,6 +1,7 @@
 import pytest
 
-from acl.command.validate_attribute_value import split_by_json_length, validate_annotation_attribute_with_llm
+from acl.command import validate_attribute_value
+from acl.command.validate_attribute_value import split_by_json_length, validate_annotation_attribute_with_llm, write_annotation_attribute_json
 
 
 def test_split_by_json_length():
@@ -26,6 +27,42 @@ def test_split_by_json_length():
     assert chunks[0][0][1]["status"] == "b" * 1000
     assert chunks[1][0][0]["status"] == "c" * 500
     assert chunks[2][0][0]["status"] == "d" * 2000
+
+
+def test_write_annotation_attribute_json_masks_annofab_pat(monkeypatch, tmp_path):
+    captured_commands = []
+    captured_logs = []
+
+    def mock_run(cmd, check):  # noqa: ANN001, ANN202
+        captured_commands.append(cmd)
+        assert check
+
+    def mock_info(message):  # noqa: ANN001, ANN202
+        captured_logs.append(message)
+
+    monkeypatch.setattr(validate_attribute_value.subprocess, "run", mock_run)
+    monkeypatch.setattr(validate_attribute_value.logger, "info", mock_info)
+
+    write_annotation_attribute_json("prj", tmp_path / "attribute.json", annotation_path=None, temp_dir=None, annofab_pat="pat1")
+
+    assert captured_commands == [
+        [
+            "annofabcli",
+            "statistics",
+            "list_annotation_attribute",
+            "--format",
+            "json",
+            "--output",
+            str(tmp_path / "attribute.json"),
+            "--project_id",
+            "prj",
+            "--annofab_pat",
+            "pat1",
+        ]
+    ]
+    assert len(captured_logs) == 1
+    assert "pat1" not in captured_logs[0]
+    assert "'--annofab_pat', '***'" in captured_logs[0]
 
 
 @pytest.mark.access_webapi

@@ -12,6 +12,7 @@ import acl.common.cli
 from acl.common.annofab.annotation_type import get_annotation_type_details
 from acl.common.annofab.attribute_type import get_attribute_type_details
 from acl.common.cli import read_at_file
+from acl.common.command import mask_command_options
 from acl.common.utils import output_string, print_json
 from acl.common.xdg_util import create_command_temp_dir
 
@@ -124,24 +125,6 @@ def call_llm_completion(**kwargs: object) -> Any:  # noqa: ANN401
     from litellm import completion  # noqa: PLC0415
 
     return completion(**kwargs)
-
-
-def mask_command_options(command: list[str], masked_options: set[str]) -> list[str]:
-    """
-    コマンド引数に含まれるセンシティブな値をマスクします。
-
-    Args:
-        command: コマンド引数
-        masked_options: 値をマスクするオプション名の集合
-
-    Returns:
-        センシティブな値をマスクしたコマンド引数
-    """
-    masked_command = command.copy()
-    for index, value in enumerate(command[:-1]):
-        if value in masked_options:
-            masked_command[index + 1] = "***"
-    return masked_command
 
 
 def run_annofabcli_annotation_specs_list(*, project_id: str, subcommand_name: str, annofab_pat: str | None) -> list[dict[str, object]]:
@@ -316,6 +299,7 @@ def review_annotation_specs_with_llm(
 ## 属性制約一覧
 以下は `annofabcli annotation_specs list_attribute_restriction --format text_with_ids` の出力です。
 IDはレビュー指摘で対象の属性制約を特定するために使用してください。
+"matches"で指定された正規表現は部分一致でなく完全一致で評価されるので、`^`と`$`は不要です。
 {attribute_restrictions_text}
 """.strip()
 
