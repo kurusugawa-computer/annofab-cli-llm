@@ -16,12 +16,12 @@ from acl.common.xdg_util import create_command_temp_dir
 COMMAND_NAME = "validate"
 DEFAULT_REVIEW_POINT = """
 - 英語名/日本語名の誤字脱字
-- 英語名と日本語名が対応しているか
+- 英語名と日本語名が対応しているか。ただし英語名に日本語、日本語名に英語が混ざっている場合は指摘しないでください。簡略のためそうすることがあるからです。
 - 必要な属性制約が設けられているか
 """.strip()
 """デフォルトのレビュー観点です。"""
-SPEC_MODEL_CONFIG = ConfigDict(extra="allow")
-"""annofabcliのJSON出力で未知フィールドが増えても保持するためのPydantic設定です。"""
+SPEC_MODEL_CONFIG = ConfigDict(extra="ignore")
+"""LLMのレビュー対象にしない未知フィールドを無視するためのPydantic設定です。"""
 
 
 class KeybindSpec(BaseModel):
@@ -250,7 +250,7 @@ def get_review_point(review_point: str | None) -> str:
     if review_point is None:
         return DEFAULT_REVIEW_POINT
 
-    return read_at_file(review_point)
+    return f"{DEFAULT_REVIEW_POINT}\n\n## 追加レビュー観点\n{read_at_file(review_point)}"
 
 
 def review_annotation_specs_with_llm(
@@ -408,7 +408,7 @@ def add_argument_to_parser(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--review_point",
         type=str,
-        help="レビュー観点。指定した場合はデフォルトのレビュー観点を使用せず、この値だけを使用します。先頭に`@`を指定すると、`@`以降をファイルパスとみなしてファイルの中身を読み込みます。",
+        help="追加のレビュー観点。デフォルトのレビュー観点に加えて、この値も使用します。先頭に`@`を指定すると、`@`以降をファイルパスとみなしてファイルの中身を読み込みます。",
     )
     parser.add_argument(
         "-o",

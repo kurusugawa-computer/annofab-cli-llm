@@ -27,7 +27,9 @@ def test_get_review_point_reads_file(tmp_path):
 
     actual = get_review_point(f"@{review_point_file}")
 
-    assert actual == "属性制約だけレビューしてください。"
+    assert DEFAULT_REVIEW_POINT in actual
+    assert "## 追加レビュー観点" in actual
+    assert "属性制約だけレビューしてください。" in actual
 
 
 def test_run_annofabcli_annotation_specs_list(monkeypatch):
@@ -76,7 +78,7 @@ def test_run_annofabcli_annotation_specs_text(monkeypatch):
     assert actual == "[restriction_id: r1] car.truncated is required"
 
 
-def test_parse_specs_keeps_unknown_fields():
+def test_parse_specs_ignores_unknown_fields():
     actual = parse_specs(
         [
             {
@@ -90,7 +92,7 @@ def test_parse_specs_keeps_unknown_fields():
     )
 
     assert actual[0].label_name_en == "car"
-    assert actual[0].model_dump(mode="json")["unknown_field"] == "kept"
+    assert "unknown_field" not in actual[0].model_dump(mode="json")
 
 
 def test_get_specs_json_schema_has_descriptions():

@@ -46,7 +46,7 @@ Examples
      --output review.md
 
 
-レビュー観点を指定する
+レビュー観点を追加する
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block::
@@ -69,6 +69,8 @@ Examples
      --annotation_rule @annotation_rule.md \
      --review_point @review_point.md \
      --output review.md
+
+``--review_point`` を指定した場合も、デフォルトのレビュー観点は使用されます。
 
 
 JSONで出力する
