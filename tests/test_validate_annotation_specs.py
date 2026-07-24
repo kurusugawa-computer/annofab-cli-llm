@@ -82,6 +82,7 @@ def test_parse_specs_ignores_unknown_fields():
     actual = parse_specs(
         [
             {
+                "label_id": "label-1",
                 "label_name_en": "car",
                 "label_name_ja": "車",
                 "annotation_type": "bounding_box",
@@ -92,6 +93,7 @@ def test_parse_specs_ignores_unknown_fields():
     )
 
     assert actual[0].label_name_en == "car"
+    assert actual[0].label_id == "label-1"
     assert "unknown_field" not in actual[0].model_dump(mode="json")
 
 
@@ -100,6 +102,9 @@ def test_get_specs_json_schema_has_descriptions():
 
     assert actual["labels"]["properties"]["label_name_en"]["description"] == "既存ラベル名（英語）です。"
     assert actual["attributes"]["properties"]["attribute_name_en"]["description"] == "既存属性名（英語）です。"
+    assert actual["labels"]["properties"]["label_id"]["description"] == "既存ラベルのIDです。レビュー指摘で対象ラベルを特定するために使用します。"
+    assert actual["attributes"]["properties"]["attribute_id"]["description"] == "既存属性のIDです。レビュー指摘で対象属性を特定するために使用します。"
+    assert actual["attributes"]["$defs"]["ChoiceSpec"]["properties"]["choice_id"]["description"] == "既存選択肢のIDです。レビュー指摘で対象選択肢を特定するために使用します。"
     assert "attribute_restrictions" not in actual
 
 
@@ -119,7 +124,7 @@ def test_review_annotation_specs_with_llm_for_markdown(monkeypatch):
     actual = review_annotation_specs_with_llm(
         annotation_rule="車を囲ってください。",
         review_point="名前をレビューしてください。",
-        labels=[LabelSpec(label_name_en="car", label_name_ja="車", annotation_type="bounding_box")],
+        labels=[LabelSpec(label_id="label-1", label_name_en="car", label_name_ja="車", annotation_type="bounding_box")],
         attributes=[],
         attribute_restrictions_text="",
         llm_model="openai/test",
@@ -173,7 +178,7 @@ def test_review_annotation_specs_with_llm_for_json(monkeypatch):
         annotation_rule="車を囲ってください。",
         review_point="属性制約をレビューしてください。",
         labels=[],
-        attributes=[AttributeSpec(attribute_type="flag", attribute_name_en="truncated", attribute_name_ja="見切れ", label_name_ens=["car"], read_only=True)],
+        attributes=[AttributeSpec(attribute_id="attribute-1", attribute_type="flag", attribute_name_en="truncated", attribute_name_ja="見切れ", label_name_ens=["car"], read_only=True)],
         attribute_restrictions_text="[restriction_id: r1] car.truncated is required",
         llm_model="openai/test",
         output_format="json",
@@ -200,7 +205,7 @@ def test_review_annotation_specs_with_llm_without_annotation_rule(monkeypatch):
     actual = review_annotation_specs_with_llm(
         annotation_rule=None,
         review_point="名前をレビューしてください。",
-        labels=[LabelSpec(label_name_en="car", label_name_ja="車", annotation_type="bounding_box")],
+        labels=[LabelSpec(label_id="label-1", label_name_en="car", label_name_ja="車", annotation_type="bounding_box")],
         attributes=[],
         attribute_restrictions_text="",
         llm_model="openai/test",

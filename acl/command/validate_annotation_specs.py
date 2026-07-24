@@ -48,6 +48,8 @@ class LabelSpec(BaseModel):
 
     model_config = SPEC_MODEL_CONFIG
 
+    label_id: str = Field(description="既存ラベルのIDです。レビュー指摘で対象ラベルを特定するために使用します。")
+    """既存ラベルのIDです。"""
     label_name_en: str = Field(description="既存ラベル名（英語）です。")
     """既存ラベル名（英語）です。"""
     label_name_ja: str = Field(description="既存ラベル名（日本語）です。")
@@ -69,6 +71,8 @@ class ChoiceSpec(BaseModel):
 
     model_config = SPEC_MODEL_CONFIG
 
+    choice_id: str = Field(description="既存選択肢のIDです。レビュー指摘で対象選択肢を特定するために使用します。")
+    """既存選択肢のIDです。"""
     choice_name_en: str = Field(description="既存選択肢名（英語）です。")
     """既存選択肢名（英語）です。"""
     choice_name_ja: str = Field(description="既存選択肢名（日本語）です。")
@@ -86,6 +90,8 @@ class AttributeSpec(BaseModel):
 
     model_config = SPEC_MODEL_CONFIG
 
+    attribute_id: str = Field(description="既存属性のIDです。レビュー指摘で対象属性を特定するために使用します。")
+    """既存属性のIDです。"""
     attribute_type: str = Field(description="既存属性の種類です。例: flag, integer, text, comment, choice, select")
     """既存属性の種類です。"""
     attribute_name_en: str = Field(description="既存属性名（英語）です。")
