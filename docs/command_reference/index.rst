@@ -16,6 +16,7 @@ annotation_specs
    parse_attribute
    parse_attribute_restriction
    parse_label
+   validate
 
 annotation_zip
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
