@@ -22,7 +22,7 @@ dependencies = [
     "more-itertools",
     "annofabapi>=1.7.1",
     "pandas>=2.2,<4",
-    "annofabcli>=1.124.0",
+    "annofabcli>=1.125.0",
 ]
 
 [dependency-groups]
@@ -99,6 +99,7 @@ ignore = [
     "TD", # TODOコメントの書き方に気にしていないので無視する
     "SIM108", # if-else-block-instead-of-if-exp : if-elseブロックを使うこともあるため無視する
     "SIM102",
+    "CPY001", # missing-copyright-notice
     
 
     # 以下のルールはannofabcliのコードに合っていないので無効化した

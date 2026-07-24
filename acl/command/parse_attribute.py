@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 import acl.common.cli
 from acl.command.parse_label import KeybindCandidate, UnresolvedText, format_unresolved_text
+from acl.common.annofab.attribute_type import get_attribute_type_details
 from acl.common.cli import read_at_file
 from acl.common.utils import print_json
 from acl.common.xdg_util import create_command_temp_dir
@@ -25,18 +26,6 @@ CHOICE_ATTRIBUTE_TYPES = {
     AdditionalDataDefinitionType.SELECT,
 }
 """選択肢を持つ属性種類です。"""
-
-ATTRIBUTE_TYPE_DESCRIPTIONS: dict[AdditionalDataDefinitionType, str] = {
-    AdditionalDataDefinitionType.FLAG: "チェックボックス",
-    AdditionalDataDefinitionType.INTEGER: "整数",
-    AdditionalDataDefinitionType.TEXT: "自由記述（1行）",
-    AdditionalDataDefinitionType.COMMENT: "自由記述（複数行）",
-    AdditionalDataDefinitionType.CHOICE: "ラジオボタン（排他選択）",
-    AdditionalDataDefinitionType.SELECT: "ドロップダウン（排他選択）",
-    AdditionalDataDefinitionType.TRACKING: "トラッキングID",
-    AdditionalDataDefinitionType.LINK: "アノテーションリンク",
-}
-"""attribute_type の説明です。"""
 
 
 class ChoiceCandidate(BaseModel):
@@ -186,16 +175,6 @@ class AttributeParseResult(BaseModel):
 
     unresolved_texts: list[UnresolvedText] = Field(default_factory=list, description="属性追加ルールとして解釈できなかった原文、理由、必要な補足情報です。")
     """属性追加ルールとして解釈できなかった原文、理由、必要な補足情報です。"""
-
-
-def get_attribute_type_details() -> list[dict[str, str]]:
-    """
-    利用可能な attribute_type と説明を返します。
-
-    Returns:
-        attribute_type と説明の一覧
-    """
-    return [{"value": attribute_type.value, "description": description} for attribute_type, description in ATTRIBUTE_TYPE_DESCRIPTIONS.items()]
 
 
 def get_label_catalog(annotation_specs: dict[str, Any]) -> list[dict[str, Any]]:

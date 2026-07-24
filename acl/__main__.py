@@ -13,6 +13,7 @@ import acl.common.cli
 from acl.command.parse_attribute import add_parser as add_parser_for_parse_attribute
 from acl.command.parse_attribute_restriction import add_parser as add_parser_for_parse_attribute_restriction
 from acl.command.parse_label import add_parser as add_parser_for_parse_label
+from acl.command.validate_annotation_specs import add_parser as add_parser_for_validate_annotation_specs
 from acl.command.validate_attribute_value import add_parser as add_parser_for_validate_attribute_value
 from acl.common.xdg_util import get_logs_root_dir
 
@@ -132,6 +133,7 @@ def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argpa
     add_parser_for_parse_attribute(annotation_specs_subparsers)
     add_parser_for_parse_attribute_restriction(annotation_specs_subparsers)
     add_parser_for_parse_label(annotation_specs_subparsers)
+    add_parser_for_validate_annotation_specs(annotation_specs_subparsers)
 
     annotation_zip_parser = subparsers.add_parser(
         "annotation_zip",
