@@ -3,7 +3,7 @@ import json
 import subprocess
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 
 from loguru import logger
 from pydantic import BaseModel, ConfigDict, Field
@@ -110,36 +110,6 @@ class AttributeSpec(BaseModel):
     """選択肢一覧です。"""
     keybind: KeybindSpec | None = Field(default=None, description="属性に設定されたキーボードショートカットです。")
     """属性に設定されたキーボードショートカットです。"""
-
-
-class AnnotationSpecsReviewFinding(BaseModel):
-    """
-    アノテーション仕様レビューの指摘です。
-    """
-
-    severity: Literal["error", "warning", "notice"]
-    """指摘の重要度です。"""
-    category: str
-    """指摘の分類です。"""
-    target_type: str
-    """指摘対象の種類です。例: label, attribute, attribute_restriction"""
-    target_name: str | None = None
-    """指摘対象の名前です。"""
-    message: str
-    """指摘内容です。"""
-    recommendation: str | None = None
-    """推奨する対応です。"""
-
-
-class AnnotationSpecsReviewResult(BaseModel):
-    """
-    アノテーション仕様レビュー結果です。
-    """
-
-    summary: str
-    """レビュー結果の概要です。"""
-    findings: list[AnnotationSpecsReviewFinding] = Field(default_factory=list)
-    """レビューの指摘一覧です。"""
 
 
 def call_llm_completion(**kwargs: object) -> Any:  # noqa: ANN401
@@ -269,9 +239,8 @@ def review_annotation_specs_with_llm(
     attributes: list[AttributeSpec],
     attribute_restrictions_text: str,
     llm_model: str,
-    output_format: Literal["markdown", "json"],
     temp_dir: Path | None = None,
-) -> str | AnnotationSpecsReviewResult:
+) -> str:
     """
     LLMでアノテーション仕様をレビューします。
 
@@ -282,7 +251,6 @@ def review_annotation_specs_with_llm(
         attributes: 属性一覧
         attribute_restrictions_text: 属性制約一覧のテキスト
         llm_model: 使用するLLMのモデル
-        output_format: 出力形式
         temp_dir: 任意の一時ディレクトリ
 
     Returns:
@@ -345,19 +313,6 @@ IDはレビュー指摘で対象の属性制約を特定するために使用し
     if temp_dir is not None:
         print_json(messages, temp_dir / "llm_prompt.json")
 
-    if output_format == "json":
-        response = call_llm_completion(model=llm_model, messages=messages, response_format=AnnotationSpecsReviewResult)
-        content = response.choices[0].message.content
-        result = AnnotationSpecsReviewResult.model_validate_json(content)
-        if temp_dir is not None:
-            (temp_dir / "llm_raw_response.txt").write_text(content, encoding="utf-8")
-            print_json(result.model_dump(mode="json"), temp_dir / "llm_completion.json")
-        logger.info(
-            f"[LLM] アノテーション仕様をレビューしました。 :: finding_count={len(result.findings)}, total_tokens={response.usage.total_tokens}, "
-            f"prompt_tokens={response.usage.prompt_tokens}, completion_tokens={response.usage.completion_tokens}"
-        )
-        return result
-
     response = call_llm_completion(model=llm_model, messages=messages)
     content = response.choices[0].message.content
     if temp_dir is not None:
@@ -394,16 +349,10 @@ def main(args: argparse.Namespace) -> None:
         attributes=attributes,
         attribute_restrictions_text=attribute_restrictions_text,
         llm_model=args.model,
-        output_format=args.output_format,
         temp_dir=temp_dir,
     )
 
-    if args.output_format == "json":
-        assert isinstance(result, AnnotationSpecsReviewResult)
-        print_json(result.model_dump(mode="json"), output=args.output)
-    else:
-        assert isinstance(result, str)
-        output_string(result, output=args.output)
+    output_string(result, output=args.output)
 
     logger.info("アノテーション仕様のレビューが完了しました。")
 
@@ -432,14 +381,6 @@ def add_argument_to_parser(parser: argparse.ArgumentParser) -> None:
         type=Path,
         help="出力先のファイルパス。指定しない場合は、標準出力に出力されます。",
     )
-    parser.add_argument(
-        "--output_format",
-        type=str,
-        choices=["markdown", "json"],
-        default="markdown",
-        help="出力形式",
-    )
-
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     parser = acl.common.cli.add_parser(subparsers, COMMAND_NAME, "アノテーション仕様をレビューします。")
