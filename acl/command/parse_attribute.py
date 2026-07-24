@@ -27,6 +27,7 @@ CHOICE_ATTRIBUTE_TYPES = {
 }
 """選択肢を持つ属性種類です。"""
 
+
 class ChoiceCandidate(BaseModel):
     """
     追加候補の選択肢情報です。

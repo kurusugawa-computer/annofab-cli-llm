@@ -384,6 +384,7 @@ def add_argument_to_parser(parser: argparse.ArgumentParser) -> None:
         help="出力先のファイルパス。指定しない場合は、標準出力に出力されます。",
     )
 
+
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     parser = acl.common.cli.add_parser(subparsers, COMMAND_NAME, "アノテーション仕様をレビューします。")
     add_argument_to_parser(parser)
