@@ -30,13 +30,13 @@ class KeybindSpec(BaseModel):
 
     model_config = SPEC_MODEL_CONFIG
 
-    alt: bool | None = Field(default=None, description="Altキーを使う場合はtrueです。")
+    alt: bool = Field(default=False, description="Altキーを使う場合はtrueです。")
     """Altキーを使うかどうかです。"""
-    code: str | None = Field(default=None, description="KeyboardEvent.code の値です。例: Digit1, KeyQ")
+    code: str = Field(description="KeyboardEvent.code の値です。例: Digit1, KeyQ")
     """KeyboardEvent.code の値です。"""
-    ctrl: bool | None = Field(default=None, description="Ctrlキーを使う場合はtrueです。")
+    ctrl: bool = Field(default=False, description="Ctrlキーを使う場合はtrueです。")
     """Ctrlキーを使うかどうかです。"""
-    shift: bool | None = Field(default=None, description="Shiftキーを使う場合はtrueです。")
+    shift: bool = Field(default=False, description="Shiftキーを使う場合はtrueです。")
     """Shiftキーを使うかどうかです。"""
 
 
@@ -47,11 +47,11 @@ class LabelSpec(BaseModel):
 
     model_config = SPEC_MODEL_CONFIG
 
-    label_name_en: str | None = Field(default=None, description="既存ラベル名（英語）です。")
+    label_name_en: str = Field(description="既存ラベル名（英語）です。")
     """既存ラベル名（英語）です。"""
-    label_name_ja: str | None = Field(default=None, description="既存ラベル名（日本語）です。")
+    label_name_ja: str = Field(description="既存ラベル名（日本語）です。")
     """既存ラベル名（日本語）です。"""
-    annotation_type: str | None = Field(default=None, description="既存ラベルのアノテーション種類です。例: bounding_box, polygon, segmentation")
+    annotation_type: str = Field(description="既存ラベルのアノテーション種類です。例: bounding_box, polygon, segmentation")
     """既存ラベルのアノテーション種類です。"""
     color: str | None = Field(default=None, description="ラベル色です。例: #FF0000")
     """ラベル色です。"""
@@ -68,11 +68,11 @@ class ChoiceSpec(BaseModel):
 
     model_config = SPEC_MODEL_CONFIG
 
-    choice_name_en: str | None = Field(default=None, description="既存選択肢名（英語）です。")
+    choice_name_en: str = Field(description="既存選択肢名（英語）です。")
     """既存選択肢名（英語）です。"""
-    choice_name_ja: str | None = Field(default=None, description="既存選択肢名（日本語）です。")
+    choice_name_ja: str = Field(description="既存選択肢名（日本語）です。")
     """既存選択肢名（日本語）です。"""
-    is_default: bool | None = Field(default=None, description="デフォルト値の選択肢の場合はtrueです。")
+    is_default: bool = Field(default=False, description="デフォルト値の選択肢の場合はtrueです。")
     """デフォルト値かどうかです。"""
     keybind: KeybindSpec | None = Field(default=None, description="選択肢に設定されたキーボードショートカットです。")
     """選択肢に設定されたキーボードショートカットです。"""
@@ -85,19 +85,19 @@ class AttributeSpec(BaseModel):
 
     model_config = SPEC_MODEL_CONFIG
 
-    attribute_type: str | None = Field(default=None, description="既存属性の種類です。例: flag, integer, text, comment, choice, select")
+    attribute_type: str = Field(description="既存属性の種類です。例: flag, integer, text, comment, choice, select")
     """既存属性の種類です。"""
-    attribute_name_en: str | None = Field(default=None, description="既存属性名（英語）です。")
+    attribute_name_en: str = Field(description="既存属性名（英語）です。")
     """既存属性名（英語）です。"""
-    attribute_name_ja: str | None = Field(default=None, description="既存属性名（日本語）です。")
+    attribute_name_ja: str = Field(description="既存属性名（日本語）です。")
     """既存属性名（日本語）です。"""
-    label_name_ens: list[str] | None = Field(default=None, description="この属性が付与されるラベル名（英語）の一覧です。")
+    label_name_ens: list[str] = Field(description="この属性が付与されるラベル名（英語）の一覧です。")
     """この属性が付与されるラベル名（英語）の一覧です。"""
-    read_only: bool | None = Field(default=None, description="読み込み専用属性の場合はtrueです。")
+    read_only: bool = Field(default=False, description="読み込み専用属性の場合はtrueです。")
     """読み込み専用属性かどうかです。"""
     default_value: str | int | bool | None = Field(default=None, description="属性の初期値です。")
     """属性の初期値です。"""
-    choices: list[ChoiceSpec] | None = Field(default=None, description="属性種類がchoiceまたはselectの場合の選択肢一覧です。")
+    choices: list[ChoiceSpec] = Field(default_factory=list, description="属性種類がchoiceまたはselectの場合の選択肢一覧です。")
     """選択肢一覧です。"""
     keybind: KeybindSpec | None = Field(default=None, description="属性に設定されたキーボードショートカットです。")
     """属性に設定されたキーボードショートカットです。"""
