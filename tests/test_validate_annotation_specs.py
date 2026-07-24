@@ -132,7 +132,7 @@ def test_run_annofabcli_annotation_specs_text_with_annofab_pat(monkeypatch):
 def test_mask_command_options():
     command = ["annofabcli", "annotation_specs", "list_label", "--annofab_pat", "pat1"]
 
-    actual = mask_command_options(command, {"--annofab_pat"})
+    actual = mask_command_options(command)
 
     assert actual == ["annofabcli", "annotation_specs", "list_label", "--annofab_pat", "***"]
     assert command == ["annofabcli", "annotation_specs", "list_label", "--annofab_pat", "pat1"]

@@ -150,7 +150,8 @@ def run_annofabcli_annotation_specs_list(*, project_id: str, subcommand_name: st
     ]
     if annofab_pat is not None:
         command.extend(["--annofab_pat", annofab_pat])
-    logger.info(f"annofabcliコマンドを実行します。 :: command={mask_command_options(command, {'--annofab_pat'})}")
+    masked_command = mask_command_options(command)
+    logger.info(f"annofabcliコマンドを実行します。 :: command={masked_command}")
     completed_process = subprocess.run(command, check=True, capture_output=True, text=True)
     return json.loads(completed_process.stdout)
 
@@ -179,7 +180,8 @@ def run_annofabcli_annotation_specs_text(*, project_id: str, subcommand_name: st
     ]
     if annofab_pat is not None:
         command.extend(["--annofab_pat", annofab_pat])
-    logger.info(f"annofabcliコマンドを実行します。 :: command={mask_command_options(command, {'--annofab_pat'})}")
+    masked_command = mask_command_options(command)
+    logger.info(f"annofabcliコマンドを実行します。 :: command={masked_command}")
     completed_process = subprocess.run(command, check=True, capture_output=True, text=True)
     return completed_process.stdout
 

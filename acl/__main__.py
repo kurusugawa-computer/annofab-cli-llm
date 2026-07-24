@@ -90,7 +90,8 @@ def main(arguments: list[str] | None = None) -> None:
             argv = sys.argv
             if arguments is not None:
                 argv = ["annofabcli", *list(arguments)]
-            logger.info(f"annofabcli-llmを実行します。 :: argv={mask_command_options(argv, {'--annofab_pat'})}")
+            masked_argv = mask_command_options(argv)
+            logger.info(f"annofabcli-llmを実行します。 :: argv={masked_argv}")
             args.func(args)
         except Exception as e:
             logger.exception(e)

@@ -207,7 +207,8 @@ def write_annotation_attribute_json(project_id: str, output_json: Path, *, annot
         cmd.extend(["--temp_dir", str(temp_dir)])
     if annofab_pat is not None:
         cmd.extend(["--annofab_pat", annofab_pat])
-    logger.info(f"annofabcliを実行します。 :: {mask_command_options(cmd, {'--annofab_pat'})}")
+    masked_cmd = mask_command_options(cmd)
+    logger.info(f"annofabcliを実行します。 :: {masked_cmd}")
     subprocess.run(cmd, check=True)
 
 
