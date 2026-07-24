@@ -40,60 +40,60 @@ Examples
 .. code-block:: json    
     :caption: labels.json
 
-  [
-    {
-      "label_name_en": "pedestrian",
-      "annotation_type": "bounding_box",
-      "label_name_ja": "歩行者",
-      "keybind": {
-        "alt": false,
-        "code": "KeyQ",
-        "ctrl": false,
-        "shift": false
-      },
-      "field_values": {
-        "minimum_size_2d_with_default_insert_position": {
-          "min_warn_rule": {
-            "_type": "Or"
-          },
-          "min_width": 100,
-          "min_height": 200,
-          "position_for_minimum_bounding_box_insertion": null,
-          "_type": "MinimumSize2dWithDefaultInsertPosition"
+    [
+      {
+        "label_name_en": "pedestrian",
+        "annotation_type": "bounding_box",
+        "label_name_ja": "歩行者",
+        "keybind": {
+          "alt": false,
+          "code": "KeyQ",
+          "ctrl": false,
+          "shift": false
         },
-        "margin_of_error_tolerance": {
-          "_type": "MarginOfErrorTolerance",
-          "max_pixel": 5
+        "field_values": {
+          "minimum_size_2d_with_default_insert_position": {
+            "min_warn_rule": {
+              "_type": "Or"
+            },
+            "min_width": 100,
+            "min_height": 200,
+            "position_for_minimum_bounding_box_insertion": null,
+            "_type": "MinimumSize2dWithDefaultInsertPosition"
+          },
+          "margin_of_error_tolerance": {
+            "_type": "MarginOfErrorTolerance",
+            "max_pixel": 5
+          }
+        }
+      },
+      {
+        "label_name_en": "car",
+        "annotation_type": "bounding_box",
+        "label_name_ja": "自動車",
+        "keybind": {
+          "alt": false,
+          "code": "KeyW",
+          "ctrl": false,
+          "shift": false
+        },
+        "field_values": {
+          "minimum_size_2d_with_default_insert_position": {
+            "min_warn_rule": {
+              "_type": "Or"
+            },
+            "min_width": 300,
+            "min_height": 300,
+            "position_for_minimum_bounding_box_insertion": null,
+            "_type": "MinimumSize2dWithDefaultInsertPosition"
+          },
+          "margin_of_error_tolerance": {
+            "_type": "MarginOfErrorTolerance",
+            "max_pixel": 5
+          }
         }
       }
-    },
-    {
-      "label_name_en": "car",
-      "annotation_type": "bounding_box",
-      "label_name_ja": "自動車",
-      "keybind": {
-        "alt": false,
-        "code": "KeyW",
-        "ctrl": false,
-        "shift": false
-      },
-      "field_values": {
-        "minimum_size_2d_with_default_insert_position": {
-          "min_warn_rule": {
-            "_type": "Or"
-          },
-          "min_width": 300,
-          "min_height": 300,
-          "position_for_minimum_bounding_box_insertion": null,
-          "_type": "MinimumSize2dWithDefaultInsertPosition"
-        },
-        "margin_of_error_tolerance": {
-          "_type": "MarginOfErrorTolerance",
-          "max_pixel": 5
-        }
-      }
-    }
-  ]
+    ]
 
 
 ``parse_label`` コマンドで出力された ``labels.json`` は、以下のコマンドでAnnofabのアノテーション仕様にラベルを追加できます。
