@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import copy
 import inspect
 import logging
 import sys
@@ -15,6 +14,7 @@ from acl.command.parse_attribute_restriction import add_parser as add_parser_for
 from acl.command.parse_label import add_parser as add_parser_for_parse_label
 from acl.command.validate_annotation_specs import add_parser as add_parser_for_validate_annotation_specs
 from acl.command.validate_attribute_value import add_parser as add_parser_for_validate_attribute_value
+from acl.common.command import mask_command_options
 from acl.common.xdg_util import get_logs_root_dir
 
 
@@ -68,20 +68,6 @@ def configure_loguru(*, is_verbose: bool) -> None:
     logger.add(get_logs_root_dir() / "annofab-cli-llm.log", rotation="1 day", diagnose=False, filter=level_per_module)  # type: ignore[arg-type]
 
 
-def mask_argv(argv: list[str]) -> list[str]:
-    """
-    `argv`にセンシティブな情報が含まれている場合は、`***`に置き換える。
-    """
-    tmp_argv = copy.deepcopy(argv)
-    for masked_option in ["--annofab_pat"]:
-        try:
-            index = tmp_argv.index(masked_option)
-            tmp_argv[index + 1] = "***"
-        except ValueError:
-            continue
-    return tmp_argv
-
-
 def main(arguments: list[str] | None = None) -> None:
     """
     annofabcliコマンドのメイン処理
@@ -104,7 +90,8 @@ def main(arguments: list[str] | None = None) -> None:
             argv = sys.argv
             if arguments is not None:
                 argv = ["annofabcli", *list(arguments)]
-            logger.info(f"annofabcli-llmを実行します。 :: argv={mask_argv(argv)}")
+            masked_argv = mask_command_options(argv)
+            logger.info(f"annofabcli-llmを実行します。 :: argv={masked_argv}")
             args.func(args)
         except Exception as e:
             logger.exception(e)

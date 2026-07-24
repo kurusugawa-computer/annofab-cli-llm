@@ -8,12 +8,12 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 import pandas
-from litellm import completion
 from loguru import logger
 from pydantic import BaseModel, Field
 
 import acl.common.cli
 from acl.common.cli import prompt_yesno, read_at_file
+from acl.common.command import mask_command_options
 from acl.common.utils import print_csv, print_json
 from acl.common.xdg_util import create_command_temp_dir
 
@@ -37,6 +37,18 @@ class ValidationResults(BaseModel):
     """
 
     results: list[ValidationResult]
+
+
+def call_llm_completion(**kwargs: object) -> Any:  # noqa: ANN401
+    """
+    LiteLLMのcompletionを呼び出します。
+
+    Args:
+        kwargs: LiteLLM completionに渡す引数
+    """
+    from litellm import completion  # noqa: PLC0415
+
+    return completion(**kwargs)
 
 
 def split_by_json_length(attribute_list: list[dict[str, Any]], max_chunk_length: int) -> list[tuple[list[dict[str, Any]], list[int]]]:
@@ -144,7 +156,7 @@ def validate_annotation_attribute_with_llm(
         if temp_dir is not None:
             print_json(messages, (temp_dir / f"{chunk_file_prefix}--llm_prompt.json"))
 
-        response = completion(
+        response = call_llm_completion(
             model=llm_model,
             messages=messages,
             response_format=ValidationResults,
@@ -195,7 +207,8 @@ def write_annotation_attribute_json(project_id: str, output_json: Path, *, annot
         cmd.extend(["--temp_dir", str(temp_dir)])
     if annofab_pat is not None:
         cmd.extend(["--annofab_pat", annofab_pat])
-    logger.info(f"annofabcliを実行します。 :: {cmd}")
+    masked_cmd = mask_command_options(cmd)
+    logger.info(f"annofabcliを実行します。 :: {masked_cmd}")
     subprocess.run(cmd, check=True)
 
 

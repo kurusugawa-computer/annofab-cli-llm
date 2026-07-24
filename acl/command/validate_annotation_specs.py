@@ -12,6 +12,7 @@ import acl.common.cli
 from acl.common.annofab.annotation_type import get_annotation_type_details
 from acl.common.annofab.attribute_type import get_attribute_type_details
 from acl.common.cli import read_at_file
+from acl.common.command import mask_command_options
 from acl.common.utils import output_string, print_json
 from acl.common.xdg_util import create_command_temp_dir
 
@@ -149,7 +150,8 @@ def run_annofabcli_annotation_specs_list(*, project_id: str, subcommand_name: st
     ]
     if annofab_pat is not None:
         command.extend(["--annofab_pat", annofab_pat])
-    logger.info(f"annofabcliコマンドを実行します。 :: command={command}")
+    masked_command = mask_command_options(command)
+    logger.info(f"annofabcliコマンドを実行します。 :: command={masked_command}")
     completed_process = subprocess.run(command, check=True, capture_output=True, text=True)
     return json.loads(completed_process.stdout)
 
@@ -178,7 +180,8 @@ def run_annofabcli_annotation_specs_text(*, project_id: str, subcommand_name: st
     ]
     if annofab_pat is not None:
         command.extend(["--annofab_pat", annofab_pat])
-    logger.info(f"annofabcliコマンドを実行します。 :: command={command}")
+    masked_command = mask_command_options(command)
+    logger.info(f"annofabcliコマンドを実行します。 :: command={masked_command}")
     completed_process = subprocess.run(command, check=True, capture_output=True, text=True)
     return completed_process.stdout
 
@@ -298,6 +301,7 @@ def review_annotation_specs_with_llm(
 ## 属性制約一覧
 以下は `annofabcli annotation_specs list_attribute_restriction --format text_with_ids` の出力です。
 IDはレビュー指摘で対象の属性制約を特定するために使用してください。
+"matches"で指定された正規表現は部分一致でなく完全一致で評価されるので、`^`と`$`は不要です。
 {attribute_restrictions_text}
 """.strip()
 
