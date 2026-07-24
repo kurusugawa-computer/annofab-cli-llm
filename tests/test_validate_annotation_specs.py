@@ -102,9 +102,11 @@ def test_get_specs_json_schema_has_descriptions():
 
     assert actual["labels"]["properties"]["label_name_en"]["description"] == "既存ラベル名（英語）です。"
     assert actual["attributes"]["properties"]["attribute_name_en"]["description"] == "既存属性名（英語）です。"
+    assert actual["attributes"]["properties"]["default"]["description"] == "属性の初期値です。"
     assert actual["labels"]["properties"]["label_id"]["description"] == "既存ラベルのIDです。レビュー指摘で対象ラベルを特定するために使用します。"
     assert actual["attributes"]["properties"]["attribute_id"]["description"] == "既存属性のIDです。レビュー指摘で対象属性を特定するために使用します。"
     assert actual["attributes"]["$defs"]["ChoiceSpec"]["properties"]["choice_id"]["description"] == "既存選択肢のIDです。レビュー指摘で対象選択肢を特定するために使用します。"
+    assert "default_value" not in actual["attributes"]["properties"]
     assert "attribute_restrictions" not in actual
 
 
@@ -157,6 +159,8 @@ def test_review_annotation_specs_with_llm_for_json(monkeypatch):
         assert '"description": "塗りつぶしv2（セマンティックセグメンテーション用）"' in messages[1]["content"]
         assert '"value": "choice"' in messages[1]["content"]
         assert '"description": "ラジオボタン（排他選択）"' in messages[1]["content"]
+        assert '"default": false' in messages[1]["content"]
+        assert "default_value" not in messages[1]["content"]
         return SimpleNamespace(
             choices=[
                 SimpleNamespace(
@@ -188,7 +192,7 @@ def test_review_annotation_specs_with_llm_for_json(monkeypatch):
         annotation_rule="車を囲ってください。",
         review_point="属性制約をレビューしてください。",
         labels=[],
-        attributes=[AttributeSpec(attribute_id="attribute-1", attribute_type="flag", attribute_name_en="truncated", attribute_name_ja="見切れ", label_name_ens=["car"], read_only=True)],
+        attributes=[AttributeSpec(attribute_id="attribute-1", attribute_type="flag", attribute_name_en="truncated", attribute_name_ja="見切れ", label_name_ens=["car"], read_only=True, default=False)],
         attribute_restrictions_text="[restriction_id: r1] car.truncated is required",
         llm_model="openai/test",
         output_format="json",

@@ -104,7 +104,7 @@ class AttributeSpec(BaseModel):
     """この属性が付与されるラベル名（英語）の一覧です。"""
     read_only: bool = Field(default=False, description="読み込み専用属性の場合はtrueです。")
     """読み込み専用属性かどうかです。"""
-    default_value: str | int | bool | None = Field(default=None, description="属性の初期値です。")
+    default: str | int | bool | None = Field(default=None, description="属性の初期値です。")
     """属性の初期値です。"""
     choices: list[ChoiceSpec] = Field(default_factory=list, description="属性種類がchoiceまたはselectの場合の選択肢一覧です。")
     """選択肢一覧です。"""
