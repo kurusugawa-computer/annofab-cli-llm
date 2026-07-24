@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from loguru import logger
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 import acl.common.cli
 from acl.common.cli import read_at_file
@@ -19,6 +19,107 @@ DEFAULT_REVIEW_POINT = """
 - 必要な属性制約が設けられているか
 """.strip()
 """デフォルトのレビュー観点です。"""
+SPEC_MODEL_CONFIG = ConfigDict(extra="allow")
+"""annofabcliのJSON出力で未知フィールドが増えても保持するためのPydantic設定です。"""
+
+
+class KeybindSpec(BaseModel):
+    """
+    キーボードショートカットです。
+    """
+
+    model_config = SPEC_MODEL_CONFIG
+
+    alt: bool | None = Field(default=None, description="Altキーを使う場合はtrueです。")
+    """Altキーを使うかどうかです。"""
+    code: str | None = Field(default=None, description="KeyboardEvent.code の値です。例: Digit1, KeyQ")
+    """KeyboardEvent.code の値です。"""
+    ctrl: bool | None = Field(default=None, description="Ctrlキーを使う場合はtrueです。")
+    """Ctrlキーを使うかどうかです。"""
+    shift: bool | None = Field(default=None, description="Shiftキーを使う場合はtrueです。")
+    """Shiftキーを使うかどうかです。"""
+
+
+class LabelSpec(BaseModel):
+    """
+    既存ラベルの仕様です。
+    """
+
+    model_config = SPEC_MODEL_CONFIG
+
+    label_name_en: str | None = Field(default=None, description="既存ラベル名（英語）です。")
+    """既存ラベル名（英語）です。"""
+    label_name_ja: str | None = Field(default=None, description="既存ラベル名（日本語）です。")
+    """既存ラベル名（日本語）です。"""
+    annotation_type: str | None = Field(default=None, description="既存ラベルのアノテーション種類です。例: bounding_box, polygon, segmentation")
+    """既存ラベルのアノテーション種類です。"""
+    color: str | None = Field(default=None, description="ラベル色です。例: #FF0000")
+    """ラベル色です。"""
+    keybind: KeybindSpec | None = Field(default=None, description="ラベルに設定されたキーボードショートカットです。")
+    """ラベルに設定されたキーボードショートカットです。"""
+    field_values: dict[str, object] | None = Field(default=None, description="ラベルごとの制約、表示設定、許容誤差などです。")
+    """ラベルごとの制約、表示設定、許容誤差などです。"""
+
+
+class ChoiceSpec(BaseModel):
+    """
+    既存属性の選択肢仕様です。
+    """
+
+    model_config = SPEC_MODEL_CONFIG
+
+    choice_name_en: str | None = Field(default=None, description="既存選択肢名（英語）です。")
+    """既存選択肢名（英語）です。"""
+    choice_name_ja: str | None = Field(default=None, description="既存選択肢名（日本語）です。")
+    """既存選択肢名（日本語）です。"""
+    is_default: bool | None = Field(default=None, description="デフォルト値の選択肢の場合はtrueです。")
+    """デフォルト値かどうかです。"""
+    keybind: KeybindSpec | None = Field(default=None, description="選択肢に設定されたキーボードショートカットです。")
+    """選択肢に設定されたキーボードショートカットです。"""
+
+
+class AttributeSpec(BaseModel):
+    """
+    既存属性の仕様です。
+    """
+
+    model_config = SPEC_MODEL_CONFIG
+
+    attribute_type: str | None = Field(default=None, description="既存属性の種類です。例: flag, integer, text, comment, choice, select")
+    """既存属性の種類です。"""
+    attribute_name_en: str | None = Field(default=None, description="既存属性名（英語）です。")
+    """既存属性名（英語）です。"""
+    attribute_name_ja: str | None = Field(default=None, description="既存属性名（日本語）です。")
+    """既存属性名（日本語）です。"""
+    label_name_ens: list[str] | None = Field(default=None, description="この属性が付与されるラベル名（英語）の一覧です。")
+    """この属性が付与されるラベル名（英語）の一覧です。"""
+    read_only: bool | None = Field(default=None, description="読み込み専用属性の場合はtrueです。")
+    """読み込み専用属性かどうかです。"""
+    default_value: str | int | bool | None = Field(default=None, description="属性の初期値です。")
+    """属性の初期値です。"""
+    choices: list[ChoiceSpec] | None = Field(default=None, description="属性種類がchoiceまたはselectの場合の選択肢一覧です。")
+    """選択肢一覧です。"""
+    keybind: KeybindSpec | None = Field(default=None, description="属性に設定されたキーボードショートカットです。")
+    """属性に設定されたキーボードショートカットです。"""
+
+
+class AttributeRestrictionSpec(BaseModel):
+    """
+    既存属性制約の仕様です。
+    """
+
+    model_config = SPEC_MODEL_CONFIG
+
+    label_name_en: str | None = Field(default=None, description="属性制約の対象ラベル名（英語）です。")
+    """属性制約の対象ラベル名（英語）です。"""
+    attribute_name_en: str | None = Field(default=None, description="属性制約の対象属性名（英語）です。")
+    """属性制約の対象属性名（英語）です。"""
+    choice_name_en: str | None = Field(default=None, description="属性制約の対象選択肢名（英語）です。")
+    """属性制約の対象選択肢名（英語）です。"""
+    condition: str | dict[str, object] | None = Field(default=None, description="属性制約の条件です。")
+    """属性制約の条件です。"""
+    restriction: str | dict[str, object] | None = Field(default=None, description="属性制約の内容です。")
+    """属性制約の内容です。"""
 
 
 class AnnotationSpecsReviewFinding(BaseModel):
@@ -88,6 +189,47 @@ def run_annofabcli_annotation_specs_list(*, project_id: str, subcommand_name: st
     return json.loads(completed_process.stdout)
 
 
+def parse_specs[SpecModel: BaseModel](raw_items: list[dict[str, object]], model_class: type[SpecModel]) -> list[SpecModel]:
+    """
+    annofabcliのJSON出力をレビュー用Specモデルへ変換します。
+
+    Args:
+        raw_items: annofabcliのJSON出力
+        model_class: 変換先のSpecモデル
+
+    Returns:
+        変換後のSpecモデル一覧
+    """
+    return [model_class.model_validate(item) for item in raw_items]
+
+
+def dump_specs(specs: list[BaseModel]) -> list[dict[str, object]]:
+    """
+    レビュー用SpecモデルをLLMへ渡すJSONへ変換します。
+
+    Args:
+        specs: レビュー用Specモデル一覧
+
+    Returns:
+        JSONへ変換したSpecモデル一覧
+    """
+    return [spec.model_dump(mode="json") for spec in specs]
+
+
+def get_specs_json_schema() -> dict[str, dict[str, object]]:
+    """
+    レビュー用SpecモデルのJSON Schemaを取得します。
+
+    Returns:
+        レビュー用SpecモデルのJSON Schema
+    """
+    return {
+        "labels": LabelSpec.model_json_schema(),
+        "attributes": AttributeSpec.model_json_schema(),
+        "attribute_restrictions": AttributeRestrictionSpec.model_json_schema(),
+    }
+
+
 def get_review_point(review_points: list[str] | None) -> str:
     """
     レビュー観点を取得します。
@@ -108,9 +250,9 @@ def review_annotation_specs_with_llm(
     *,
     annotation_rule: str,
     review_point: str,
-    labels: list[dict[str, object]],
-    attributes: list[dict[str, object]],
-    attribute_restrictions: list[dict[str, object]],
+    labels: list[LabelSpec],
+    attributes: list[AttributeSpec],
+    attribute_restrictions: list[AttributeRestrictionSpec],
     llm_model: str,
     output_format: Literal["markdown", "json"],
     temp_dir: Path | None = None,
@@ -131,6 +273,10 @@ def review_annotation_specs_with_llm(
     Returns:
         レビュー結果
     """
+    specs_json_schema = get_specs_json_schema()
+    dumped_labels = dump_specs(labels)
+    dumped_attributes = dump_specs(attributes)
+    dumped_attribute_restrictions = dump_specs(attribute_restrictions)
     user_content = f"""
 以下のアノテーション仕様を、アノテーションルールとレビュー観点に基づいてレビューしてください。
 
@@ -140,14 +286,18 @@ def review_annotation_specs_with_llm(
 ## レビュー観点
 {review_point}
 
+## アノテーション仕様JSON Schema
+以下のアノテーション仕様JSONは、このJSON Schemaに従います。
+{json.dumps(specs_json_schema, ensure_ascii=False, indent=2)}
+
 ## ラベル一覧
-{json.dumps(labels, ensure_ascii=False, indent=2)}
+{json.dumps(dumped_labels, ensure_ascii=False, indent=2)}
 
 ## 属性一覧
-{json.dumps(attributes, ensure_ascii=False, indent=2)}
+{json.dumps(dumped_attributes, ensure_ascii=False, indent=2)}
 
 ## 属性制約一覧
-{json.dumps(attribute_restrictions, ensure_ascii=False, indent=2)}
+{json.dumps(dumped_attribute_restrictions, ensure_ascii=False, indent=2)}
 """.strip()
 
     messages = [
@@ -201,12 +351,16 @@ def main(args: argparse.Namespace) -> None:
     logger.info(f"一時ディレクトリ'{temp_dir}'を作成しました。このディレクトリにLLMの入出力情報などを出力します。")
     temp_dir.mkdir(exist_ok=True)
 
-    labels = run_annofabcli_annotation_specs_list(project_id=args.project_id, subcommand_name="list_label")
-    attributes = run_annofabcli_annotation_specs_list(project_id=args.project_id, subcommand_name="list_attribute")
-    attribute_restrictions = run_annofabcli_annotation_specs_list(project_id=args.project_id, subcommand_name="list_attribute_restriction")
-    print_json(labels, temp_dir / "labels.json")
-    print_json(attributes, temp_dir / "attributes.json")
-    print_json(attribute_restrictions, temp_dir / "attribute_restrictions.json")
+    raw_labels = run_annofabcli_annotation_specs_list(project_id=args.project_id, subcommand_name="list_label")
+    raw_attributes = run_annofabcli_annotation_specs_list(project_id=args.project_id, subcommand_name="list_attribute")
+    raw_attribute_restrictions = run_annofabcli_annotation_specs_list(project_id=args.project_id, subcommand_name="list_attribute_restriction")
+    labels = parse_specs(raw_labels, LabelSpec)
+    attributes = parse_specs(raw_attributes, AttributeSpec)
+    attribute_restrictions = parse_specs(raw_attribute_restrictions, AttributeRestrictionSpec)
+    print_json(dump_specs(labels), temp_dir / "labels.json")
+    print_json(dump_specs(attributes), temp_dir / "attributes.json")
+    print_json(dump_specs(attribute_restrictions), temp_dir / "attribute_restrictions.json")
+    print_json(get_specs_json_schema(), temp_dir / "annotation_specs_json_schema.json")
 
     result = review_annotation_specs_with_llm(
         annotation_rule=annotation_rule,

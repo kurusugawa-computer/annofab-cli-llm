@@ -5,7 +5,12 @@ from acl.command import validate_annotation_specs
 from acl.command.validate_annotation_specs import (
     DEFAULT_REVIEW_POINT,
     AnnotationSpecsReviewResult,
+    AttributeRestrictionSpec,
+    AttributeSpec,
+    LabelSpec,
     get_review_point,
+    get_specs_json_schema,
+    parse_specs,
     review_annotation_specs_with_llm,
     run_annofabcli_annotation_specs_list,
 )
@@ -56,6 +61,31 @@ def test_run_annofabcli_annotation_specs_list(monkeypatch):
     assert actual == [{"label_name_en": "car"}]
 
 
+def test_parse_specs_keeps_unknown_fields():
+    actual = parse_specs(
+        [
+            {
+                "label_name_en": "car",
+                "label_name_ja": "車",
+                "annotation_type": "bounding_box",
+                "unknown_field": "kept",
+            }
+        ],
+        LabelSpec,
+    )
+
+    assert actual[0].label_name_en == "car"
+    assert actual[0].model_dump(mode="json")["unknown_field"] == "kept"
+
+
+def test_get_specs_json_schema_has_descriptions():
+    actual = get_specs_json_schema()
+
+    assert actual["labels"]["properties"]["label_name_en"]["description"] == "既存ラベル名（英語）です。"
+    assert actual["attributes"]["properties"]["attribute_name_en"]["description"] == "既存属性名（英語）です。"
+    assert actual["attribute_restrictions"]["properties"]["attribute_name_en"]["description"] == "属性制約の対象属性名（英語）です。"
+
+
 def test_review_annotation_specs_with_llm_for_markdown(monkeypatch):
     captured_messages = []
 
@@ -72,7 +102,7 @@ def test_review_annotation_specs_with_llm_for_markdown(monkeypatch):
     actual = review_annotation_specs_with_llm(
         annotation_rule="車を囲ってください。",
         review_point="名前をレビューしてください。",
-        labels=[{"label_name_en": "car", "label_name_ja": "車"}],
+        labels=[LabelSpec(label_name_en="car", label_name_ja="車")],
         attributes=[],
         attribute_restrictions=[],
         llm_model="openai/test",
@@ -83,6 +113,8 @@ def test_review_annotation_specs_with_llm_for_markdown(monkeypatch):
     user_content = captured_messages[1]["content"]
     assert "車を囲ってください。" in user_content
     assert "名前をレビューしてください。" in user_content
+    assert "アノテーション仕様JSON Schema" in user_content
+    assert "既存ラベル名（英語）です。" in user_content
     assert '"label_name_en": "car"' in user_content
 
 
@@ -122,8 +154,8 @@ def test_review_annotation_specs_with_llm_for_json(monkeypatch):
         annotation_rule="車を囲ってください。",
         review_point="属性制約をレビューしてください。",
         labels=[],
-        attributes=[],
-        attribute_restrictions=[],
+        attributes=[AttributeSpec(attribute_name_en="truncated", attribute_name_ja="見切れ")],
+        attribute_restrictions=[AttributeRestrictionSpec(attribute_name_en="truncated")],
         llm_model="openai/test",
         output_format="json",
     )
