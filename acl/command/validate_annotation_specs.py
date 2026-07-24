@@ -281,7 +281,7 @@ def review_annotation_specs_with_llm(
     annotation_rule_section = annotation_rule if annotation_rule is not None else "指定されていません。アノテーション仕様単体で判断できる範囲だけレビューしてください。"
     user_content = f"""
 以下のアノテーション仕様を、アノテーションルールとレビュー観点に基づいてレビューしてください。
-
+ただし、アノテーションルールに記載されていないラベルや属性が存在することは問題ないので、それについては指摘しないでください。
 ## アノテーションルール
 {annotation_rule_section}
 
