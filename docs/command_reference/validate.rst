@@ -50,7 +50,7 @@ Examples
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block::
-    :caption: review_points.md
+    :caption: review_point.md
 
     以下の観点でレビューしてください。
 
@@ -67,7 +67,7 @@ Examples
     $ annofabcli-llm annotation_specs validate \
      --project_id ${PROJECT_ID} \
      --annotation_rule @annotation_rule.md \
-     --review_point @review_points.md \
+     --review_point @review_point.md \
      --output review.md
 
 

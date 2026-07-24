@@ -1,6 +1,7 @@
 import argparse
 import json
 import subprocess
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any, Literal
 
@@ -203,7 +204,7 @@ def parse_specs[SpecModel: BaseModel](raw_items: list[dict[str, object]], model_
     return [model_class.model_validate(item) for item in raw_items]
 
 
-def dump_specs(specs: list[BaseModel]) -> list[dict[str, object]]:
+def dump_specs(specs: Sequence[BaseModel]) -> list[dict[str, Any]]:
     """
     レビュー用SpecモデルをLLMへ渡すJSONへ変換します。
 
@@ -216,7 +217,7 @@ def dump_specs(specs: list[BaseModel]) -> list[dict[str, object]]:
     return [spec.model_dump(mode="json") for spec in specs]
 
 
-def get_specs_json_schema() -> dict[str, dict[str, object]]:
+def get_specs_json_schema() -> dict[str, dict[str, Any]]:
     """
     レビュー用SpecモデルのJSON Schemaを取得します。
 
@@ -230,20 +231,20 @@ def get_specs_json_schema() -> dict[str, dict[str, object]]:
     }
 
 
-def get_review_point(review_points: list[str] | None) -> str:
+def get_review_point(review_point: str | None) -> str:
     """
     レビュー観点を取得します。
 
     Args:
-        review_points: CLI引数で指定されたレビュー観点
+        review_point: CLI引数で指定されたレビュー観点
 
     Returns:
         LLMに渡すレビュー観点
     """
-    if review_points is None:
+    if review_point is None:
         return DEFAULT_REVIEW_POINT
 
-    return "\n\n".join(read_at_file(review_point) for review_point in review_points)
+    return read_at_file(review_point)
 
 
 def review_annotation_specs_with_llm(
@@ -401,8 +402,7 @@ def add_argument_to_parser(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--review_point",
         type=str,
-        action="append",
-        help="レビュー観点。先頭に`@`を指定すると、`@`以降をファイルパスとみなしてファイルの中身を読み込みます。複数回指定できます。指定しない場合はデフォルトのレビュー観点を使用します。",
+        help="レビュー観点。指定した場合はデフォルトのレビュー観点を使用せず、この値だけを使用します。先頭に`@`を指定すると、`@`以降をファイルパスとみなしてファイルの中身を読み込みます。",
     )
     parser.add_argument(
         "-o",
