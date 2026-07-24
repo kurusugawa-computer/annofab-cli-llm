@@ -10,6 +10,7 @@ from acl.command.validate_annotation_specs import (
     add_parser,
     get_review_point,
     get_specs_json_schema,
+    mask_command_options,
     parse_specs,
     review_annotation_specs_with_llm,
     run_annofabcli_annotation_specs_list,
@@ -126,6 +127,15 @@ def test_run_annofabcli_annotation_specs_text_with_annofab_pat(monkeypatch):
     actual = run_annofabcli_annotation_specs_text(project_id="prj", subcommand_name="list_attribute_restriction", output_format="text_with_ids", annofab_pat="pat1")
 
     assert actual == "[restriction_id: r1] car.truncated is required"
+
+
+def test_mask_command_options():
+    command = ["annofabcli", "annotation_specs", "list_label", "--annofab_pat", "pat1"]
+
+    actual = mask_command_options(command, {"--annofab_pat"})
+
+    assert actual == ["annofabcli", "annotation_specs", "list_label", "--annofab_pat", "***"]
+    assert command == ["annofabcli", "annotation_specs", "list_label", "--annofab_pat", "pat1"]
 
 
 def test_parse_specs_ignores_unknown_fields():

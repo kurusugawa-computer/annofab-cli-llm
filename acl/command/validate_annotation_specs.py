@@ -126,6 +126,24 @@ def call_llm_completion(**kwargs: object) -> Any:  # noqa: ANN401
     return completion(**kwargs)
 
 
+def mask_command_options(command: list[str], masked_options: set[str]) -> list[str]:
+    """
+    コマンド引数に含まれるセンシティブな値をマスクします。
+
+    Args:
+        command: コマンド引数
+        masked_options: 値をマスクするオプション名の集合
+
+    Returns:
+        センシティブな値をマスクしたコマンド引数
+    """
+    masked_command = command.copy()
+    for index, value in enumerate(command[:-1]):
+        if value in masked_options:
+            masked_command[index + 1] = "***"
+    return masked_command
+
+
 def run_annofabcli_annotation_specs_list(*, project_id: str, subcommand_name: str, annofab_pat: str | None) -> list[dict[str, object]]:
     """
     annofabcliでアノテーション仕様の一覧をJSON形式で取得します。
@@ -149,7 +167,7 @@ def run_annofabcli_annotation_specs_list(*, project_id: str, subcommand_name: st
     ]
     if annofab_pat is not None:
         command.extend(["--annofab_pat", annofab_pat])
-    logger.info(f"annofabcliコマンドを実行します。 :: command={command}")
+    logger.info(f"annofabcliコマンドを実行します。 :: command={mask_command_options(command, {'--annofab_pat'})}")
     completed_process = subprocess.run(command, check=True, capture_output=True, text=True)
     return json.loads(completed_process.stdout)
 
@@ -178,7 +196,7 @@ def run_annofabcli_annotation_specs_text(*, project_id: str, subcommand_name: st
     ]
     if annofab_pat is not None:
         command.extend(["--annofab_pat", annofab_pat])
-    logger.info(f"annofabcliコマンドを実行します。 :: command={command}")
+    logger.info(f"annofabcliコマンドを実行します。 :: command={mask_command_options(command, {'--annofab_pat'})}")
     completed_process = subprocess.run(command, check=True, capture_output=True, text=True)
     return completed_process.stdout
 
