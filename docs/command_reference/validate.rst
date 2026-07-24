@@ -73,18 +73,6 @@ Examples
 ``--review_point`` を指定した場合も、デフォルトのレビュー観点は使用されます。
 
 
-JSONで出力する
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. code-block:: bash
-
-    $ annofabcli-llm annotation_specs validate \
-     --project_id ${PROJECT_ID} \
-     --annotation_rule @annotation_rule.md \
-     --output_format json \
-     --output review.json
-
-
 .. note::
 
     レビュー結果の途中経過は ``$HOME/.cache/annofab-cli-llm/temp/validate_*`` に出力されます。

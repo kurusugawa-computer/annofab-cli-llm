@@ -100,6 +100,8 @@ class AttributeSpec(BaseModel):
     """既存属性名（英語）です。"""
     attribute_name_ja: str = Field(description="既存属性名（日本語）です。")
     """既存属性名（日本語）です。"""
+    label_ids: list[str] = Field(description="この属性が付与されるラベルIDの一覧です。")
+    """この属性が付与されるラベルIDの一覧です。"""
     label_name_ens: list[str] = Field(description="この属性が付与されるラベル名（英語）の一覧です。")
     """この属性が付与されるラベル名（英語）の一覧です。"""
     read_only: bool = Field(default=False, description="読み込み専用属性の場合はtrueです。")

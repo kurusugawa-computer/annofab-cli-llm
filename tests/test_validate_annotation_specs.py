@@ -5,9 +5,9 @@ from typing import Any
 from acl.command import validate_annotation_specs
 from acl.command.validate_annotation_specs import (
     DEFAULT_REVIEW_POINT,
-    AnnotationSpecsReviewResult,
     AttributeSpec,
     LabelSpec,
+    add_parser,
     get_review_point,
     get_specs_json_schema,
     parse_specs,
@@ -105,9 +105,18 @@ def test_get_specs_json_schema_has_descriptions():
     assert actual["attributes"]["properties"]["default"]["description"] == "属性の初期値です。"
     assert actual["labels"]["properties"]["label_id"]["description"] == "既存ラベルのIDです。レビュー指摘で対象ラベルを特定するために使用します。"
     assert actual["attributes"]["properties"]["attribute_id"]["description"] == "既存属性のIDです。レビュー指摘で対象属性を特定するために使用します。"
+    assert actual["attributes"]["properties"]["label_ids"]["description"] == "この属性が付与されるラベルIDの一覧です。"
     assert actual["attributes"]["$defs"]["ChoiceSpec"]["properties"]["choice_id"]["description"] == "既存選択肢のIDです。レビュー指摘で対象選択肢を特定するために使用します。"
     assert "default_value" not in actual["attributes"]["properties"]
     assert "attribute_restrictions" not in actual
+
+
+def test_add_parser_does_not_have_output_format():
+    parser = add_parser()
+
+    option_strings = {option_string for action in parser._actions for option_string in action.option_strings}
+
+    assert "--output_format" not in option_strings
 
 
 def test_review_annotation_specs_with_llm_for_markdown(monkeypatch):
@@ -130,7 +139,6 @@ def test_review_annotation_specs_with_llm_for_markdown(monkeypatch):
         attributes=[],
         attribute_restrictions_text="",
         llm_model="openai/test",
-        output_format="markdown",
     )
 
     assert actual == "問題ありません。"
@@ -148,10 +156,12 @@ def test_review_annotation_specs_with_llm_for_markdown(monkeypatch):
     assert '"description": "チェックボックス"' in user_content
 
 
-def test_review_annotation_specs_with_llm_for_json(monkeypatch):
-    def mock_completion(model, messages, response_format):  # noqa: ANN001, ANN202
+def test_review_annotation_specs_with_llm_includes_attribute_default(monkeypatch):
+    captured_messages = []
+
+    def mock_completion(model, messages):  # noqa: ANN001, ANN202
         assert model == "openai/test"
-        assert response_format == AnnotationSpecsReviewResult
+        captured_messages.extend(messages)
         assert "属性制約一覧" in messages[1]["content"]
         assert "text_with_ids" in messages[1]["content"]
         assert "restriction_id: r1" in messages[1]["content"]
@@ -160,29 +170,11 @@ def test_review_annotation_specs_with_llm_for_json(monkeypatch):
         assert '"value": "choice"' in messages[1]["content"]
         assert '"description": "ラジオボタン（排他選択）"' in messages[1]["content"]
         assert '"default": false' in messages[1]["content"]
+        assert '"label_ids": [' in messages[1]["content"]
+        assert '"label-1"' in messages[1]["content"]
         assert "default_value" not in messages[1]["content"]
         return SimpleNamespace(
-            choices=[
-                SimpleNamespace(
-                    message=SimpleNamespace(
-                        content=json.dumps(
-                            {
-                                "summary": "1件の指摘があります。",
-                                "findings": [
-                                    {
-                                        "severity": "warning",
-                                        "category": "attribute_restriction",
-                                        "target_type": "attribute",
-                                        "target_name": "truncated",
-                                        "message": "見切れ属性の制約が不足しています。",
-                                        "recommendation": "車ラベルに制約を追加してください。",
-                                    }
-                                ],
-                            }
-                        )
-                    )
-                )
-            ],
+            choices=[SimpleNamespace(message=SimpleNamespace(content="見切れ属性の制約が不足しています。"))],
             usage=SimpleNamespace(total_tokens=10, prompt_tokens=8, completion_tokens=2),
         )
 
@@ -192,15 +184,24 @@ def test_review_annotation_specs_with_llm_for_json(monkeypatch):
         annotation_rule="車を囲ってください。",
         review_point="属性制約をレビューしてください。",
         labels=[],
-        attributes=[AttributeSpec(attribute_id="attribute-1", attribute_type="flag", attribute_name_en="truncated", attribute_name_ja="見切れ", label_name_ens=["car"], read_only=True, default=False)],
+        attributes=[
+            AttributeSpec(
+                attribute_id="attribute-1",
+                attribute_type="flag",
+                attribute_name_en="truncated",
+                attribute_name_ja="見切れ",
+                label_ids=["label-1"],
+                label_name_ens=["car"],
+                read_only=True,
+                default=False,
+            )
+        ],
         attribute_restrictions_text="[restriction_id: r1] car.truncated is required",
         llm_model="openai/test",
-        output_format="json",
     )
 
-    assert isinstance(actual, AnnotationSpecsReviewResult)
-    assert actual.summary == "1件の指摘があります。"
-    assert actual.findings[0].severity == "warning"
+    assert actual == "見切れ属性の制約が不足しています。"
+    assert captured_messages
 
 
 def test_review_annotation_specs_with_llm_without_annotation_rule(monkeypatch):
@@ -223,7 +224,6 @@ def test_review_annotation_specs_with_llm_without_annotation_rule(monkeypatch):
         attributes=[],
         attribute_restrictions_text="",
         llm_model="openai/test",
-        output_format="markdown",
     )
 
     assert actual == "問題ありません。"
