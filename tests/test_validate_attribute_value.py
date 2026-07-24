@@ -32,7 +32,7 @@ def test_split_by_json_length():
 def test_validate_annotation_attribute_with_llm():
     attribute_list = [
         {"status": "自動車が走っています。"},
-        {"status": "歩行者が歩いてています。"},
+        {"status": "歩高者が歩いています。"},
     ]
     validation_prompt = "属性`status`の値に、明らかな誤字脱字がないかをチェックしてください。意味の言い換え、表現の揺れ、語尾の違い、文法的な改善提案、句点忘れなどは対象にしないでください。"
     attribute_description = "`status`は画像に映っている状態を表します。"
