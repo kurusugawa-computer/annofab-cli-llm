@@ -163,3 +163,34 @@ def test_review_annotation_specs_with_llm_for_json(monkeypatch):
     assert isinstance(actual, AnnotationSpecsReviewResult)
     assert actual.summary == "1件の指摘があります。"
     assert actual.findings[0].severity == "warning"
+
+
+def test_review_annotation_specs_with_llm_without_annotation_rule(monkeypatch):
+    captured_messages = []
+
+    def mock_completion(model, messages):  # noqa: ANN001, ANN202
+        assert model == "openai/test"
+        captured_messages.extend(messages)
+        return SimpleNamespace(
+            choices=[SimpleNamespace(message=SimpleNamespace(content="問題ありません。"))],
+            usage=SimpleNamespace(total_tokens=10, prompt_tokens=8, completion_tokens=2),
+        )
+
+    monkeypatch.setattr(validate_annotation_specs, "call_llm_completion", mock_completion)
+
+    actual = review_annotation_specs_with_llm(
+        annotation_rule=None,
+        review_point="名前をレビューしてください。",
+        labels=[LabelSpec(label_name_en="car", label_name_ja="車")],
+        attributes=[],
+        attribute_restrictions=[],
+        llm_model="openai/test",
+        output_format="markdown",
+    )
+
+    assert actual == "問題ありません。"
+    developer_content = captured_messages[0]["content"]
+    user_content = captured_messages[1]["content"]
+    assert "アノテーションルールが指定されていない場合" in developer_content
+    assert "指定されていません" in user_content
+    assert "アノテーション仕様単体で判断できる範囲だけレビューしてください。" in user_content

@@ -248,7 +248,7 @@ def get_review_point(review_points: list[str] | None) -> str:
 
 def review_annotation_specs_with_llm(
     *,
-    annotation_rule: str,
+    annotation_rule: str | None,
     review_point: str,
     labels: list[LabelSpec],
     attributes: list[AttributeSpec],
@@ -261,7 +261,7 @@ def review_annotation_specs_with_llm(
     LLMでアノテーション仕様をレビューします。
 
     Args:
-        annotation_rule: アノテーションルール
+        annotation_rule: アノテーションルール。未指定の場合はNone
         review_point: レビュー観点
         labels: ラベル一覧
         attributes: 属性一覧
@@ -277,11 +277,12 @@ def review_annotation_specs_with_llm(
     dumped_labels = dump_specs(labels)
     dumped_attributes = dump_specs(attributes)
     dumped_attribute_restrictions = dump_specs(attribute_restrictions)
+    annotation_rule_section = annotation_rule if annotation_rule is not None else "指定されていません。アノテーション仕様単体で判断できる範囲だけレビューしてください。"
     user_content = f"""
 以下のアノテーション仕様を、アノテーションルールとレビュー観点に基づいてレビューしてください。
 
 ## アノテーションルール
-{annotation_rule}
+{annotation_rule_section}
 
 ## レビュー観点
 {review_point}
@@ -306,6 +307,7 @@ def review_annotation_specs_with_llm(
             "content": """
 あなたはAnnofabのアノテーション仕様をレビューするAIです。
 アノテーションルールに対して、ラベル、属性、属性制約に問題がないかをレビューしてください。
+アノテーションルールが指定されていない場合は、アノテーション仕様単体で判断できる範囲だけレビューしてください。
 推測だけで断定せず、根拠が弱い場合はその旨を明記してください。
 問題がない場合は、問題が見つからなかったことを簡潔に述べてください。
 """.strip(),
@@ -344,7 +346,7 @@ def review_annotation_specs_with_llm(
 
 
 def main(args: argparse.Namespace) -> None:
-    annotation_rule = read_at_file(args.annotation_rule)
+    annotation_rule = read_at_file(args.annotation_rule) if args.annotation_rule is not None else None
     review_point = get_review_point(args.review_point)
 
     temp_dir = create_command_temp_dir(COMMAND_NAME)
@@ -394,8 +396,7 @@ def add_argument_to_parser(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--annotation_rule",
         type=str,
-        required=True,
-        help="アノテーションルール。先頭に`@`を指定すると、`@`以降をファイルパスとみなしてファイルの中身を読み込みます。",
+        help="アノテーションルール。指定しない場合は、アノテーション仕様単体で判断できる範囲をレビューします。先頭に`@`を指定すると、`@`以降をファイルパスとみなしてファイルの中身を読み込みます。",
     )
     parser.add_argument(
         "--review_point",
