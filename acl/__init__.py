@@ -1,7 +1,10 @@
 from importlib.metadata import PackageNotFoundError, version
 
+PACKAGE_NAME = "annofabcli-llm"
+"""配布パッケージ名。"""
+
 try:
-    __version__ = version(__name__)
+    __version__ = version(PACKAGE_NAME)
 except PackageNotFoundError:
-    # `uv run annofabcli --version`では、メタデータからバージョン情報を取得できないため、fallbackしたバージョンを設定する
+    # パッケージメタデータを取得できない環境向けにfallbackしたバージョンを設定する。
     __version__ = "0.0.0"
