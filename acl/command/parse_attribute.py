@@ -178,24 +178,6 @@ class AttributeParseResult(BaseModel):
     """属性追加ルールとして解釈できなかった原文、理由、必要な補足情報です。"""
 
 
-class KeybindCatalogItem(BaseModel):
-    """
-    既存仕様に設定されたキーボードショートカットです。
-    """
-
-    alt: bool = Field(description="Altキーを使用する場合はtrueです。")
-    """Altキーを使用するかどうかです。"""
-
-    code: str = Field(description="KeyboardEvent.code の値です。例: Digit1, KeyQ")
-    """KeyboardEvent.code の値です。"""
-
-    ctrl: bool = Field(description="Ctrlキーを使用する場合はtrueです。")
-    """Ctrlキーを使用するかどうかです。"""
-
-    shift: bool = Field(description="Shiftキーを使用する場合はtrueです。")
-    """Shiftキーを使用するかどうかです。"""
-
-
 class LabelCatalogItem(BaseModel):
     """
     LLMへ渡すための既存ラベル情報です。
@@ -210,7 +192,7 @@ class LabelCatalogItem(BaseModel):
     annotation_type: str = Field(description="既存ラベルのアノテーション種類です。例: bounding_box, polygon")
     """既存ラベルのアノテーション種類です。"""
 
-    keybind: KeybindCatalogItem | None = Field(description="既存ラベルに設定されたキーボードショートカットです。")
+    keybind: KeybindCandidate | None = Field(description="既存ラベルに設定されたキーボードショートカットです。")
     """既存ラベルに設定されたキーボードショートカットです。"""
 
 
@@ -219,16 +201,16 @@ class ChoiceCatalogItem(BaseModel):
     LLMへ渡すための既存選択肢情報です。
     """
 
-    choice_name_en: str | None = Field(description="既存選択肢名（英語）です。")
+    choice_name_en: str = Field(description="既存選択肢名（英語）です。")
     """既存選択肢名（英語）です。"""
 
-    choice_name_ja: str | None = Field(description="既存選択肢名（日本語）です。")
+    choice_name_ja: str = Field(description="既存選択肢名（日本語）です。")
     """既存選択肢名（日本語）です。"""
 
     is_default: bool = Field(description="デフォルト値の選択肢の場合はtrueです。")
     """デフォルト値かどうかです。"""
 
-    keybind: KeybindCatalogItem | None = Field(description="既存選択肢に設定されたキーボードショートカットです。")
+    keybind: KeybindCandidate | None = Field(description="既存選択肢に設定されたキーボードショートカットです。")
     """既存選択肢に設定されたキーボードショートカットです。"""
 
 
@@ -237,10 +219,10 @@ class AttributeCatalogItem(BaseModel):
     LLMへ渡すための既存属性情報です。
     """
 
-    attribute_name_en: str | None = Field(description="既存属性名（英語）です。")
+    attribute_name_en: str = Field(description="既存属性名（英語）です。")
     """既存属性名（英語）です。"""
 
-    attribute_name_ja: str | None = Field(description="既存属性名（日本語）です。")
+    attribute_name_ja: str = Field(description="既存属性名（日本語）です。")
     """既存属性名（日本語）です。"""
 
     attribute_type: str = Field(description="既存属性の種類です。例: flag, integer, text, choice, select")
@@ -255,7 +237,7 @@ class AttributeCatalogItem(BaseModel):
     default: str | int | bool | None = Field(description="属性の初期値です。")
     """属性の初期値です。"""
 
-    keybind: KeybindCatalogItem | None = Field(description="既存属性に設定されたキーボードショートカットです。")
+    keybind: KeybindCandidate | None = Field(description="既存属性に設定されたキーボードショートカットです。")
     """既存属性に設定されたキーボードショートカットです。"""
 
     choice_name_ens: list[str | None] = Field(description="既存選択肢名（英語）の一覧です。")
@@ -278,7 +260,7 @@ def dump_catalog(catalog: Sequence[BaseModel]) -> list[dict[str, Any]]:
     return [item.model_dump(mode="json") for item in catalog]
 
 
-def get_catalog_keybind(keybinds: list[dict[str, Any]] | None) -> KeybindCatalogItem | None:
+def get_catalog_keybind(keybinds: list[dict[str, Any]] | None) -> KeybindCandidate | None:
     """
     Annofab APIのkeybind配列からCatalog用の単一keybindを取得します。
 
@@ -290,7 +272,7 @@ def get_catalog_keybind(keybinds: list[dict[str, Any]] | None) -> KeybindCatalog
     """
     if keybinds is None or len(keybinds) == 0:
         return None
-    return KeybindCatalogItem.model_validate(keybinds[0])
+    return KeybindCandidate.model_validate(keybinds[0])
 
 
 def get_required_japanese_message(annotation_text: Any) -> str:  # noqa: ANN401
@@ -357,7 +339,7 @@ def get_attribute_catalog(annotation_specs: dict[str, Any]) -> list[AttributeCat
         catalog.append(
             AttributeCatalogItem(
                 attribute_name_en=get_english_message(additional["name"]),
-                attribute_name_ja=get_message_with_lang(additional["name"], "ja-JP"),
+                attribute_name_ja=get_required_japanese_message(additional["name"]),
                 attribute_type=additional["type"],
                 label_name_ens=sorted(label_names_by_attribute_id[additional["additional_data_definition_id"]]),
                 read_only=additional["read_only"],
@@ -367,7 +349,7 @@ def get_attribute_catalog(annotation_specs: dict[str, Any]) -> list[AttributeCat
                 choices=[
                     ChoiceCatalogItem(
                         choice_name_en=get_english_message(choice["name"]),
-                        choice_name_ja=get_message_with_lang(choice["name"], "ja-JP"),
+                        choice_name_ja=get_required_japanese_message(choice["name"]),
                         is_default=choice["is_default"],
                         keybind=get_catalog_keybind(choice["keybind"]),
                     )
@@ -557,8 +539,6 @@ def normalize_parsed_attributes(result: AttributeParseResult, annotation_specs: 
     existing_attribute_labels_by_name: dict[str, list[set[str]]] = {}
     for existing_attribute in attribute_catalog:
         attribute_name_en = existing_attribute.attribute_name_en
-        if attribute_name_en is None:
-            continue
         existing_attribute_labels_by_name.setdefault(attribute_name_en, []).append(set(existing_attribute.label_name_ens))
 
     parsed_attribute_labels_by_name: dict[str, list[set[str]]] = {}

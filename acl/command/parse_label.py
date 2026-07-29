@@ -385,24 +385,6 @@ def get_message(annotation_text: dict[str, Any], *, lang: str) -> str | None:
     return None
 
 
-class KeybindCatalogItem(BaseModel):
-    """
-    既存仕様に設定されたキーボードショートカットです。
-    """
-
-    alt: bool = Field(description="Altキーを使用する場合はtrueです。")
-    """Altキーを使用するかどうかです。"""
-
-    code: str = Field(description="KeyboardEvent.code の値です。例: Digit1, KeyQ")
-    """KeyboardEvent.code の値です。"""
-
-    ctrl: bool = Field(description="Ctrlキーを使用する場合はtrueです。")
-    """Ctrlキーを使用するかどうかです。"""
-
-    shift: bool = Field(description="Shiftキーを使用する場合はtrueです。")
-    """Shiftキーを使用するかどうかです。"""
-
-
 class LabelCatalogItem(BaseModel):
     """
     LLMへ渡すための既存ラベル情報です。
@@ -420,7 +402,7 @@ class LabelCatalogItem(BaseModel):
     color: str | None = Field(description="既存ラベルの色です。例: #FF0000")
     """既存ラベルの色です。"""
 
-    keybind: KeybindCatalogItem | None = Field(description="既存ラベルに設定されたキーボードショートカットです。")
+    keybind: KeybindCandidate | None = Field(description="既存ラベルに設定されたキーボードショートカットです。")
     """既存ラベルに設定されたキーボードショートカットです。"""
 
     field_values: dict[str, Any] = Field(description="既存ラベルごとの制約、表示設定、許容誤差などです。")
@@ -460,7 +442,7 @@ def get_required_message(annotation_text: dict[str, Any], *, lang: str) -> str:
     return message
 
 
-def get_catalog_keybind(keybinds: list[dict[str, Any]] | None) -> KeybindCatalogItem | None:
+def get_catalog_keybind(keybinds: list[dict[str, Any]] | None) -> KeybindCandidate | None:
     """
     Annofab APIのkeybind配列からCatalog用の単一keybindを取得します。
 
@@ -472,7 +454,7 @@ def get_catalog_keybind(keybinds: list[dict[str, Any]] | None) -> KeybindCatalog
     """
     if keybinds is None or len(keybinds) == 0:
         return None
-    return KeybindCatalogItem.model_validate(keybinds[0])
+    return KeybindCandidate.model_validate(keybinds[0])
 
 
 def get_label_catalog(annotation_specs: dict[str, Any]) -> list[LabelCatalogItem]:
