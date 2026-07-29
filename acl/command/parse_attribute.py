@@ -177,7 +177,107 @@ class AttributeParseResult(BaseModel):
     """属性追加ルールとして解釈できなかった原文、理由、必要な補足情報です。"""
 
 
-def get_label_catalog(annotation_specs: dict[str, Any]) -> list[dict[str, Any]]:
+class KeybindCatalogItem(BaseModel):
+    """
+    既存仕様に設定されたキーボードショートカットです。
+    """
+
+    alt: bool = Field(description="Altキーを使用する場合はtrueです。")
+    """Altキーを使用するかどうかです。"""
+
+    code: str = Field(description="KeyboardEvent.code の値です。例: Digit1, KeyQ")
+    """KeyboardEvent.code の値です。"""
+
+    ctrl: bool = Field(description="Ctrlキーを使用する場合はtrueです。")
+    """Ctrlキーを使用するかどうかです。"""
+
+    shift: bool = Field(description="Shiftキーを使用する場合はtrueです。")
+    """Shiftキーを使用するかどうかです。"""
+
+
+class LabelCatalogItem(BaseModel):
+    """
+    LLMへ渡すための既存ラベル情報です。
+    """
+
+    label_name_en: str | None = Field(description="既存ラベル名（英語）です。")
+    """既存ラベル名（英語）です。"""
+
+    label_name_ja: str | None = Field(description="既存ラベル名（日本語）です。")
+    """既存ラベル名（日本語）です。"""
+
+    annotation_type: str = Field(description="既存ラベルのアノテーション種類です。例: bounding_box, polygon")
+    """既存ラベルのアノテーション種類です。"""
+
+    keybind: list[KeybindCatalogItem] | None = Field(description="既存ラベルに設定されたキーボードショートカットです。")
+    """既存ラベルに設定されたキーボードショートカットです。"""
+
+
+class ChoiceCatalogItem(BaseModel):
+    """
+    LLMへ渡すための既存選択肢情報です。
+    """
+
+    choice_name_en: str | None = Field(description="既存選択肢名（英語）です。")
+    """既存選択肢名（英語）です。"""
+
+    choice_name_ja: str | None = Field(description="既存選択肢名（日本語）です。")
+    """既存選択肢名（日本語）です。"""
+
+    is_default: bool = Field(description="デフォルト値の選択肢の場合はtrueです。")
+    """デフォルト値かどうかです。"""
+
+    keybind: list[KeybindCatalogItem] | None = Field(description="既存選択肢に設定されたキーボードショートカットです。")
+    """既存選択肢に設定されたキーボードショートカットです。"""
+
+
+class AttributeCatalogItem(BaseModel):
+    """
+    LLMへ渡すための既存属性情報です。
+    """
+
+    attribute_name_en: str | None = Field(description="既存属性名（英語）です。")
+    """既存属性名（英語）です。"""
+
+    attribute_name_ja: str | None = Field(description="既存属性名（日本語）です。")
+    """既存属性名（日本語）です。"""
+
+    attribute_type: str = Field(description="既存属性の種類です。例: flag, integer, text, choice, select")
+    """既存属性の種類です。"""
+
+    label_name_ens: list[str | None] = Field(description="この属性が付与されるラベル名（英語）の一覧です。")
+    """この属性が付与されるラベル名（英語）の一覧です。"""
+
+    read_only: bool = Field(description="読み込み専用属性の場合はtrueです。")
+    """読み込み専用属性かどうかです。"""
+
+    default: str | int | bool | None = Field(description="属性の初期値です。")
+    """属性の初期値です。"""
+
+    keybind: list[KeybindCatalogItem] | None = Field(description="既存属性に設定されたキーボードショートカットです。")
+    """既存属性に設定されたキーボードショートカットです。"""
+
+    choice_name_ens: list[str | None] = Field(description="既存選択肢名（英語）の一覧です。")
+    """既存選択肢名（英語）の一覧です。"""
+
+    choices: list[ChoiceCatalogItem] = Field(description="属性種類がchoiceまたはselectの場合の選択肢一覧です。")
+    """選択肢一覧です。"""
+
+
+def dump_catalog(catalog: list[BaseModel]) -> list[dict[str, Any]]:
+    """
+    CatalogモデルをLLMへ渡すJSON互換のdictへ変換します。
+
+    Args:
+        catalog: Catalogモデル一覧
+
+    Returns:
+        JSON互換のdict一覧
+    """
+    return [item.model_dump(mode="json") for item in catalog]
+
+
+def get_label_catalog(annotation_specs: dict[str, Any]) -> list[LabelCatalogItem]:
     """
     LLMへ渡すための既存ラベル一覧を生成します。
 
@@ -188,17 +288,17 @@ def get_label_catalog(annotation_specs: dict[str, Any]) -> list[dict[str, Any]]:
         既存ラベル一覧
     """
     return [
-        {
-            "label_name_en": get_english_message(label["label_name"]),
-            "label_name_ja": get_message_with_lang(label["label_name"], "ja-JP"),
-            "annotation_type": label["annotation_type"],
-            "keybind": label["keybind"],
-        }
+        LabelCatalogItem(
+            label_name_en=get_english_message(label["label_name"]),
+            label_name_ja=get_message_with_lang(label["label_name"], "ja-JP"),
+            annotation_type=label["annotation_type"],
+            keybind=[KeybindCatalogItem.model_validate(keybind) for keybind in label["keybind"]] if label["keybind"] is not None else None,
+        )
         for label in annotation_specs["labels"]
     ]
 
 
-def get_attribute_catalog(annotation_specs: dict[str, Any]) -> list[dict[str, Any]]:
+def get_attribute_catalog(annotation_specs: dict[str, Any]) -> list[AttributeCatalogItem]:
     """
     LLMへ渡すための既存属性一覧を生成します。
 
@@ -220,25 +320,25 @@ def get_attribute_catalog(annotation_specs: dict[str, Any]) -> list[dict[str, An
     for additional in annotation_specs_accessor.additionals:
         choices = additional["choices"]
         catalog.append(
-            {
-                "attribute_name_en": get_english_message(additional["name"]),
-                "attribute_name_ja": get_message_with_lang(additional["name"], "ja-JP"),
-                "attribute_type": additional["type"],
-                "label_name_ens": sorted(label_names_by_attribute_id[additional["additional_data_definition_id"]]),
-                "read_only": additional["read_only"],
-                "default": additional["default"],
-                "keybind": additional["keybind"],
-                "choice_name_ens": [get_english_message(choice["name"]) for choice in choices],
-                "choices": [
-                    {
-                        "choice_name_en": get_english_message(choice["name"]),
-                        "choice_name_ja": get_message_with_lang(choice["name"], "ja-JP"),
-                        "is_default": choice["is_default"],
-                        "keybind": choice["keybind"],
-                    }
+            AttributeCatalogItem(
+                attribute_name_en=get_english_message(additional["name"]),
+                attribute_name_ja=get_message_with_lang(additional["name"], "ja-JP"),
+                attribute_type=additional["type"],
+                label_name_ens=sorted(label_names_by_attribute_id[additional["additional_data_definition_id"]]),
+                read_only=additional["read_only"],
+                default=additional["default"],
+                keybind=[KeybindCatalogItem.model_validate(keybind) for keybind in additional["keybind"]] if additional["keybind"] is not None else None,
+                choice_name_ens=[get_english_message(choice["name"]) for choice in choices],
+                choices=[
+                    ChoiceCatalogItem(
+                        choice_name_en=get_english_message(choice["name"]),
+                        choice_name_ja=get_message_with_lang(choice["name"], "ja-JP"),
+                        is_default=choice["is_default"],
+                        keybind=[KeybindCatalogItem.model_validate(keybind) for keybind in choice["keybind"]] if choice["keybind"] is not None else None,
+                    )
                     for choice in choices
                 ],
-            }
+            )
         )
     return catalog
 
@@ -301,10 +401,10 @@ unresolved_texts には、解釈できなかった原文を text、解釈でき�
 {json.dumps(attribute_type_details, ensure_ascii=False, indent=2)}
 
 ## 既存ラベル一覧
-{json.dumps(label_catalog, ensure_ascii=False, indent=2)}
+{json.dumps(dump_catalog(label_catalog), ensure_ascii=False, indent=2)}
 
 ## 既存属性一覧
-{json.dumps(attribute_catalog, ensure_ascii=False, indent=2)}
+{json.dumps(dump_catalog(attribute_catalog), ensure_ascii=False, indent=2)}
 """.strip(),
         },
     ]
@@ -330,8 +430,8 @@ unresolved_texts には、解釈できなかった原文を text、解釈でき�
     )
 
     if temp_dir is not None:
-        print_json(label_catalog, temp_dir / "label_catalog.json")
-        print_json(attribute_catalog, temp_dir / "attribute_catalog.json")
+        print_json(dump_catalog(label_catalog), temp_dir / "label_catalog.json")
+        print_json(dump_catalog(attribute_catalog), temp_dir / "attribute_catalog.json")
         print_json(result.model_dump(mode="json"), temp_dir / "llm_completion.json")
 
     return result
@@ -418,13 +518,13 @@ def normalize_parsed_attributes(result: AttributeParseResult, annotation_specs: 
     """
     label_catalog = get_label_catalog(annotation_specs)
     attribute_catalog = get_attribute_catalog(annotation_specs)
-    existing_label_name_ens = {label["label_name_en"] for label in label_catalog if label["label_name_en"] is not None}
+    existing_label_name_ens = {label.label_name_en for label in label_catalog if label.label_name_en is not None}
     existing_attribute_labels_by_name: dict[str, list[set[str]]] = {}
     for existing_attribute in attribute_catalog:
-        attribute_name_en = existing_attribute["attribute_name_en"]
+        attribute_name_en = existing_attribute.attribute_name_en
         if attribute_name_en is None:
             continue
-        existing_attribute_labels_by_name.setdefault(attribute_name_en, []).append(set(existing_attribute["label_name_ens"]))
+        existing_attribute_labels_by_name.setdefault(attribute_name_en, []).append({label_name_en for label_name_en in existing_attribute.label_name_ens if label_name_en is not None})
 
     parsed_attribute_labels_by_name: dict[str, list[set[str]]] = {}
     normalized_attributes: list[AttributeCandidate] = []

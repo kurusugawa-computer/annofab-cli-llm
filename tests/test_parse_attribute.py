@@ -203,7 +203,7 @@ def test_parse_attributes_from_text(monkeypatch, annotation_specs):
 def test_get_label_catalog_includes_annotation_type_and_keybind(annotation_specs):
     actual = get_label_catalog(annotation_specs)
 
-    assert actual[0] == {
+    assert actual[0].model_dump(mode="json") == {
         "label_name_en": "car",
         "label_name_ja": "車",
         "annotation_type": "bounding_box",
@@ -221,7 +221,7 @@ def test_get_label_catalog_includes_annotation_type_and_keybind(annotation_specs
 def test_get_attribute_catalog_includes_keybind_and_choice_details(annotation_specs):
     actual = get_attribute_catalog(annotation_specs)
 
-    assert actual[0] == {
+    assert actual[0].model_dump(mode="json") == {
         "attribute_name_en": "occluded",
         "attribute_name_ja": "隠れ",
         "attribute_type": "flag",
@@ -239,7 +239,7 @@ def test_get_attribute_catalog_includes_keybind_and_choice_details(annotation_sp
         "choice_name_ens": [],
         "choices": [],
     }
-    assert actual[1]["choices"][0] == {
+    assert actual[1].choices[0].model_dump(mode="json") == {
         "choice_name_en": "general_car",
         "choice_name_ja": "乗用車",
         "is_default": True,
