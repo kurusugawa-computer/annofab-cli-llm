@@ -1,5 +1,6 @@
 import argparse
 import json
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -200,16 +201,16 @@ class LabelCatalogItem(BaseModel):
     LLMへ渡すための既存ラベル情報です。
     """
 
-    label_name_en: str | None = Field(description="既存ラベル名（英語）です。")
+    label_name_en: str = Field(description="既存ラベル名（英語）です。")
     """既存ラベル名（英語）です。"""
 
-    label_name_ja: str | None = Field(description="既存ラベル名（日本語）です。")
+    label_name_ja: str = Field(description="既存ラベル名（日本語）です。")
     """既存ラベル名（日本語）です。"""
 
     annotation_type: str = Field(description="既存ラベルのアノテーション種類です。例: bounding_box, polygon")
     """既存ラベルのアノテーション種類です。"""
 
-    keybind: list[KeybindCatalogItem] | None = Field(description="既存ラベルに設定されたキーボードショートカットです。")
+    keybind: KeybindCatalogItem | None = Field(description="既存ラベルに設定されたキーボードショートカットです。")
     """既存ラベルに設定されたキーボードショートカットです。"""
 
 
@@ -227,7 +228,7 @@ class ChoiceCatalogItem(BaseModel):
     is_default: bool = Field(description="デフォルト値の選択肢の場合はtrueです。")
     """デフォルト値かどうかです。"""
 
-    keybind: list[KeybindCatalogItem] | None = Field(description="既存選択肢に設定されたキーボードショートカットです。")
+    keybind: KeybindCatalogItem | None = Field(description="既存選択肢に設定されたキーボードショートカットです。")
     """既存選択肢に設定されたキーボードショートカットです。"""
 
 
@@ -245,7 +246,7 @@ class AttributeCatalogItem(BaseModel):
     attribute_type: str = Field(description="既存属性の種類です。例: flag, integer, text, choice, select")
     """既存属性の種類です。"""
 
-    label_name_ens: list[str | None] = Field(description="この属性が付与されるラベル名（英語）の一覧です。")
+    label_name_ens: list[str] = Field(description="この属性が付与されるラベル名（英語）の一覧です。")
     """この属性が付与されるラベル名（英語）の一覧です。"""
 
     read_only: bool = Field(description="読み込み専用属性の場合はtrueです。")
@@ -254,7 +255,7 @@ class AttributeCatalogItem(BaseModel):
     default: str | int | bool | None = Field(description="属性の初期値です。")
     """属性の初期値です。"""
 
-    keybind: list[KeybindCatalogItem] | None = Field(description="既存属性に設定されたキーボードショートカットです。")
+    keybind: KeybindCatalogItem | None = Field(description="既存属性に設定されたキーボードショートカットです。")
     """既存属性に設定されたキーボードショートカットです。"""
 
     choice_name_ens: list[str | None] = Field(description="既存選択肢名（英語）の一覧です。")
@@ -264,7 +265,7 @@ class AttributeCatalogItem(BaseModel):
     """選択肢一覧です。"""
 
 
-def dump_catalog(catalog: list[BaseModel]) -> list[dict[str, Any]]:
+def dump_catalog(catalog: Sequence[BaseModel]) -> list[dict[str, Any]]:
     """
     CatalogモデルをLLMへ渡すJSON互換のdictへ変換します。
 
@@ -275,6 +276,40 @@ def dump_catalog(catalog: list[BaseModel]) -> list[dict[str, Any]]:
         JSON互換のdict一覧
     """
     return [item.model_dump(mode="json") for item in catalog]
+
+
+def get_catalog_keybind(keybinds: list[dict[str, Any]] | None) -> KeybindCatalogItem | None:
+    """
+    Annofab APIのkeybind配列からCatalog用の単一keybindを取得します。
+
+    Args:
+        keybinds: Annofab APIのkeybind配列
+
+    Returns:
+        Catalog用の単一keybind。未設定の場合はNone
+    """
+    if keybinds is None or len(keybinds) == 0:
+        return None
+    return KeybindCatalogItem.model_validate(keybinds[0])
+
+
+def get_required_japanese_message(annotation_text: Any) -> str:  # noqa: ANN401
+    """
+    多言語メッセージから日本語の必須文字列を取得します。
+
+    Args:
+        annotation_text: Annofab APIの多言語メッセージ
+
+    Returns:
+        見つかった文字列
+
+    Raises:
+        ValueError: 日本語の文字列が存在しない場合
+    """
+    message = get_message_with_lang(annotation_text, "ja-JP")
+    if message is None:
+        raise ValueError("annotation specs に必須メッセージが存在しません。 :: lang='ja-JP'")
+    return message
 
 
 def get_label_catalog(annotation_specs: dict[str, Any]) -> list[LabelCatalogItem]:
@@ -290,9 +325,9 @@ def get_label_catalog(annotation_specs: dict[str, Any]) -> list[LabelCatalogItem
     return [
         LabelCatalogItem(
             label_name_en=get_english_message(label["label_name"]),
-            label_name_ja=get_message_with_lang(label["label_name"], "ja-JP"),
+            label_name_ja=get_required_japanese_message(label["label_name"]),
             annotation_type=label["annotation_type"],
-            keybind=[KeybindCatalogItem.model_validate(keybind) for keybind in label["keybind"]] if label["keybind"] is not None else None,
+            keybind=get_catalog_keybind(label["keybind"]),
         )
         for label in annotation_specs["labels"]
     ]
@@ -327,14 +362,14 @@ def get_attribute_catalog(annotation_specs: dict[str, Any]) -> list[AttributeCat
                 label_name_ens=sorted(label_names_by_attribute_id[additional["additional_data_definition_id"]]),
                 read_only=additional["read_only"],
                 default=additional["default"],
-                keybind=[KeybindCatalogItem.model_validate(keybind) for keybind in additional["keybind"]] if additional["keybind"] is not None else None,
+                keybind=get_catalog_keybind(additional["keybind"]),
                 choice_name_ens=[get_english_message(choice["name"]) for choice in choices],
                 choices=[
                     ChoiceCatalogItem(
                         choice_name_en=get_english_message(choice["name"]),
                         choice_name_ja=get_message_with_lang(choice["name"], "ja-JP"),
                         is_default=choice["is_default"],
-                        keybind=[KeybindCatalogItem.model_validate(keybind) for keybind in choice["keybind"]] if choice["keybind"] is not None else None,
+                        keybind=get_catalog_keybind(choice["keybind"]),
                     )
                     for choice in choices
                 ],
@@ -524,7 +559,7 @@ def normalize_parsed_attributes(result: AttributeParseResult, annotation_specs: 
         attribute_name_en = existing_attribute.attribute_name_en
         if attribute_name_en is None:
             continue
-        existing_attribute_labels_by_name.setdefault(attribute_name_en, []).append({label_name_en for label_name_en in existing_attribute.label_name_ens if label_name_en is not None})
+        existing_attribute_labels_by_name.setdefault(attribute_name_en, []).append(set(existing_attribute.label_name_ens))
 
     parsed_attribute_labels_by_name: dict[str, list[set[str]]] = {}
     normalized_attributes: list[AttributeCandidate] = []

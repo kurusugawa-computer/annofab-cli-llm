@@ -191,7 +191,7 @@ def test_parse_attributes_from_text(monkeypatch, annotation_specs):
     assert '"choice_name_ens": [' in user_content
     assert '"choices": [' in user_content
     assert '"choice_name_en": "general_car"' in user_content
-    assert '"keybind": [' in user_content
+    assert '"keybind": {' in user_content
     assert '"code": "Digit1"' in user_content
     assert '"code": "KeyQ"' in user_content
     assert '"code": "KeyW"' in user_content
@@ -207,14 +207,12 @@ def test_get_label_catalog_includes_annotation_type_and_keybind(annotation_specs
         "label_name_en": "car",
         "label_name_ja": "車",
         "annotation_type": "bounding_box",
-        "keybind": [
-            {
-                "alt": False,
-                "code": "Digit1",
-                "ctrl": True,
-                "shift": False,
-            }
-        ],
+        "keybind": {
+            "alt": False,
+            "code": "Digit1",
+            "ctrl": True,
+            "shift": False,
+        },
     }
 
 
@@ -228,14 +226,12 @@ def test_get_attribute_catalog_includes_keybind_and_choice_details(annotation_sp
         "label_name_ens": ["car"],
         "read_only": False,
         "default": None,
-        "keybind": [
-            {
-                "alt": False,
-                "code": "KeyQ",
-                "ctrl": False,
-                "shift": False,
-            }
-        ],
+        "keybind": {
+            "alt": False,
+            "code": "KeyQ",
+            "ctrl": False,
+            "shift": False,
+        },
         "choice_name_ens": [],
         "choices": [],
     }
@@ -243,14 +239,12 @@ def test_get_attribute_catalog_includes_keybind_and_choice_details(annotation_sp
         "choice_name_en": "general_car",
         "choice_name_ja": "乗用車",
         "is_default": True,
-        "keybind": [
-            {
-                "alt": False,
-                "code": "KeyW",
-                "ctrl": False,
-                "shift": False,
-            }
-        ],
+        "keybind": {
+            "alt": False,
+            "code": "KeyW",
+            "ctrl": False,
+            "shift": False,
+        },
     }
 
 

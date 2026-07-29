@@ -408,10 +408,10 @@ class LabelCatalogItem(BaseModel):
     LLMへ渡すための既存ラベル情報です。
     """
 
-    label_name_en: str | None = Field(description="既存ラベル名（英語）です。")
+    label_name_en: str = Field(description="既存ラベル名（英語）です。")
     """既存ラベル名（英語）です。"""
 
-    label_name_ja: str | None = Field(description="既存ラベル名（日本語）です。")
+    label_name_ja: str = Field(description="既存ラベル名（日本語）です。")
     """既存ラベル名（日本語）です。"""
 
     annotation_type: str = Field(description="既存ラベルのアノテーション種類です。例: bounding_box, polygon")
@@ -420,7 +420,7 @@ class LabelCatalogItem(BaseModel):
     color: str | None = Field(description="既存ラベルの色です。例: #FF0000")
     """既存ラベルの色です。"""
 
-    keybind: list[KeybindCatalogItem] | None = Field(description="既存ラベルに設定されたキーボードショートカットです。")
+    keybind: KeybindCatalogItem | None = Field(description="既存ラベルに設定されたキーボードショートカットです。")
     """既存ラベルに設定されたキーボードショートカットです。"""
 
     field_values: dict[str, Any] = Field(description="既存ラベルごとの制約、表示設定、許容誤差などです。")
@@ -440,6 +440,41 @@ def dump_label_catalog(label_catalog: list[LabelCatalogItem]) -> list[dict[str, 
     return [item.model_dump(mode="json") for item in label_catalog]
 
 
+def get_required_message(annotation_text: dict[str, Any], *, lang: str) -> str:
+    """
+    多言語メッセージから指定言語の必須文字列を取得します。
+
+    Args:
+        annotation_text: Annofab APIの多言語メッセージ
+        lang: 取得対象の言語コード
+
+    Returns:
+        見つかった文字列
+
+    Raises:
+        ValueError: 指定言語の文字列が存在しない場合
+    """
+    message = get_message(annotation_text, lang=lang)
+    if message is None:
+        raise ValueError(f"annotation specs に必須メッセージが存在しません。 :: lang='{lang}'")
+    return message
+
+
+def get_catalog_keybind(keybinds: list[dict[str, Any]] | None) -> KeybindCatalogItem | None:
+    """
+    Annofab APIのkeybind配列からCatalog用の単一keybindを取得します。
+
+    Args:
+        keybinds: Annofab APIのkeybind配列
+
+    Returns:
+        Catalog用の単一keybind。未設定の場合はNone
+    """
+    if keybinds is None or len(keybinds) == 0:
+        return None
+    return KeybindCatalogItem.model_validate(keybinds[0])
+
+
 def get_label_catalog(annotation_specs: dict[str, Any]) -> list[LabelCatalogItem]:
     """
     LLMへ渡すための既存ラベル一覧を生成します。
@@ -455,11 +490,11 @@ def get_label_catalog(annotation_specs: dict[str, Any]) -> list[LabelCatalogItem
         label_name = label["label_name"]
         catalog.append(
             LabelCatalogItem(
-                label_name_en=get_message(label_name, lang="en-US"),
-                label_name_ja=get_message(label_name, lang="ja-JP"),
+                label_name_en=get_required_message(label_name, lang="en-US"),
+                label_name_ja=get_required_message(label_name, lang="ja-JP"),
                 annotation_type=label["annotation_type"],
                 color=label["color"],
-                keybind=[KeybindCatalogItem.model_validate(keybind) for keybind in label["keybind"]] if label["keybind"] is not None else None,
+                keybind=get_catalog_keybind(label["keybind"]),
                 field_values=label["field_values"],
             )
         )
@@ -654,7 +689,7 @@ def normalize_parsed_labels(result: LabelParseResult, annotation_specs: dict[str
     Returns:
         正規化済みの解析結果
     """
-    existing_label_name_ens = {label.label_name_en for label in get_label_catalog(annotation_specs) if label.label_name_en is not None}
+    existing_label_name_ens = {label.label_name_en for label in get_label_catalog(annotation_specs)}
     allowed_annotation_types = set(get_allowed_annotation_types(project_type))
     label_name_en_set: set[str] = set()
     normalized_labels: list[LabelCandidate] = []

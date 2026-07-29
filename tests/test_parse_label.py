@@ -111,7 +111,7 @@ def test_parse_labels_from_text(monkeypatch, annotation_specs):
     assert '"label_name_en": "car"' in user_content
     assert '"annotation_type": "bounding_box"' in user_content
     assert '"color": "#FF0000"' in user_content
-    assert '"keybind": [' in user_content
+    assert '"keybind": {' in user_content
     assert '"code": "Digit1"' in user_content
     assert '"ctrl": true' in user_content
     assert '"field_values": {' in user_content
@@ -126,14 +126,12 @@ def test_get_label_catalog_includes_color_and_field_values(annotation_specs):
         "label_name_ja": "車",
         "annotation_type": "bounding_box",
         "color": "#FF0000",
-        "keybind": [
-            {
-                "alt": False,
-                "code": "Digit1",
-                "ctrl": True,
-                "shift": False,
-            }
-        ],
+        "keybind": {
+            "alt": False,
+            "code": "Digit1",
+            "ctrl": True,
+            "shift": False,
+        },
         "field_values": {
             "minimum_size_2d": {
                 "_type": "MinimumSize2d",
