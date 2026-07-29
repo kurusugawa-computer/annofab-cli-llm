@@ -6,7 +6,7 @@ from typing import Any
 
 import annofabapi
 from annofabapi.models import AdditionalDataDefinitionType
-from annofabapi.util.annotation_specs import AnnotationSpecsAccessor, get_english_message, get_message_with_lang
+from annofabapi.util.annotation_specs import get_english_message, get_message_with_lang
 from litellm import completion
 from loguru import logger
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -322,16 +322,14 @@ def get_attribute_catalog(annotation_specs: dict[str, Any]) -> list[AttributeCat
     Returns:
         既存属性一覧
     """
-    annotation_specs_accessor = AnnotationSpecsAccessor(annotation_specs)
-
     label_names_by_attribute_id: dict[str, list[str]] = {}
-    for label in annotation_specs_accessor.labels:
+    for label in annotation_specs["labels"]:
         label_name_en = get_english_message(label["label_name"])
         for additional_data_definition_id in label["additional_data_definitions"]:
             label_names_by_attribute_id.setdefault(additional_data_definition_id, []).append(label_name_en)
 
     catalog = []
-    for additional in annotation_specs_accessor.additionals:
+    for additional in annotation_specs["additionals"]:
         choices = additional["choices"]
         catalog.append(
             AttributeCatalogItem(
