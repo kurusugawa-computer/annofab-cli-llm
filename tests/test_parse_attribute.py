@@ -188,7 +188,6 @@ def test_parse_attributes_from_text(monkeypatch, annotation_specs):
     assert '"description": "チェックボックス"' in user_content
     assert '"annotation_type": "bounding_box"' in user_content
     assert '"attribute_name_en": "occluded"' in user_content
-    assert '"choice_name_ens": [' in user_content
     assert '"choices": [' in user_content
     assert '"choice_name_en": "general_car"' in user_content
     assert '"keybind": {' in user_content
@@ -232,7 +231,6 @@ def test_get_attribute_catalog_includes_keybind_and_choice_details(annotation_sp
             "ctrl": False,
             "shift": False,
         },
-        "choice_name_ens": [],
         "choices": [],
     }
     assert actual[1].choices[0].model_dump(mode="json") == {

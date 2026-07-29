@@ -240,9 +240,6 @@ class AttributeCatalogItem(BaseModel):
     keybind: KeybindCandidate | None = Field(description="既存属性に設定されたキーボードショートカットです。")
     """既存属性に設定されたキーボードショートカットです。"""
 
-    choice_name_ens: list[str | None] = Field(description="既存選択肢名（英語）の一覧です。")
-    """既存選択肢名（英語）の一覧です。"""
-
     choices: list[ChoiceCatalogItem] = Field(description="属性種類がchoiceまたはselectの場合の選択肢一覧です。")
     """選択肢一覧です。"""
 
@@ -345,7 +342,6 @@ def get_attribute_catalog(annotation_specs: dict[str, Any]) -> list[AttributeCat
                 read_only=additional["read_only"],
                 default=additional["default"],
                 keybind=get_catalog_keybind(additional["keybind"]),
-                choice_name_ens=[get_english_message(choice["name"]) for choice in choices],
                 choices=[
                     ChoiceCatalogItem(
                         choice_name_en=get_english_message(choice["name"]),
