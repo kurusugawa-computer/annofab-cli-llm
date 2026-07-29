@@ -9,6 +9,8 @@ from acl.command.parse_attribute import (
     AttributeParseResult,
     ChoiceCandidate,
     get_annotation_specs,
+    get_attribute_catalog,
+    get_label_catalog,
     normalize_parsed_attributes,
     parse_attributes_from_text,
     to_annofab_attributes,
@@ -28,6 +30,15 @@ def annotation_specs() -> dict:
                         {"lang": "ja-JP", "message": "車"},
                     ]
                 },
+                "annotation_type": "bounding_box",
+                "keybind": [
+                    {
+                        "alt": False,
+                        "code": "Digit1",
+                        "ctrl": True,
+                        "shift": False,
+                    }
+                ],
                 "additional_data_definitions": ["attr_occluded", "attr_vehicle_type"],
             },
             {
@@ -38,6 +49,8 @@ def annotation_specs() -> dict:
                         {"lang": "ja-JP", "message": "歩行者"},
                     ]
                 },
+                "annotation_type": "polygon",
+                "keybind": None,
                 "additional_data_definitions": [],
             },
         ],
@@ -51,6 +64,17 @@ def annotation_specs() -> dict:
                     ]
                 },
                 "type": "flag",
+                "read_only": False,
+                "default": None,
+                "keybind": [
+                    {
+                        "alt": False,
+                        "code": "KeyQ",
+                        "ctrl": False,
+                        "shift": False,
+                    }
+                ],
+                "choices": [],
             },
             {
                 "additional_data_definition_id": "attr_vehicle_type",
@@ -61,6 +85,9 @@ def annotation_specs() -> dict:
                     ]
                 },
                 "type": "select",
+                "read_only": True,
+                "default": None,
+                "keybind": None,
                 "choices": [
                     {
                         "choice_id": "choice_general_car",
@@ -70,6 +97,15 @@ def annotation_specs() -> dict:
                                 {"lang": "ja-JP", "message": "乗用車"},
                             ]
                         },
+                        "is_default": True,
+                        "keybind": [
+                            {
+                                "alt": False,
+                                "code": "KeyW",
+                                "ctrl": False,
+                                "shift": False,
+                            }
+                        ],
                     },
                     {
                         "choice_id": "choice_truck",
@@ -79,6 +115,15 @@ def annotation_specs() -> dict:
                                 {"lang": "ja-JP", "message": "トラック"},
                             ]
                         },
+                        "is_default": False,
+                        "keybind": [
+                            {
+                                "alt": False,
+                                "code": "KeyE",
+                                "ctrl": False,
+                                "shift": False,
+                            }
+                        ],
                     },
                 ],
             },
@@ -141,11 +186,72 @@ def test_parse_attributes_from_text(monkeypatch, annotation_specs):
     assert "## 既存属性一覧" in user_content
     assert '"value": "select"' in user_content
     assert '"description": "チェックボックス"' in user_content
+    assert '"annotation_type": "bounding_box"' in user_content
     assert '"attribute_name_en": "occluded"' in user_content
     assert '"choice_name_ens": [' in user_content
+    assert '"choices": [' in user_content
+    assert '"choice_name_en": "general_car"' in user_content
+    assert '"keybind": [' in user_content
+    assert '"code": "Digit1"' in user_content
+    assert '"code": "KeyQ"' in user_content
+    assert '"code": "KeyW"' in user_content
     assert "warnings" in developer_content
     assert "`choice` または `select` の場合は、choices を2件以上出力してください。" in developer_content
     assert "解釈できなかった原文を text、解釈できなかった理由を reason、解釈に必要な補足情報を required_information" in developer_content
+
+
+def test_get_label_catalog_includes_annotation_type_and_keybind(annotation_specs):
+    actual = get_label_catalog(annotation_specs)
+
+    assert actual[0] == {
+        "label_name_en": "car",
+        "label_name_ja": "車",
+        "annotation_type": "bounding_box",
+        "keybind": [
+            {
+                "alt": False,
+                "code": "Digit1",
+                "ctrl": True,
+                "shift": False,
+            }
+        ],
+    }
+
+
+def test_get_attribute_catalog_includes_keybind_and_choice_details(annotation_specs):
+    actual = get_attribute_catalog(annotation_specs)
+
+    assert actual[0] == {
+        "attribute_name_en": "occluded",
+        "attribute_name_ja": "隠れ",
+        "attribute_type": "flag",
+        "label_name_ens": ["car"],
+        "read_only": False,
+        "default": None,
+        "keybind": [
+            {
+                "alt": False,
+                "code": "KeyQ",
+                "ctrl": False,
+                "shift": False,
+            }
+        ],
+        "choice_name_ens": [],
+        "choices": [],
+    }
+    assert actual[1]["choices"][0] == {
+        "choice_name_en": "general_car",
+        "choice_name_ja": "乗用車",
+        "is_default": True,
+        "keybind": [
+            {
+                "alt": False,
+                "code": "KeyW",
+                "ctrl": False,
+                "shift": False,
+            }
+        ],
+    }
 
 
 def test_normalize_parsed_attributes(annotation_specs):

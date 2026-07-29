@@ -191,8 +191,10 @@ def get_label_catalog(annotation_specs: dict[str, Any]) -> list[dict[str, Any]]:
         {
             "label_name_en": get_english_message(label["label_name"]),
             "label_name_ja": get_message_with_lang(label["label_name"], "ja-JP"),
+            "annotation_type": label["annotation_type"],
+            "keybind": label["keybind"],
         }
-        for label in annotation_specs.get("labels", [])
+        for label in annotation_specs["labels"]
     ]
 
 
@@ -211,19 +213,31 @@ def get_attribute_catalog(annotation_specs: dict[str, Any]) -> list[dict[str, An
     label_names_by_attribute_id: dict[str, list[str]] = {}
     for label in annotation_specs_accessor.labels:
         label_name_en = get_english_message(label["label_name"])
-        for additional_data_definition_id in label.get("additional_data_definitions", []):
+        for additional_data_definition_id in label["additional_data_definitions"]:
             label_names_by_attribute_id.setdefault(additional_data_definition_id, []).append(label_name_en)
 
     catalog = []
     for additional in annotation_specs_accessor.additionals:
-        choices = additional.get("choices") or []
+        choices = additional["choices"]
         catalog.append(
             {
                 "attribute_name_en": get_english_message(additional["name"]),
                 "attribute_name_ja": get_message_with_lang(additional["name"], "ja-JP"),
-                "attribute_type": additional.get("type"),
-                "label_name_ens": sorted(label_names_by_attribute_id.get(additional.get("additional_data_definition_id"), [])),
+                "attribute_type": additional["type"],
+                "label_name_ens": sorted(label_names_by_attribute_id[additional["additional_data_definition_id"]]),
+                "read_only": additional["read_only"],
+                "default": additional["default"],
+                "keybind": additional["keybind"],
                 "choice_name_ens": [get_english_message(choice["name"]) for choice in choices],
+                "choices": [
+                    {
+                        "choice_name_en": get_english_message(choice["name"]),
+                        "choice_name_ja": get_message_with_lang(choice["name"], "ja-JP"),
+                        "is_default": choice["is_default"],
+                        "keybind": choice["keybind"],
+                    }
+                    for choice in choices
+                ],
             }
         )
     return catalog
