@@ -18,6 +18,7 @@ from acl.command.parse_label import (
     VertexCountMinMaxFieldValue,
     format_unresolved_text,
     get_annotation_specs,
+    get_label_catalog,
     normalize_parsed_labels,
     parse_labels_from_text,
     to_annofab_labels,
@@ -37,6 +38,7 @@ def annotation_specs() -> dict:
                     ]
                 },
                 "annotation_type": "bounding_box",
+                "color": "#FF0000",
                 "keybind": [
                     {
                         "alt": False,
@@ -45,6 +47,14 @@ def annotation_specs() -> dict:
                         "shift": False,
                     }
                 ],
+                "field_values": {
+                    "minimum_size_2d": {
+                        "_type": "MinimumSize2d",
+                        "min_width": 100,
+                        "min_height": 200,
+                        "min_warn_rule": {"_type": "Or"},
+                    }
+                },
                 "additional_data_definitions": [],
             },
         ],
@@ -100,9 +110,37 @@ def test_parse_labels_from_text(monkeypatch, annotation_specs):
     assert "解釈できなかった原文を text、解釈できなかった理由を reason、解釈に必要な補足情報を required_information" in developer_content
     assert '"label_name_en": "car"' in user_content
     assert '"annotation_type": "bounding_box"' in user_content
-    assert '"keybind": [' in user_content
+    assert '"color": "#FF0000"' in user_content
+    assert '"keybind": {' in user_content
     assert '"code": "Digit1"' in user_content
     assert '"ctrl": true' in user_content
+    assert '"field_values": {' in user_content
+    assert '"minimum_size_2d": {' in user_content
+
+
+def test_get_label_catalog_includes_color_and_field_values(annotation_specs):
+    actual = get_label_catalog(annotation_specs)
+
+    assert actual[0].model_dump(mode="json") == {
+        "label_name_en": "car",
+        "label_name_ja": "車",
+        "annotation_type": "bounding_box",
+        "color": "#FF0000",
+        "keybind": {
+            "alt": False,
+            "code": "Digit1",
+            "ctrl": True,
+            "shift": False,
+        },
+        "field_values": {
+            "minimum_size_2d": {
+                "_type": "MinimumSize2d",
+                "min_width": 100,
+                "min_height": 200,
+                "min_warn_rule": {"_type": "Or"},
+            }
+        },
+    }
 
 
 def test_normalize_parsed_labels(annotation_specs):
