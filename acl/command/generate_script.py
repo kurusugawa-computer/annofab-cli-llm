@@ -196,8 +196,6 @@ bash apply.sh --yes
 def main(args: argparse.Namespace) -> None:
     annotation_rule = read_at_file(args.annotation_rule)
     output_dir = args.output_dir
-    if output_dir.exists() and any(output_dir.iterdir()):
-        raise ValueError(f"出力先ディレクトリが空ではありません。 :: output_dir='{output_dir}'")
     output_dir.mkdir(parents=True, exist_ok=True)
 
     rule_path = output_dir / RULE_FILE_NAME

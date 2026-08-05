@@ -2,8 +2,6 @@ import argparse
 import subprocess
 from pathlib import Path
 
-import pytest
-
 from acl.command.generate_script import generate_readme, generate_script, main
 
 
@@ -54,19 +52,21 @@ def test_main_generates_executable_artifacts(tmp_path):
     subprocess.run(["bash", "-n", output_dir / "apply.sh"], check=True)
 
 
-def test_main_rejects_non_empty_output_dir(tmp_path):
+def test_main_allows_non_empty_output_dir(tmp_path):
     rule_path = tmp_path / "rule.md"
     rule_path.write_text("自動車を矩形で囲ってください。", encoding="utf-8")
     output_dir = tmp_path / "generated"
     output_dir.mkdir()
     (output_dir / "existing.txt").write_text("既存ファイル", encoding="utf-8")
 
-    with pytest.raises(ValueError):
-        main(
-            argparse.Namespace(
-                annotation_rule=f"@{rule_path}",
-                output_dir=output_dir,
-                project_id="prj1",
-                model="openai/gpt-5.6-terra",
-            )
+    main(
+        argparse.Namespace(
+            annotation_rule=f"@{rule_path}",
+            output_dir=output_dir,
+            project_id="prj1",
+            model="openai/gpt-5.6-terra",
         )
+    )
+
+    assert (output_dir / "existing.txt").read_text(encoding="utf-8") == "既存ファイル"
+    assert (output_dir / "apply.sh").is_file()
