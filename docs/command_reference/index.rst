@@ -18,6 +18,7 @@ annotation_specs
    generate_add_choices_to_attributes_json
    generate_add_existing_attribute_to_labels_script
    generate_add_labels_json
+   generate_delete_attribute_restriction_json
    generate_script
    generate_update_attributes_json
    generate_update_labels_json
