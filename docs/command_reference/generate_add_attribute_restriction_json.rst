@@ -1,16 +1,16 @@
 ============================================================
-annotation_specs parse_attribute_restriction
+annotation_specs generate_add_attribute_restriction_json
 ============================================================
 
 Description
 =================================
 
-自然言語で書かれた属性制約の情報から、Annofabの属性制約を解析します。
+自然言語で書かれた属性制約の情報から、Annofabの属性制約追加用JSONを生成します。
 アノテーションルールや運用ルールの文章から、属性制約ASTやAnnofabに登録可能なJSONを生成したいときに利用できます。
 ``annofab_json`` 形式で出力したJSONは、 `annofabcli annotation_specs add_attribute_restriction <https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation_specs/add_attribute_restriction.html>`_ コマンドでAnnofabに登録できます。
 
 このコマンドを実行するには、対象のラベルと属性がアノテーション仕様に存在している必要があります。
-新規でアノテーション仕様を作成する場合は、先に ``annotation_specs parse_label`` と ``annotation_specs parse_attribute`` でラベルと属性を追加してください。
+新規でアノテーション仕様を作成する場合は、先に ``annotation_specs generate_add_labels_json`` と ``annotation_specs generate_add_attributes_json`` でラベルと属性を追加してください。
 
 
 Examples
@@ -30,7 +30,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli-llm annotation_specs parse_attribute_restriction \
+    $ annofabcli-llm annotation_specs generate_add_attribute_restriction_json \
      --annotation_specs_json_file annotation_specs.json \
      --restriction_text @restriction.md
 
@@ -48,7 +48,7 @@ Annofabに登録可能なJSONを出力する
 
 .. code-block::
 
-    $ annofabcli-llm annotation_specs parse_attribute_restriction \
+    $ annofabcli-llm annotation_specs generate_add_attribute_restriction_json \
      --project_id ${PROJECT_ID} \
      --restriction_text @restriction.md \
      --output restriction.json \
@@ -92,7 +92,7 @@ Annofabに登録可能なJSONを出力する
 
 .. note::
 
-    解析結果の途中経過は ``$HOME/.cache/annofab-cli-llm/temp/parse_attribute_restriction_*`` に出力されます。
+    解析結果の途中経過は ``$HOME/.cache/annofab-cli-llm/temp/generate_add_attribute_restriction_json_*`` に出力されます。
 
 
 ASTのJSONを出力する
@@ -100,7 +100,7 @@ ASTのJSONを出力する
 
 .. code-block::
 
-    $ annofabcli-llm annotation_specs parse_attribute_restriction \
+    $ annofabcli-llm annotation_specs generate_add_attribute_restriction_json \
      --annotation_specs_json_file annotation_specs.json \
      --restriction_text @restriction.md \
      --output restriction_ast.json \
@@ -139,7 +139,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: acl.command.parse_attribute_restriction.add_parser
-   :prog: annofabcli-llm annotation_specs parse_attribute_restriction
+   :ref: acl.command.generate_add_attribute_restriction_json.add_parser
+   :prog: annofabcli-llm annotation_specs generate_add_attribute_restriction_json
    :nosubcommands:
    :nodefaultconst:

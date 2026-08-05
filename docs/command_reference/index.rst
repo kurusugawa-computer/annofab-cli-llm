@@ -13,9 +13,11 @@ annotation_specs
    :maxdepth: 1
    :titlesonly:
 
-   parse_attribute
-   parse_attribute_restriction
-   parse_label
+   generate_add_attribute_restriction_json
+   generate_add_attributes_json
+   generate_add_labels_json
+   generate_update_attributes_json
+   generate_update_labels_json
    validate
 
 annotation_zip

@@ -6,7 +6,7 @@ from annofabapi.plugin import ThreeDimensionAnnotationType
 
 class ProjectType(StrEnum):
     """
-    parse_labelコマンドで扱うプロジェクト種別です。
+    generate_add_labels_jsonコマンドで扱うプロジェクト種別です。
     """
 
     IMAGE = "image"

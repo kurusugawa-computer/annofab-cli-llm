@@ -10,12 +10,12 @@ from loguru import logger
 from pydantic import BaseModel, Field
 
 import acl.common.cli
-from acl.command.parse_label import UnresolvedText, format_unresolved_text
+from acl.command.generate_add_labels_json import UnresolvedText, format_unresolved_text
 from acl.common.cli import read_at_file
 from acl.common.utils import output_string, print_json
 from acl.common.xdg_util import create_command_temp_dir
 
-COMMAND_NAME = "parse_attribute_restriction"
+COMMAND_NAME = "generate_add_attribute_restriction_json"
 OUTPUT_USAGE_MESSAGE = "--output_format annofab_json で出力されるJSONは、annofabcli annotation_specs add_attribute_restriction コマンドでAnnofabに登録できます。"
 """出力JSONの利用方法に関するメッセージです。"""
 
@@ -321,8 +321,8 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     parser = acl.common.cli.add_parser(
         subparsers,
         COMMAND_NAME,
-        "自然言語から属性制約を解析します。",
-        description=f"自然言語から属性制約を解析します。\n{OUTPUT_USAGE_MESSAGE}",
+        "自然言語から属性制約追加用JSONを生成します。",
+        description=f"自然言語から属性制約追加用JSONを生成します。\n{OUTPUT_USAGE_MESSAGE}",
     )
     add_argument_to_parser(parser)
     parser.set_defaults(func=main)

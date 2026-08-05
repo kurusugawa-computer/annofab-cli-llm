@@ -12,13 +12,13 @@ from loguru import logger
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 import acl.common.cli
-from acl.command.parse_label import KeybindCandidate, UnresolvedText, format_unresolved_text
+from acl.command.generate_add_labels_json import KeybindCandidate, UnresolvedText, format_unresolved_text
 from acl.common.annofab.attribute_type import get_attribute_type_details
 from acl.common.cli import read_at_file
 from acl.common.utils import print_json
 from acl.common.xdg_util import create_command_temp_dir
 
-COMMAND_NAME = "parse_attribute"
+COMMAND_NAME = "generate_add_attributes_json"
 OUTPUT_USAGE_MESSAGE = "出力されるJSONは、annofabcli annotation_specs add_attributes コマンドの --attribute_json 引数にそのまま指定できます。"
 """出力JSONの利用方法に関するメッセージです。"""
 
@@ -354,7 +354,7 @@ def get_attribute_catalog(annotation_specs: dict[str, Any]) -> list[AttributeCat
     return catalog
 
 
-def parse_attributes_from_text(
+def generate_add_attributes_from_text(
     *,
     text: str,
     annotation_specs: dict[str, Any],
@@ -598,7 +598,7 @@ def main(args: argparse.Namespace) -> None:
     print_json(annotation_specs, temp_dir / "annotation_specs.json")
 
     current_text = annotation_rule
-    result = parse_attributes_from_text(
+    result = generate_add_attributes_from_text(
         text=current_text,
         annotation_specs=annotation_specs,
         llm_model=args.model,
@@ -618,7 +618,7 @@ def main(args: argparse.Namespace) -> None:
         logger.info(f"{len(supplements)}件の補足情報をもとに再解析します。")
         supplement_text = "\n".join(supplements)
         current_text = f"{current_text}\n\n## 補足情報\n{supplement_text}"
-        result = parse_attributes_from_text(
+        result = generate_add_attributes_from_text(
             text=current_text,
             annotation_specs=annotation_specs,
             llm_model=args.model,
@@ -677,8 +677,8 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     parser = acl.common.cli.add_parser(
         subparsers,
         COMMAND_NAME,
-        "自然言語から追加対象の属性を解析します。",
-        description=f"自然言語から追加対象の属性を解析します。\n{OUTPUT_USAGE_MESSAGE}",
+        "自然言語から属性追加用JSONを生成します。",
+        description=f"自然言語から属性追加用JSONを生成します。\n{OUTPUT_USAGE_MESSAGE}",
     )
     add_argument_to_parser(parser)
     parser.set_defaults(func=main)

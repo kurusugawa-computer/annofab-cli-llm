@@ -9,9 +9,11 @@ from loguru import logger
 
 import acl
 import acl.common.cli
-from acl.command.parse_attribute import add_parser as add_parser_for_parse_attribute
-from acl.command.parse_attribute_restriction import add_parser as add_parser_for_parse_attribute_restriction
-from acl.command.parse_label import add_parser as add_parser_for_parse_label
+from acl.command.generate_add_attribute_restriction_json import add_parser as add_parser_for_generate_add_attribute_restriction_json
+from acl.command.generate_add_attributes_json import add_parser as add_parser_for_generate_add_attributes_json
+from acl.command.generate_add_labels_json import add_parser as add_parser_for_generate_add_labels_json
+from acl.command.generate_update_attributes_json import add_parser as add_parser_for_generate_update_attributes_json
+from acl.command.generate_update_labels_json import add_parser as add_parser_for_generate_update_labels_json
 from acl.command.validate_annotation_specs import add_parser as add_parser_for_validate_annotation_specs
 from acl.command.validate_attribute_value import add_parser as add_parser_for_validate_attribute_value
 from acl.common.command import mask_command_options
@@ -117,9 +119,11 @@ def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argpa
     )
     annotation_specs_parser.set_defaults(command_help=annotation_specs_parser.print_help)
     annotation_specs_subparsers = annotation_specs_parser.add_subparsers(dest="subcommand_name")
-    add_parser_for_parse_attribute(annotation_specs_subparsers)
-    add_parser_for_parse_attribute_restriction(annotation_specs_subparsers)
-    add_parser_for_parse_label(annotation_specs_subparsers)
+    add_parser_for_generate_add_attribute_restriction_json(annotation_specs_subparsers)
+    add_parser_for_generate_add_attributes_json(annotation_specs_subparsers)
+    add_parser_for_generate_add_labels_json(annotation_specs_subparsers)
+    add_parser_for_generate_update_attributes_json(annotation_specs_subparsers)
+    add_parser_for_generate_update_labels_json(annotation_specs_subparsers)
     add_parser_for_validate_annotation_specs(annotation_specs_subparsers)
 
     annotation_zip_parser = subparsers.add_parser(

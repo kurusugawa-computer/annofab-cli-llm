@@ -9,7 +9,7 @@
 ### コマンドを2階層にする理由
 対象リソースごとにコマンドを整理するため、以下の2階層構成にする。
 
-* `annotation_specs parse_*`
+* `annotation_specs generate_*_json`
 * `annotation_zip validate_attribute_value`
 
 

@@ -4,18 +4,18 @@ from types import SimpleNamespace
 import pytest
 from annofabapi.models import AdditionalDataDefinitionType
 
-from acl.command.parse_attribute import (
+from acl.command.generate_add_attributes_json import (
     AttributeCandidate,
     AttributeParseResult,
     ChoiceCandidate,
+    generate_add_attributes_from_text,
     get_annotation_specs,
     get_attribute_catalog,
     get_label_catalog,
     normalize_parsed_attributes,
-    parse_attributes_from_text,
     to_annofab_attributes,
 )
-from acl.command.parse_label import KeybindCandidate, UnresolvedText
+from acl.command.generate_add_labels_json import KeybindCandidate, UnresolvedText
 
 
 @pytest.fixture
@@ -131,7 +131,7 @@ def annotation_specs() -> dict:
     }
 
 
-def test_parse_attributes_from_text(monkeypatch, annotation_specs):
+def test_generate_add_attributes_from_text(monkeypatch, annotation_specs):
     result = AttributeParseResult(
         attributes=[
             AttributeCandidate(
@@ -170,9 +170,9 @@ def test_parse_attributes_from_text(monkeypatch, annotation_specs):
             usage=SimpleNamespace(total_tokens=14, prompt_tokens=10, completion_tokens=4),
         )
 
-    monkeypatch.setattr("acl.command.parse_attribute.completion", fake_completion)
+    monkeypatch.setattr("acl.command.generate_add_attributes_json.completion", fake_completion)
 
-    actual = parse_attributes_from_text(
+    actual = generate_add_attributes_from_text(
         text="car と pedestrian に truncated 属性を追加し、car には weather をドロップダウンで追加してください。",
         annotation_specs=annotation_specs,
         llm_model="openai/gpt-5.4-nano",
@@ -431,7 +431,7 @@ def test_get_annotation_specs_from_project_id(monkeypatch, annotation_specs):
         called["pat"] = pat
         return SimpleNamespace(api=SimpleNamespace(get_annotation_specs=lambda project_id, query_params: (annotation_specs, {"project_id": project_id, "query_params": query_params})))
 
-    monkeypatch.setattr("acl.command.parse_attribute.annofabapi.build", fake_build)
+    monkeypatch.setattr("acl.command.generate_add_attributes_json.annofabapi.build", fake_build)
 
     actual = get_annotation_specs(
         annotation_specs_json_file=None,
