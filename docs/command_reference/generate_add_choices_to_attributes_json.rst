@@ -8,7 +8,7 @@ Description
 自然言語で書かれた選択肢追加ルールやアノテーション仕様の文章から、既存の選択肢系属性に追加する選択肢のJSONを生成します。
 出力されるJSONは、 `annofabcli annotation_specs add_choices_to_attributes <https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation_specs/add_choices_to_attributes.html>`_ コマンドの ``--attribute_json`` 引数にそのまま指定できます。
 
-対象属性は ``--attribute_id`` で明示的に指定します。対象は ``choice`` または ``select`` 型の既存属性である必要があります。
+対象属性は ``--attribute_id`` で明示的に指定します。対象は ``choice`` または ``select`` 型の既存属性である必要があります。``--all_attributes`` を指定すると、すべての選択式属性を対象にして、追加対象の選択肢だけをまとめて出力します。
 
 
 Examples

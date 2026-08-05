@@ -11,10 +11,15 @@ def test_generate_script_includes_steps_in_dependency_order():
     actual = generate_script(project_id="prj1", annotation_rule_path=Path("annotation_rule.md"), model="openai/gpt-5.6-terra")
 
     assert actual.index("generate_add_labels_json") < actual.index("add_labels")
+    assert actual.index("generate_update_labels_json") < actual.index("update_labels")
     assert actual.index("generate_add_attributes_json") < actual.index("add_attributes")
+    assert actual.index("generate_add_existing_attribute_to_labels_script") < actual.index("add_existing_attribute_to_labels")
+    assert actual.index("generate_update_attributes_json") < actual.index("update_attributes")
+    assert actual.index("generate_add_choices_to_attributes_json") < actual.index("add_choices_to_attributes")
     assert actual.index("generate_add_attribute_restriction_json") < actual.index("add_attribute_restriction")
-    assert actual.index("add_labels") < actual.index("generate_add_attributes_json")
-    assert actual.index("add_attributes") < actual.index("generate_add_attribute_restriction_json")
+    assert actual.index("add_labels") < actual.index("generate_update_labels_json") < actual.index("generate_add_attributes_json")
+    assert actual.index("add_attributes") < actual.index("generate_add_existing_attribute_to_labels_script") < actual.index("generate_update_attributes_json")
+    assert actual.index("add_choices_to_attributes") < actual.index("generate_add_attribute_restriction_json")
     assert "set -euo pipefail" in actual
     assert "--allow_empty" in actual
     assert "--annofab_pat" not in actual
@@ -23,8 +28,10 @@ def test_generate_script_includes_steps_in_dependency_order():
 def test_generate_readme_describes_scope():
     actual = generate_readme()
 
-    assert "既存の選択式属性への選択肢追加" in actual
-    assert "既存のラベル・属性の更新" in actual
+    assert "ラベルと属性の追加・更新" in actual
+    assert "既存属性への選択肢追加" in actual
+    assert "既存属性のラベルへの紐付け" in actual
+    assert "属性型変更" in actual
 
 
 def test_main_generates_executable_artifacts(tmp_path):

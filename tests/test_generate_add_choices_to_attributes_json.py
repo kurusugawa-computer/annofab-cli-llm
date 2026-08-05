@@ -5,6 +5,7 @@ import pytest
 from acl.command.generate_add_choices_to_attributes_json import (
     ChoiceCandidate,
     ChoiceParseResult,
+    get_choice_attributes,
     get_target_attribute,
     normalize_parsed_choices,
     parse_add_choices_from_text,
@@ -119,3 +120,9 @@ def test_to_annofab_attributes_excludes_empty_optional_values():
 def test_get_target_attribute_rejects_unknown_attribute(annotation_specs):
     with pytest.raises(ValueError, match="存在しません"):
         get_target_attribute(annotation_specs, "unknown")
+
+
+def test_get_choice_attributes_returns_only_choice_type_attributes(annotation_specs):
+    actual = get_choice_attributes(annotation_specs)
+
+    assert actual == [get_target_attribute(annotation_specs, "attr_vehicle_type")]

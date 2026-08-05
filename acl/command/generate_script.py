@@ -20,7 +20,7 @@ README_FILE_NAME = "README.md"
 
 def generate_script(*, project_id: str, annotation_rule_path: Path, model: str) -> str:
     """
-    アノテーション仕様を追加するBashスクリプトを生成します。
+    アノテーション仕様を追加・更新するBashスクリプトを生成します。
 
     Args:
         project_id: AnnofabのプロジェクトID
@@ -44,7 +44,7 @@ RULE_FILE="$SCRIPT_DIR/{quoted_rule_file_name}"
 WORK_DIR="$SCRIPT_DIR/work"
 
 if [[ "${{1:-}}" != "--yes" ]]; then
-  read -r -p "プロジェクト '$PROJECT_ID' のアノテーション仕様を追加します。続行しますか？ [y/N] " answer
+  read -r -p "プロジェクト '$PROJECT_ID' のアノテーション仕様を追加・更新します。続行しますか？ [y/N] " answer
   if [[ "$answer" != "y" ]]; then
     echo "中止しました。"
     exit 0
@@ -59,7 +59,7 @@ apply_if_not_empty() {{
   shift 2
 
   if [[ "$(tr -d '[:space:]' < "$json_file")" == "[]" ]]; then
-    echo "$resource_name の追加対象はありません。"
+    echo "$resource_name の対象はありません。"
     return
   fi
 
@@ -78,6 +78,18 @@ apply_if_not_empty "$WORK_DIR/labels.json" "ラベル" \\
     --project_id "$PROJECT_ID" \\
     --label_json "file://$WORK_DIR/labels.json"
 
+echo "ラベル更新を解析します。"
+annofabcli-llm annotation_specs generate_update_labels_json \\
+  --project_id "$PROJECT_ID" \\
+  --annotation_rule "@$RULE_FILE" \\
+  --model "$MODEL" \\
+  --allow_empty \\
+  --output "$WORK_DIR/updated_labels.json"
+apply_if_not_empty "$WORK_DIR/updated_labels.json" "ラベル更新" \\
+  annofabcli annotation_specs update_labels \\
+    --project_id "$PROJECT_ID" \\
+    --label_json "file://$WORK_DIR/updated_labels.json"
+
 echo "属性を解析します。"
 annofabcli-llm annotation_specs generate_add_attributes_json \\
   --project_id "$PROJECT_ID" \\
@@ -89,6 +101,42 @@ apply_if_not_empty "$WORK_DIR/attributes.json" "属性" \\
   annofabcli annotation_specs add_attributes \\
     --project_id "$PROJECT_ID" \\
     --attribute_json "file://$WORK_DIR/attributes.json"
+
+echo "既存属性をラベルへ紐付ける情報を解析します。"
+annofabcli-llm annotation_specs generate_add_existing_attribute_to_labels_script \\
+  --project_id "$PROJECT_ID" \\
+  --annotation_rule "@$RULE_FILE" \\
+  --model "$MODEL" \\
+  --output "$WORK_DIR/add_existing_attribute_to_labels.sh"
+if [[ -s "$WORK_DIR/add_existing_attribute_to_labels.sh" ]]; then
+  bash "$WORK_DIR/add_existing_attribute_to_labels.sh"
+else
+  echo "既存属性をラベルへ紐付ける対象はありません。"
+fi
+
+echo "属性更新を解析します。"
+annofabcli-llm annotation_specs generate_update_attributes_json \\
+  --project_id "$PROJECT_ID" \\
+  --annotation_rule "@$RULE_FILE" \\
+  --model "$MODEL" \\
+  --allow_empty \\
+  --output "$WORK_DIR/updated_attributes.json"
+apply_if_not_empty "$WORK_DIR/updated_attributes.json" "属性更新" \\
+  annofabcli annotation_specs update_attributes \\
+    --project_id "$PROJECT_ID" \\
+    --attribute_json "file://$WORK_DIR/updated_attributes.json"
+
+echo "既存属性への選択肢追加を解析します。"
+annofabcli-llm annotation_specs generate_add_choices_to_attributes_json \\
+  --project_id "$PROJECT_ID" \\
+  --all_attributes \\
+  --annotation_rule "@$RULE_FILE" \\
+  --model "$MODEL" \\
+  --output "$WORK_DIR/added_choices.json"
+apply_if_not_empty "$WORK_DIR/added_choices.json" "選択肢追加" \\
+  annofabcli annotation_specs add_choices_to_attributes \\
+    --project_id "$PROJECT_ID" \\
+    --attribute_json "file://$WORK_DIR/added_choices.json"
 
 echo "属性制約を解析します。"
 annofabcli-llm annotation_specs generate_add_attribute_restriction_json \\
@@ -109,7 +157,7 @@ annofabcli-llm annotation_specs validate \\
   --model "$MODEL" \\
   --output "$WORK_DIR/validation.md"
 
-echo "アノテーション仕様の追加が完了しました。"
+echo "アノテーション仕様の追加・更新が完了しました。"
 echo "レビュー結果: $WORK_DIR/validation.md"
 """
 
@@ -121,9 +169,9 @@ def generate_readme() -> str:
     Returns:
         READMEの内容
     """
-    return """# アノテーション仕様の追加
+    return """# アノテーション仕様の追加・更新
 
-`apply.sh` は、ラベル、属性、属性制約をこの順にAnnofabへ追加し、最後にアノテーション仕様をレビューします。
+`apply.sh` は、ラベルと属性の追加・更新、既存属性のラベルへの紐付け、既存属性への選択肢追加、属性制約追加を順に実行し、最後にアノテーション仕様をレビューします。
 
 ## 実行方法
 
@@ -141,7 +189,7 @@ bash apply.sh --yes
 
 `work/` には各工程で生成したJSONとレビュー結果が保存されます。途中で失敗した場合は、内容を確認してから再実行してください。
 
-既存の選択式属性への選択肢追加や、既存のラベル・属性の更新はこのスクリプトの対象外です。
+ラベル・属性・選択肢・属性制約の削除、並べ替え、属性型変更は対象外です。
 """
 
 
@@ -162,7 +210,7 @@ def main(args: argparse.Namespace) -> None:
     output_string(generate_readme(), readme_path)
     work_dir.mkdir(exist_ok=True)
 
-    logger.info(f"アノテーション仕様追加用スクリプトを出力しました。 :: output_dir='{output_dir}'")
+    logger.info(f"アノテーション仕様追加・更新用スクリプトを出力しました。 :: output_dir='{output_dir}'")
     logger.info(f"スクリプトを確認後、`bash {script_path} --yes` を実行してください。")
 
 
@@ -172,7 +220,7 @@ def add_argument_to_parser(parser: argparse.ArgumentParser) -> None:
         "--annotation_rule",
         type=str,
         required=True,
-        help="追加するラベル、属性、属性制約が記載された自然言語。先頭に`@`を指定すると、`@`以降をファイルパスとみなしてファイルの中身を読み込みます。",
+        help="追加・更新するラベル、属性、選択肢、属性制約が記載された自然言語。先頭に`@`を指定すると、`@`以降をファイルパスとみなしてファイルの中身を読み込みます。",
     )
     parser.add_argument("-o", "--output_dir", type=Path, required=True, help="スクリプト一式を出力するディレクトリのパス")
 
@@ -181,8 +229,8 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     parser = acl.common.cli.add_parser(
         subparsers,
         COMMAND_NAME,
-        "アノテーション仕様追加用のBashスクリプトを生成します。",
-        description="アノテーション仕様追加用のBashスクリプトを生成します。生成時にAnnofabのアノテーション仕様は変更しません。",
+        "アノテーション仕様の追加・更新用Bashスクリプトを生成します。",
+        description="アノテーション仕様の追加・更新用Bashスクリプトを生成します。生成時にAnnofabのアノテーション仕様は変更しません。",
     )
     add_argument_to_parser(parser)
     parser.set_defaults(func=main)
