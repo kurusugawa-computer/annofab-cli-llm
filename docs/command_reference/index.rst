@@ -15,6 +15,7 @@ annotation_specs
 
    generate_add_attribute_restriction_json
    generate_add_attributes_json
+   generate_add_choices_to_attributes_json
    generate_add_labels_json
    generate_update_attributes_json
    generate_update_labels_json
