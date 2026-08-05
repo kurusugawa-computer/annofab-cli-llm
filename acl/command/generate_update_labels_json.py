@@ -28,6 +28,31 @@ OUTPUT_USAGE_MESSAGE = "出力されるJSONは、annofabcli annotation_specs upd
 """出力JSONの利用方法に関するメッセージです。"""
 
 
+def normalize_label_color(color: Any) -> str | None:  # noqa: ANN401
+    """
+    Annofab APIのラベル色を ``#RRGGBB`` 形式に正規化します。
+
+    Args:
+        color: Annofab APIのラベル色
+
+    Returns:
+        ``#RRGGBB`` 形式の色。色が未設定または未対応形式の場合はNone
+    """
+    if color is None:
+        return None
+    if isinstance(color, str):
+        return color
+    if not isinstance(color, dict):
+        return None
+
+    red = color.get("red")
+    green = color.get("green")
+    blue = color.get("blue")
+    if isinstance(red, int) and isinstance(green, int) and isinstance(blue, int):
+        return f"#{red:02X}{green:02X}{blue:02X}"
+    return None
+
+
 class LabelUpdateCatalogItem(BaseModel):
     """
     LLMへ渡すための既存ラベル情報です。
@@ -119,7 +144,7 @@ def get_label_update_catalog(annotation_specs: dict[str, Any]) -> list[LabelUpda
             label_name_en=get_required_message(label["label_name"], lang="en-US"),
             label_name_ja=get_required_message(label["label_name"], lang="ja-JP"),
             annotation_type=label["annotation_type"],
-            color=label["color"],
+            color=normalize_label_color(label["color"]),
             keybind=get_catalog_keybind(label["keybind"]),
             field_values=label["field_values"],
         )

@@ -7,6 +7,7 @@ from acl.command.generate_update_labels_json import (
     LabelUpdateCandidate,
     LabelUpdateParseResult,
     get_label_update_catalog,
+    normalize_label_color,
     normalize_parsed_update_labels,
     parse_update_labels_from_text,
     to_annofab_update_labels,
@@ -26,7 +27,7 @@ def annotation_specs() -> dict:
                     ]
                 },
                 "annotation_type": "bounding_box",
-                "color": "#FF0000",
+                "color": {"red": 255, "green": 0, "blue": 0},
                 "keybind": [
                     {
                         "alt": False,
@@ -117,6 +118,13 @@ def test_get_label_update_catalog(annotation_specs):
             }
         },
     }
+
+
+def test_normalize_label_color():
+    assert normalize_label_color({"red": 255, "green": 0, "blue": 170}) == "#FF00AA"
+    assert normalize_label_color("#00AAFF") == "#00AAFF"
+    assert normalize_label_color(None) is None
+    assert normalize_label_color({"red": 255, "green": "0", "blue": 170}) is None
 
 
 def test_normalize_parsed_update_labels(annotation_specs):
