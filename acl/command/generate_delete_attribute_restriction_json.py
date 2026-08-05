@@ -167,7 +167,7 @@ def to_human_readable_text(resolved: ResolvedRestrictionsForDelete, result: Dele
     if resolved.warnings:
         lines.extend(("", "[warnings]"))
         lines.extend(f"- {warning}" for warning in resolved.warnings)
-    if result.unresolved_texts:
+    if len(result.unresolved_texts) > 0:
         lines.extend(("", "[unresolved_texts]"))
         lines.extend(f"- {format_unresolved_text(unresolved_text)}" for unresolved_text in result.unresolved_texts)
     return "\n".join(lines)
