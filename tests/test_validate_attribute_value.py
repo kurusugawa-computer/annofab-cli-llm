@@ -1,7 +1,7 @@
 import pytest
 
 from acl.command import validate_attribute_value
-from acl.command.validate_attribute_value import split_by_json_length, validate_annotation_attribute_with_llm, write_annotation_attribute_json
+from acl.command.validate_attribute_value import split_by_json_length, validate_annotation_attribute_with_llm, write_annotation_attribute_json, write_output_attribute_list
 
 
 def test_split_by_json_length():
@@ -63,6 +63,56 @@ def test_write_annotation_attribute_json_masks_annofab_pat(monkeypatch, tmp_path
     assert len(captured_logs) == 1
     assert "pat1" not in captured_logs[0]
     assert "'--annofab_pat', '***'" in captured_logs[0]
+
+
+def test_write_output_attribute_list_outputs_json_to_stdout(capsys):
+    write_output_attribute_list(
+        [
+            {
+                "project_id": "prj",
+                "task_id": "task",
+                "attributes": {"status": "歩高者が歩いています。"},
+                "validation_messages": {"status": "誤字があります。"},
+                "suggested_attributes": {"status": "歩行者が歩いています。"},
+            }
+        ],
+        output=None,
+        output_format="json",
+    )
+
+    captured = capsys.readouterr()
+
+    assert '"project_id": "prj"' in captured.out
+    assert '"suggested_attributes": {' in captured.out
+
+
+def test_write_output_attribute_list_outputs_csv_to_stdout(capsys):
+    write_output_attribute_list(
+        [
+            {
+                "project_id": "prj",
+                "task_id": "task",
+                "task_status": "complete",
+                "task_phase": "acceptance",
+                "task_phase_stage": 1,
+                "input_data_id": "input",
+                "input_data_name": "image.jpg",
+                "updated_datetime": "2026-08-05T00:00:00+09:00",
+                "annotation_id": "anno",
+                "label": "car",
+                "attributes": {"status": "歩高者が歩いています。"},
+                "validation_messages": {"status": "誤字があります。"},
+                "suggested_attributes": {"status": "歩行者が歩いています。"},
+            }
+        ],
+        output=None,
+        output_format="csv",
+    )
+
+    captured = capsys.readouterr()
+
+    assert "project_id,task_id,task_status" in captured.out
+    assert "prj,task,complete" in captured.out
 
 
 @pytest.mark.access_webapi
