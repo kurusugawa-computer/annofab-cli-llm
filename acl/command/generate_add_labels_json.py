@@ -782,6 +782,10 @@ def main(args: argparse.Namespace) -> None:
 
     annofab_labels = to_annofab_labels(result)
     if len(annofab_labels) == 0:
+        if args.allow_empty:
+            print_json(annofab_labels, output=args.output)
+            logger.info("追加対象ラベルがないため、空のJSONを出力しました。")
+            return
         raise ValueError("アノテーション仕様に追加可能なラベルを抽出できませんでした。")
 
     print_json(annofab_labels, output=args.output)
@@ -819,6 +823,11 @@ def add_argument_to_parser(parser: argparse.ArgumentParser) -> None:
         action="store_true",
         dest="no_interactive",
         help="未解決テキストが存在しても、補足情報の入力を求めずに終了します。",
+    )
+    parser.add_argument(
+        "--allow_empty",
+        action="store_true",
+        help="追加対象がない場合も空のJSONを出力して正常終了します。",
     )
 
 

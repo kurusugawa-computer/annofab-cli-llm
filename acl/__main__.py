@@ -13,6 +13,7 @@ from acl.command.generate_add_attribute_restriction_json import add_parser as ad
 from acl.command.generate_add_attributes_json import add_parser as add_parser_for_generate_add_attributes_json
 from acl.command.generate_add_choices_to_attributes_json import add_parser as add_parser_for_generate_add_choices_to_attributes_json
 from acl.command.generate_add_labels_json import add_parser as add_parser_for_generate_add_labels_json
+from acl.command.generate_script import add_parser as add_parser_for_generate_script
 from acl.command.generate_update_attributes_json import add_parser as add_parser_for_generate_update_attributes_json
 from acl.command.generate_update_labels_json import add_parser as add_parser_for_generate_update_labels_json
 from acl.command.validate_annotation_specs import add_parser as add_parser_for_validate_annotation_specs
@@ -124,6 +125,7 @@ def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argpa
     add_parser_for_generate_add_attributes_json(annotation_specs_subparsers)
     add_parser_for_generate_add_choices_to_attributes_json(annotation_specs_subparsers)
     add_parser_for_generate_add_labels_json(annotation_specs_subparsers)
+    add_parser_for_generate_script(annotation_specs_subparsers)
     add_parser_for_generate_update_attributes_json(annotation_specs_subparsers)
     add_parser_for_generate_update_labels_json(annotation_specs_subparsers)
     add_parser_for_validate_annotation_specs(annotation_specs_subparsers)
