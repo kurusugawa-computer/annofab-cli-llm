@@ -481,9 +481,7 @@ def test_get_annotation_specs_from_project_id(monkeypatch, annotation_specs):
 def test_get_project_type_from_project_id(monkeypatch, project, expected):
     monkeypatch.setattr(
         "acl.command.generate_add_labels_json.annofabapi.build",
-        lambda **_: SimpleNamespace(
-            api=SimpleNamespace(get_project=lambda project_id: (project, {"project_id": project_id}))
-        ),
+        lambda **_: SimpleNamespace(api=SimpleNamespace(get_project=lambda project_id: (project, {"project_id": project_id}))),
     )
 
     actual = get_project_type_from_project_id(project_id="prj1", annofab_pat="pat1")

@@ -184,10 +184,7 @@ def normalize_assignments(
                 label_name_ens.append(label_name_en)
 
     return ExistingAttributeLabelAssignmentParseResult(
-        assignments=[
-            ExistingAttributeLabelAssignment(attribute_id=attribute_id, label_name_ens=label_name_ens)
-            for attribute_id, label_name_ens in assignments_by_attribute_id.items()
-        ],
+        assignments=[ExistingAttributeLabelAssignment(attribute_id=attribute_id, label_name_ens=label_name_ens) for attribute_id, label_name_ens in assignments_by_attribute_id.items()],
         warnings=warnings,
         unresolved_texts=result.unresolved_texts,
     )
