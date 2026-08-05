@@ -272,6 +272,20 @@ def get_catalog_keybind(keybinds: list[dict[str, Any]] | None) -> KeybindCandida
     return KeybindCandidate.model_validate(keybinds[0])
 
 
+def is_default_choice(*, additional: dict[str, Any], choice: dict[str, Any]) -> bool:
+    """
+    選択肢が属性のデフォルト値かどうかを判定します。
+
+    Args:
+        additional: Annofab APIの属性情報
+        choice: Annofab APIの選択肢情報
+
+    Returns:
+        選択肢がデフォルト値ならTrue
+    """
+    return additional["default"] == choice["choice_id"]
+
+
 def get_required_japanese_message(annotation_text: Any) -> str:  # noqa: ANN401
     """
     多言語メッセージから日本語の必須文字列を取得します。
@@ -344,7 +358,7 @@ def get_attribute_catalog(annotation_specs: dict[str, Any]) -> list[AttributeCat
                     ChoiceCatalogItem(
                         choice_name_en=get_english_message(choice["name"]),
                         choice_name_ja=get_required_japanese_message(choice["name"]),
-                        is_default=choice["is_default"],
+                        is_default=is_default_choice(additional=additional, choice=choice),
                         keybind=get_catalog_keybind(choice["keybind"]),
                     )
                     for choice in choices

@@ -10,7 +10,7 @@ from loguru import logger
 from pydantic import BaseModel, Field, model_validator
 
 import acl.common.cli
-from acl.command.generate_add_attributes_json import get_annotation_specs, get_catalog_keybind, get_required_japanese_message
+from acl.command.generate_add_attributes_json import get_annotation_specs, get_catalog_keybind, get_required_japanese_message, is_default_choice
 from acl.command.generate_add_labels_json import STRUCTURED_OUTPUT_MODEL_CONFIG, KeybindCandidate, UnresolvedText, format_unresolved_text
 from acl.common.cli import read_at_file
 from acl.common.utils import print_json
@@ -197,7 +197,7 @@ def get_attribute_update_catalog(annotation_specs: dict[str, Any]) -> list[Attri
                         choice_id=choice["choice_id"],
                         choice_name_en=get_english_message(choice["name"]),
                         choice_name_ja=get_required_japanese_message(choice["name"]),
-                        is_default=choice["is_default"],
+                        is_default=is_default_choice(additional=additional, choice=choice),
                         keybind=get_catalog_keybind(choice["keybind"]),
                     )
                     for choice in additional["choices"]

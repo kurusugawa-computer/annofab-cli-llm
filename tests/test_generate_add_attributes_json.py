@@ -12,6 +12,7 @@ from acl.command.generate_add_attributes_json import (
     get_annotation_specs,
     get_attribute_catalog,
     get_label_catalog,
+    is_default_choice,
     normalize_parsed_attributes,
     to_annofab_attributes,
 )
@@ -86,7 +87,7 @@ def annotation_specs() -> dict:
                 },
                 "type": "select",
                 "read_only": True,
-                "default": None,
+                "default": "choice_general_car",
                 "keybind": None,
                 "choices": [
                     {
@@ -97,7 +98,6 @@ def annotation_specs() -> dict:
                                 {"lang": "ja-JP", "message": "乗用車"},
                             ]
                         },
-                        "is_default": True,
                         "keybind": [
                             {
                                 "alt": False,
@@ -115,7 +115,6 @@ def annotation_specs() -> dict:
                                 {"lang": "ja-JP", "message": "トラック"},
                             ]
                         },
-                        "is_default": False,
                         "keybind": [
                             {
                                 "alt": False,
@@ -244,6 +243,14 @@ def test_get_attribute_catalog_includes_keybind_and_choice_details(annotation_sp
             "shift": False,
         },
     }
+
+
+def test_is_default_choice():
+    additional = {"default": "choice_general_car"}
+
+    assert is_default_choice(additional=additional, choice={"choice_id": "choice_general_car"})
+    assert not is_default_choice(additional=additional, choice={"choice_id": "choice_truck"})
+    assert not is_default_choice(additional={"default": ""}, choice={"choice_id": "choice_general_car"})
 
 
 def test_normalize_parsed_attributes(annotation_specs):

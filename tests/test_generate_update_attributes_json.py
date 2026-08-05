@@ -64,7 +64,7 @@ def annotation_specs() -> dict:
                 },
                 "type": "select",
                 "read_only": True,
-                "default": None,
+                "default": "choice_general_car",
                 "keybind": None,
                 "choices": [
                     {
@@ -75,7 +75,6 @@ def annotation_specs() -> dict:
                                 {"lang": "ja-JP", "message": "乗用車"},
                             ]
                         },
-                        "is_default": True,
                         "keybind": [
                             {
                                 "alt": False,
@@ -93,7 +92,6 @@ def annotation_specs() -> dict:
                                 {"lang": "ja-JP", "message": "トラック"},
                             ]
                         },
-                        "is_default": False,
                         "keybind": None,
                     },
                 ],
