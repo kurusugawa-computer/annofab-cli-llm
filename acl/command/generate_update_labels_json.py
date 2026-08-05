@@ -270,11 +270,7 @@ def get_existing_field_values_by_label_id(annotation_specs: dict[str, Any]) -> d
     Returns:
         ラベルIDをキー、既存 field_values を値にした辞書
     """
-    return {
-        label["label_id"]: label.get("field_values", {})
-        for label in annotation_specs["labels"]
-        if isinstance(label.get("field_values"), dict)
-    }
+    return {label["label_id"]: label.get("field_values", {}) for label in annotation_specs["labels"] if isinstance(label.get("field_values"), dict)}
 
 
 def dump_label_update_for_annofab(label: LabelUpdateCandidate, *, existing_field_values: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -323,10 +319,7 @@ def to_annofab_update_labels(result: LabelUpdateParseResult, annotation_specs: d
     解析結果を ``annotation_specs update_labels --label_json`` に渡せるJSONへ変換します。
     """
     existing_field_values_by_label_id = get_existing_field_values_by_label_id(annotation_specs) if annotation_specs is not None else {}
-    return [
-        dump_label_update_for_annofab(label, existing_field_values=existing_field_values_by_label_id.get(label.label_id))
-        for label in result.labels
-    ]
+    return [dump_label_update_for_annofab(label, existing_field_values=existing_field_values_by_label_id.get(label.label_id)) for label in result.labels]
 
 
 def log_parse_warnings(result: LabelUpdateParseResult) -> None:
