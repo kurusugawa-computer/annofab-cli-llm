@@ -427,6 +427,10 @@ def main(args: argparse.Namespace) -> None:
         raise ValueError("アノテーション仕様で更新可能な属性を抽出できませんでした。")
 
     print_json(annofab_attributes, output=args.output)
+    if args.output is None:
+        logger.info("更新対象属性のJSONを標準出力に出力しました。")
+    else:
+        logger.info(f"更新対象属性のJSONをファイルに出力しました。 :: output='{args.output}'")
     logger.info(OUTPUT_USAGE_MESSAGE)
     print_json(annofab_attributes, temp_dir / "annofab_attributes.json")
     logger.info("属性更新情報の自然言語解析が完了しました。")

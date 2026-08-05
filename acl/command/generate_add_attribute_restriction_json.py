@@ -272,6 +272,10 @@ def main(args: argparse.Namespace) -> None:
         print_json(annofab_restrictions, output=output_path)
         logger.info(OUTPUT_USAGE_MESSAGE)
         print_json(annofab_restrictions, temp_dir / "annofab_restrictions.json")
+    if output_path is None:
+        logger.info("属性制約の解析結果を標準出力に出力しました。")
+    else:
+        logger.info(f"属性制約の解析結果をファイルに出力しました。 :: output='{output_path}'")
 
     logger.info("属性制約の自然言語解析が完了しました。")
 

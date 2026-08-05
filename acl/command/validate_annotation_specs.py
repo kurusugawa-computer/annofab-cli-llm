@@ -370,6 +370,10 @@ def main(args: argparse.Namespace) -> None:
     )
 
     output_string(result, output=args.output)
+    if args.output is None:
+        logger.info("アノテーション仕様のレビュー結果を標準出力に出力しました。")
+    else:
+        logger.info(f"アノテーション仕様のレビュー結果をファイルに出力しました。 :: output='{args.output}'")
 
     logger.info("アノテーション仕様のレビューが完了しました。")
 

@@ -387,6 +387,7 @@ def main(args: argparse.Namespace) -> None:
 
         print_csv(df, output=out)
 
+    logger.info(f"アノテーション属性値の検証結果をファイルに出力しました。 :: output='{out}'")
     logger.info("アノテーションの属性値の検証が完了しました。")
 
 
