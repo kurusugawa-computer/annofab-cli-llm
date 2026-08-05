@@ -215,7 +215,12 @@ def add_argument_to_parser(parser: argparse.ArgumentParser) -> None:
     group.add_argument("--annotation_specs_json_file", type=Path, help="annotation specs v3 のJSONファイルのパス")
     group.add_argument("-p", "--project_id", type=str, help="AnnofabのプロジェクトID")
     parser.add_argument("--attribute_id", type=str, required=True, help="選択肢を追加する対象属性のID")
-    parser.add_argument("--annotation_rule", type=str, required=True, help="選択肢追加に関するアノテーションルールやアノテーション仕様の自然言語。先頭に`@`を指定すると、`@`以降をファイルパスとみなしてファイルの中身を読み込みます。")
+    parser.add_argument(
+        "--annotation_rule",
+        type=str,
+        required=True,
+        help="選択肢追加に関するアノテーションルールやアノテーション仕様の自然言語。先頭に`@`を指定すると、`@`以降をファイルパスとみなしてファイルの中身を読み込みます。",
+    )
     parser.add_argument("-o", "--output", type=Path, help="出力先のファイルパス。指定しない場合は、標準出力に出力されます。")
     parser.add_argument("--no_interactive", action="store_true", dest="no_interactive", help="未解決テキストが存在しても、補足情報の入力を求めずに終了します。")
 
