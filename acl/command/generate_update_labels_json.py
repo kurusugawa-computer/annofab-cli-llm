@@ -13,7 +13,6 @@ from acl.command.generate_add_labels_json import (
     FieldValues,
     KeybindCandidate,
     UnresolvedText,
-    dump_label_catalog,
     format_unresolved_text,
     get_annotation_specs,
     get_catalog_keybind,
@@ -163,6 +162,19 @@ def get_label_update_catalog(annotation_specs: dict[str, Any]) -> list[LabelUpda
     ]
 
 
+def dump_label_update_catalog(catalog: list[LabelUpdateCatalogItem]) -> list[dict[str, Any]]:
+    """
+    更新用の既存ラベル一覧をJSON出力可能なdictに変換します。
+
+    Args:
+        catalog: 更新用の既存ラベル一覧
+
+    Returns:
+        JSON出力可能なdictの一覧
+    """
+    return [item.model_dump(mode="json") for item in catalog]
+
+
 def parse_update_labels_from_text(
     *,
     text: str,
@@ -201,7 +213,7 @@ unresolved_texts には、解釈できなかった原文を text、解釈でき�
 {text}
 
 ## 既存ラベル一覧
-{json.dumps(dump_label_catalog(label_catalog), ensure_ascii=False, indent=2)}
+{json.dumps(dump_label_update_catalog(label_catalog), ensure_ascii=False, indent=2)}
 """.strip(),
         },
     ]
@@ -227,7 +239,7 @@ unresolved_texts には、解釈できなかった原文を text、解釈でき�
     )
 
     if temp_dir is not None:
-        print_json(dump_label_catalog(label_catalog), temp_dir / "label_catalog.json")
+        print_json(dump_label_update_catalog(label_catalog), temp_dir / "label_catalog.json")
         print_json(result.model_dump(mode="json"), temp_dir / "llm_completion.json")
 
     return result

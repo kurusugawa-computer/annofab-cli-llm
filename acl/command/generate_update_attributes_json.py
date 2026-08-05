@@ -1,7 +1,8 @@
 import argparse
 import json
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from annofabapi.models import AdditionalDataDefinitionType
 from annofabapi.util.annotation_specs import get_english_message, get_message_with_lang
@@ -166,7 +167,7 @@ class AttributeUpdateParseResult(BaseModel):
     """属性更新ルールとして解釈できなかった原文、理由、必要な補足情報です。"""
 
 
-def get_optional_message(annotation_text: Any, *, lang: str) -> str | None:  # noqa: ANN401
+def get_optional_message(annotation_text: Any, *, lang: Literal["en-US", "ja-JP", "vi-VN"]) -> str | None:  # noqa: ANN401
     return get_message_with_lang(annotation_text, lang)
 
 
@@ -208,7 +209,7 @@ def get_attribute_update_catalog(annotation_specs: dict[str, Any]) -> list[Attri
     ]
 
 
-def dump_catalog(catalog: list[BaseModel]) -> list[dict[str, Any]]:
+def dump_catalog(catalog: Sequence[BaseModel]) -> list[dict[str, Any]]:
     return [item.model_dump(mode="json") for item in catalog]
 
 
