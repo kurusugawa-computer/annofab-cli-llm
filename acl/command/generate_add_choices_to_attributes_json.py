@@ -184,7 +184,6 @@ def main(args: argparse.Namespace) -> None:
     annotation_rule = read_at_file(args.annotation_rule)
     temp_dir = create_command_temp_dir(COMMAND_NAME)
     logger.info(f"一時ディレクトリ'{temp_dir}'を作成しました。このディレクトリにLLMの入出力情報などを出力します。")
-    temp_dir.mkdir(exist_ok=True)
     annotation_specs = get_annotation_specs(annotation_specs_json_file=args.annotation_specs_json_file, project_id=args.project_id, annofab_pat=args.annofab_pat)
     print_json(annotation_specs, temp_dir / "annotation_specs.json")
     attribute = get_target_attribute(annotation_specs, args.attribute_id)
