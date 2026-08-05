@@ -15,7 +15,7 @@ from acl.common.cli import read_at_file
 from acl.common.utils import print_json
 from acl.common.xdg_util import create_command_temp_dir
 
-COMMAND_NAME = "parse_label"
+COMMAND_NAME = "generate_add_labels_json"
 OUTPUT_USAGE_MESSAGE = "出力されるJSONは、annofabcli annotation_specs add_labels コマンドの --label_json 引数にそのまま指定できます。"
 """出力JSONの利用方法に関するメッセージです。"""
 HEX_COLOR_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
@@ -483,7 +483,7 @@ def get_label_catalog(annotation_specs: dict[str, Any]) -> list[LabelCatalogItem
     return catalog
 
 
-def parse_labels_from_text(
+def generate_add_labels_from_text(
     *,
     text: str,
     annotation_specs: dict[str, Any],
@@ -742,7 +742,7 @@ def main(args: argparse.Namespace) -> None:
     print_json(annotation_specs, temp_dir / "annotation_specs.json")
 
     current_text = annotation_rule
-    result = parse_labels_from_text(
+    result = generate_add_labels_from_text(
         text=current_text,
         annotation_specs=annotation_specs,
         project_type=args.project_type,
@@ -763,7 +763,7 @@ def main(args: argparse.Namespace) -> None:
         logger.info(f"{len(supplements)}件の補足情報をもとに再解析します。")
         supplement_text = "\n".join(supplements)
         current_text = f"{current_text}\n\n## 補足情報\n{supplement_text}"
-        result = parse_labels_from_text(
+        result = generate_add_labels_from_text(
             text=current_text,
             annotation_specs=annotation_specs,
             project_type=args.project_type,
@@ -834,8 +834,8 @@ def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse
     parser = acl.common.cli.add_parser(
         subparsers,
         COMMAND_NAME,
-        "自然言語から追加対象のラベルを解析します。",
-        description=f"自然言語から追加対象のラベルを解析します。\n{OUTPUT_USAGE_MESSAGE}",
+        "自然言語からラベル追加用JSONを生成します。",
+        description=f"自然言語からラベル追加用JSONを生成します。\n{OUTPUT_USAGE_MESSAGE}",
     )
     add_argument_to_parser(parser)
     parser.set_defaults(func=main)

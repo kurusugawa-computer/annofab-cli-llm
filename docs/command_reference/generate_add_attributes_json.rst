@@ -1,15 +1,15 @@
 ============================================================
-annotation_specs parse_attribute
+annotation_specs generate_add_attributes_json
 ============================================================
 
 Description
 =================================
 
-自然言語で書かれた属性追加ルールやアノテーション仕様の文章から、Annofabに追加する属性を解析します。
+自然言語で書かれた属性追加ルールやアノテーション仕様の文章から、Annofabに追加する属性のJSONを生成します。
 出力されるJSONは、 `annofabcli annotation_specs add_attributes <https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation_specs/add_attributes.html>`_ コマンドの ``--attribute_json`` 引数にそのまま指定できます。
 
 このコマンドを実行するには、対象のラベルがアノテーション仕様に存在している必要があります。
-新規でアノテーション仕様を作成する場合は、先に ``annotation_specs parse_label`` でラベルを追加してください。
+新規でアノテーション仕様を作成する場合は、先に ``annotation_specs generate_add_labels_json`` でラベルを追加してください。
 
 
 Examples
@@ -27,9 +27,9 @@ Examples
 
 .. code-block::
 
-    $ annofabcli-llm annotation_specs parse_attribute \
+    $ annofabcli-llm annotation_specs generate_add_attributes_json \
      --annotation_specs_json_file annotation_specs.json \
-     --annotation_rule @rule.md
+     --annotation_rule @rule.md \
      --output attributes.json
 
 
@@ -100,7 +100,7 @@ Examples
 
 .. note::
 
-    解析結果の途中経過は ``$HOME/.cache/annofab-cli-llm/temp/parse_attribute_*`` に出力されます。
+    解析結果の途中経過は ``$HOME/.cache/annofab-cli-llm/temp/generate_add_attributes_json_*`` に出力されます。
 
 
 
@@ -108,7 +108,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: acl.command.parse_attribute.add_parser
-   :prog: annofabcli-llm annotation_specs parse_attribute
+   :ref: acl.command.generate_add_attributes_json.add_parser
+   :prog: annofabcli-llm annotation_specs generate_add_attributes_json
    :nosubcommands:
    :nodefaultconst:

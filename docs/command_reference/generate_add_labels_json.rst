@@ -1,11 +1,11 @@
 ============================================================
-annotation_specs parse_label
+annotation_specs generate_add_labels_json
 ============================================================
 
 Description
 =================================
 
-自然言語で書かれたアノテーションルールやアノテーション仕様の文章から、Annofabに追加するラベルを解析します。
+自然言語で書かれたアノテーションルールやアノテーション仕様の文章から、Annofabに追加するラベルのJSONを生成します。
 出力されるJSONは、 `annofabcli annotation_specs add_labels <https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation_specs/add_labels.html>`_ コマンドの ``--label_json`` 引数にそのまま指定できます。
 
 このコマンドは、新規でアノテーション仕様を作成する場合に最初に実行します。
@@ -30,7 +30,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli-llm annotation_specs parse_label \
+    $ annofabcli-llm annotation_specs generate_add_labels_json \
      --project_type image \
      --annotation_rule @rule.md \
      --output labels.json
@@ -96,7 +96,7 @@ Examples
     ]
 
 
-``parse_label`` コマンドで出力された ``labels.json`` は、以下のコマンドでAnnofabのアノテーション仕様にラベルを追加できます。
+``generate_add_labels_json`` コマンドで出力された ``labels.json`` は、以下のコマンドでAnnofabのアノテーション仕様にラベルを追加できます。
 
 
 .. code-block::
@@ -108,7 +108,7 @@ Examples
 
 .. note::
 
-    解析結果の途中経過は ``$HOME/.cache/annofab-cli-llm/temp/parse_label_*`` に出力されます。
+    解析結果の途中経過は ``$HOME/.cache/annofab-cli-llm/temp/generate_add_labels_json_*`` に出力されます。
 
 
 
@@ -119,7 +119,7 @@ Examples
 
 .. code-block::
 
-    $ annofabcli-llm annotation_specs parse_label \
+    $ annofabcli-llm annotation_specs generate_add_labels_json \
      --project_id ${PROJECT_ID} \
      --project_type image \
      --annotation_rule @rule.md \
@@ -131,7 +131,7 @@ Usage Details
 =================================
 
 .. argparse::
-   :ref: acl.command.parse_label.add_parser
-   :prog: annofabcli-llm annotation_specs parse_label
+   :ref: acl.command.generate_add_labels_json.add_parser
+   :prog: annofabcli-llm annotation_specs generate_add_labels_json
    :nosubcommands:
    :nodefaultconst:

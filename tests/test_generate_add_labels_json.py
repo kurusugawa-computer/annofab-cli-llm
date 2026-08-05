@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from acl.command.parse_label import (
+from acl.command.generate_add_labels_json import (
     AnnotationType,
     FieldValues,
     KeybindCandidate,
@@ -17,10 +17,10 @@ from acl.command.parse_label import (
     UnresolvedText,
     VertexCountMinMaxFieldValue,
     format_unresolved_text,
+    generate_add_labels_from_text,
     get_annotation_specs,
     get_label_catalog,
     normalize_parsed_labels,
-    parse_labels_from_text,
     to_annofab_labels,
 )
 
@@ -62,7 +62,7 @@ def annotation_specs() -> dict:
     }
 
 
-def test_parse_labels_from_text(monkeypatch, annotation_specs):
+def test_generate_add_labels_from_text(monkeypatch, annotation_specs):
     result = LabelParseResult(
         labels=[
             LabelCandidate(label_name_en="pedestrian", label_name_ja="歩行者", annotation_type=AnnotationType.BOUNDING_BOX, color="#FF0000"),
@@ -87,9 +87,9 @@ def test_parse_labels_from_text(monkeypatch, annotation_specs):
             usage=SimpleNamespace(total_tokens=12, prompt_tokens=8, completion_tokens=4),
         )
 
-    monkeypatch.setattr("acl.command.parse_label.completion", fake_completion)
+    monkeypatch.setattr("acl.command.generate_add_labels_json.completion", fake_completion)
 
-    actual = parse_labels_from_text(
+    actual = generate_add_labels_from_text(
         text="歩行者と自転車のラベルを追加してください。どちらも bounding_box です。",
         annotation_specs=annotation_specs,
         project_type=ProjectType.IMAGE,
@@ -468,7 +468,7 @@ def test_get_annotation_specs_from_project_id(monkeypatch, annotation_specs):
         called["pat"] = pat
         return SimpleNamespace(api=SimpleNamespace(get_annotation_specs=lambda project_id, query_params: (annotation_specs, {"project_id": project_id, "query_params": query_params})))
 
-    monkeypatch.setattr("acl.command.parse_label.annofabapi.build", fake_build)
+    monkeypatch.setattr("acl.command.generate_add_labels_json.annofabapi.build", fake_build)
 
     actual = get_annotation_specs(
         annotation_specs_json_file=None,

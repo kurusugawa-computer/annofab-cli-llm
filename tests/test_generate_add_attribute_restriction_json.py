@@ -4,14 +4,14 @@ from types import SimpleNamespace
 import pytest
 from annofabapi.util.attribute_restrictions import RestrictionAst, RestrictionAstType
 
-from acl.command.parse_attribute_restriction import (
+from acl.command.generate_add_attribute_restriction_json import (
     RestrictionAstParseResult,
     get_annotation_specs,
     parse_restrictions_from_text,
     to_annofab_restrictions,
     to_human_readable_text,
 )
-from acl.command.parse_label import UnresolvedText
+from acl.command.generate_add_labels_json import UnresolvedText
 
 
 @pytest.fixture
@@ -83,7 +83,7 @@ def test_parse_restrictions_from_text(monkeypatch, annotation_specs):
             usage=SimpleNamespace(total_tokens=10, prompt_tokens=7, completion_tokens=3),
         )
 
-    monkeypatch.setattr("acl.command.parse_attribute_restriction.completion", fake_completion)
+    monkeypatch.setattr("acl.command.generate_add_attribute_restriction_json.completion", fake_completion)
 
     actual = parse_restrictions_from_text(
         text="occludedならnoteを必須にしてください。",
@@ -179,7 +179,7 @@ def test_get_annotation_specs_from_project_id(monkeypatch, annotation_specs):
         called["pat"] = pat
         return SimpleNamespace(api=SimpleNamespace(get_annotation_specs=lambda project_id, query_params: (annotation_specs, {"project_id": project_id, "query_params": query_params})))
 
-    monkeypatch.setattr("acl.command.parse_attribute_restriction.annofabapi.build", fake_build)
+    monkeypatch.setattr("acl.command.generate_add_attribute_restriction_json.annofabapi.build", fake_build)
 
     actual = get_annotation_specs(
         annotation_specs_json_file=None,

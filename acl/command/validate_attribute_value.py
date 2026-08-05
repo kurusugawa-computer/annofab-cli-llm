@@ -300,6 +300,42 @@ def to_output_attribute_list(attribute_list: list[dict[str, Any]], validation_re
     return output_attribute_list
 
 
+def write_output_attribute_list(output_attribute_list: list[dict[str, Any]], *, output: Path | None, output_format: str) -> None:
+    """
+    アノテーション属性値の検証結果を出力します。
+
+    Args:
+        output_attribute_list: 出力対象の属性値検証結果
+        output: 出力先。Noneなら標準出力に出力する
+        output_format: 出力形式。``json`` または ``csv``
+    """
+    if output_format == "json":
+        print_json(output_attribute_list, output)
+        return
+
+    cols = [
+        "project_id",
+        "task_id",
+        "task_status",
+        "task_phase",
+        "task_phase_stage",
+        "input_data_id",
+        "input_data_name",
+        "updated_datetime",
+        "annotation_id",
+        "label",
+        "attributes",
+        "validation_messages",
+        "suggested_attributes",
+    ]
+    df = pandas.DataFrame(output_attribute_list, columns=cols)
+    # `annofabcli annotation change_attributes_per_annotation`コマンドの`--csv`に渡せるようにするため、JSONに変換する。
+    for col in ["attributes", "validation_messages", "suggested_attributes"]:
+        df[col] = df[col].map(json.dumps)
+
+    print_csv(df, output=output)
+
+
 def main(args: argparse.Namespace) -> None:
     validation_prompt = read_at_file(args.prompt)
     attribute_description = read_at_file(args.attribute_description) if args.attribute_description else None
@@ -360,33 +396,11 @@ def main(args: argparse.Namespace) -> None:
 
     output_attribute_list = to_output_attribute_list(filtered_attribute_list, results)
 
-    out = args.output
-    out.parent.mkdir(parents=True, exist_ok=True)
-    if args.output_format == "json":
-        print_json(output_attribute_list, out)
+    write_output_attribute_list(output_attribute_list, output=args.output, output_format=args.output_format)
+    if args.output is None:
+        logger.info("アノテーション属性値の検証結果を標準出力に出力しました。")
     else:
-        cols = [
-            "project_id",
-            "task_id",
-            "task_status",
-            "task_phase",
-            "task_phase_stage",
-            "input_data_id",
-            "input_data_name",
-            "updated_datetime",
-            "annotation_id",
-            "label",
-            "attributes",
-            "validation_messages",
-            "suggested_attributes",
-        ]
-        df = pandas.DataFrame(output_attribute_list, columns=cols)
-        # `annofabcli annotation change_attributes_per_annotation`コマンドの`--csv`に渡せるようにするため、JSONに変換する。
-        for col in ["attributes", "validation_messages", "suggested_attributes"]:
-            df[col] = df[col].map(json.dumps)
-
-        print_csv(df, output=out)
-
+        logger.info(f"アノテーション属性値の検証結果をファイルに出力しました。 :: output='{args.output}'")
     logger.info("アノテーションの属性値の検証が完了しました。")
 
 
