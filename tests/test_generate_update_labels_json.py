@@ -24,6 +24,7 @@ def annotation_specs() -> dict:
                     "messages": [
                         {"lang": "en-US", "message": "car"},
                         {"lang": "ja-JP", "message": "車"},
+                        {"lang": "vi-VN", "message": "xe hơi"},
                     ]
                 },
                 "annotation_type": "bounding_box",
@@ -54,7 +55,9 @@ def test_parse_update_labels_from_text(monkeypatch, annotation_specs):
         labels=[
             LabelUpdateCandidate(
                 label_id="label_car",
+                label_name_en="vehicle",
                 label_name_ja="自動車",
+                label_name_vi="phương tiện",
                 color="#00AAFF",
                 keybind=KeybindCandidate(code="Digit2", ctrl=True),
             )
@@ -91,8 +94,11 @@ def test_parse_update_labels_from_text(monkeypatch, annotation_specs):
     user_content = actual_messages[1]["content"]
     assert "既存ラベルを更新する内容だけを labels に入れてください。" in developer_content
     assert "更新対象は必ず既存ラベル一覧の label_id で指定してください。" in developer_content
+    assert "label_id、annotation_type は更新できません。" in developer_content
+    assert "label_name_en、annotation_type は更新できません。" not in developer_content
     assert "## 既存ラベル一覧" in user_content
     assert '"label_id": "label_car"' in user_content
+    assert '"label_name_vi": "xe hơi"' in user_content
     assert '"field_values": {' in user_content
 
 
@@ -103,6 +109,7 @@ def test_get_label_update_catalog(annotation_specs):
         "label_id": "label_car",
         "label_name_en": "car",
         "label_name_ja": "車",
+        "label_name_vi": "xe hơi",
         "annotation_type": "bounding_box",
         "color": "#FF0000",
         "keybind": {
@@ -130,7 +137,7 @@ def test_normalize_label_color():
 def test_normalize_parsed_update_labels(annotation_specs):
     result = LabelUpdateParseResult(
         labels=[
-            LabelUpdateCandidate(label_id="label_car", label_name_ja="自動車"),
+            LabelUpdateCandidate(label_id="label_car", label_name_en="vehicle", label_name_ja="自動車"),
             LabelUpdateCandidate(label_id="unknown_label", label_name_ja="不明"),
             LabelUpdateCandidate(label_id="label_car", color="#00AAFF"),
             LabelUpdateCandidate(label_id="label_car"),
@@ -139,7 +146,7 @@ def test_normalize_parsed_update_labels(annotation_specs):
 
     actual = normalize_parsed_update_labels(result, annotation_specs)
 
-    assert actual.labels == [LabelUpdateCandidate(label_id="label_car", label_name_ja="自動車")]
+    assert actual.labels == [LabelUpdateCandidate(label_id="label_car", label_name_en="vehicle", label_name_ja="自動車")]
     assert len(actual.warnings) == 3
 
 
@@ -148,7 +155,9 @@ def test_to_annofab_update_labels():
         labels=[
             LabelUpdateCandidate(
                 label_id="label_car",
+                label_name_en="vehicle",
                 label_name_ja="自動車",
+                label_name_vi="phương tiện",
                 field_values=FieldValues(
                     margin_of_error_tolerance=MarginOfErrorToleranceFieldValue(
                         _type="MarginOfErrorTolerance",
@@ -164,7 +173,9 @@ def test_to_annofab_update_labels():
     assert actual == [
         {
             "label_id": "label_car",
+            "label_name_en": "vehicle",
             "label_name_ja": "自動車",
+            "label_name_vi": "phương tiện",
             "field_values": {
                 "margin_of_error_tolerance": {
                     "_type": "MarginOfErrorTolerance",

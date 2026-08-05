@@ -22,7 +22,7 @@ Examples
 .. code-block::
     :caption: rule.md
 
-    carラベルの日本語名を「自動車」に変更してください。
+    carラベルの英語名をvehicle、日本語名を「自動車」に変更してください。
     carラベルの色を #00AAFF にしてください。
 
 
@@ -40,6 +40,7 @@ Examples
     [
       {
         "label_id": "label_car",
+        "label_name_en": "vehicle",
         "label_name_ja": "自動車",
         "color": "#00AAFF"
       }

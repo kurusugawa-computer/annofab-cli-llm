@@ -17,6 +17,7 @@ from acl.command.generate_add_labels_json import (
     format_unresolved_text,
     get_annotation_specs,
     get_catalog_keybind,
+    get_message,
     get_required_message,
 )
 from acl.common.cli import read_at_file
@@ -69,6 +70,9 @@ class LabelUpdateCatalogItem(BaseModel):
     label_name_ja: str = Field(description="既存ラベル名（日本語）です。")
     """既存ラベル名（日本語）です。"""
 
+    label_name_vi: str | None = Field(description="既存ラベル名（ベトナム語）です。")
+    """既存ラベル名（ベトナム語）です。"""
+
     annotation_type: str = Field(description="既存ラベルのアノテーション種類です。")
     """既存ラベルのアノテーション種類です。"""
 
@@ -92,8 +96,14 @@ class LabelUpdateCandidate(BaseModel):
     label_id: str = Field(description="更新対象ラベルのIDです。既存ラベル一覧に存在するIDを指定してください。")
     """更新対象ラベルのIDです。"""
 
+    label_name_en: str | None = Field(default=None, description="更新後のラベル名（英語）です。")
+    """更新後のラベル名（英語）です。"""
+
     label_name_ja: str | None = Field(default=None, description="更新後のラベル名（日本語）です。")
     """更新後のラベル名（日本語）です。"""
+
+    label_name_vi: str | None = Field(default=None, description="更新後のラベル名（ベトナム語）です。")
+    """更新後のラベル名（ベトナム語）です。"""
 
     color: str | None = Field(default=None, description="更新後のラベル色です。指定する場合は `#RRGGBB` 形式にしてください。")
     """更新後のラベル色です。"""
@@ -143,6 +153,7 @@ def get_label_update_catalog(annotation_specs: dict[str, Any]) -> list[LabelUpda
             label_id=label["label_id"],
             label_name_en=get_required_message(label["label_name"], lang="en-US"),
             label_name_ja=get_required_message(label["label_name"], lang="ja-JP"),
+            label_name_vi=get_message(label["label_name"], lang="vi-VN"),
             annotation_type=label["annotation_type"],
             color=normalize_label_color(label["color"]),
             keybind=get_catalog_keybind(label["keybind"]),
@@ -173,7 +184,7 @@ def parse_update_labels_from_text(
 既存ラベルを更新する内容だけを labels に入れてください。
 新規ラベルの追加、属性の追加・更新、属性制約、作業手順、品質基準は labels に入れず無視してください。
 更新対象は必ず既存ラベル一覧の label_id で指定してください。
-label_id、label_name_en、annotation_type は更新できません。
+label_id、annotation_type は更新できません。
 変更が必要な項目だけを出力してください。
 既存値と同じ値だけの更新は出力しないでください。
 field_values を更新する場合は置換として扱います。更新後も残すべき field_values をすべて出力してください。
