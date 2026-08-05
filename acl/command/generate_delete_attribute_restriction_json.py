@@ -162,9 +162,9 @@ def to_human_readable_text(resolved: ResolvedRestrictionsForDelete, result: Dele
     """解析・解決結果を人が読みやすいテキストへ変換します。"""
     lines = ["[restrictions]"]
     lines.extend(f"- {restriction_text}" for restriction_text in resolved.restriction_texts)
-    if not resolved.restriction_texts:
+    if len(resolved.restriction_texts) == 0:
         lines.append("(none)")
-    if resolved.warnings:
+    if len(resolved.warnings) > 0:
         lines.extend(("", "[warnings]"))
         lines.extend(f"- {warning}" for warning in resolved.warnings)
     if len(result.unresolved_texts) > 0:
