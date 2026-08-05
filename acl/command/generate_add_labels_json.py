@@ -10,7 +10,7 @@ from loguru import logger
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 import acl.common.cli
-from acl.common.annofab.annotation_type import AnnotationType, ProjectType, get_allowed_annotation_type_details, get_allowed_annotation_types, get_project_type_help
+from acl.common.annofab.annotation_type import AnnotationType, ProjectType, get_allowed_annotation_type_details, get_allowed_annotation_types, get_project_type
 from acl.common.cli import read_at_file
 from acl.common.utils import print_json
 from acl.common.xdg_util import create_command_temp_dir
@@ -577,35 +577,40 @@ unresolved_texts には、解釈できなかった原文を text、解釈でき�
     return result
 
 
-def get_annotation_specs(
-    *,
-    annotation_specs_json_file: Path | None,
-    project_id: str | None,
-    annofab_pat: str | None,
-) -> dict[str, Any]:
+def get_annotation_specs(*, project_id: str, annofab_pat: str | None) -> dict[str, Any]:
     """
-    ファイルまたはAnnofab APIからannotation specsを取得します。
+    Annofab APIからannotation specsを取得します。
 
     Args:
-        annotation_specs_json_file: annotation specs JSONファイル
         project_id: AnnofabのプロジェクトID
         annofab_pat: AnnofabのPAT
 
     Returns:
         annotation specs(v3)
     """
-    if annotation_specs_json_file is not None:
-        logger.info(f"annotation specs JSONファイルを読み込みます。 :: path='{annotation_specs_json_file}'")
-        return json.loads(annotation_specs_json_file.read_text(encoding="utf-8"))
-
-    if project_id is None:
-        logger.info("`annotation_specs_json_file`と`project_id`が未指定のため、既存ラベル一覧なしでラベルを解析します。")
-        return {"labels": [], "additionals": []}
-
     logger.info(f"Annofabからアノテーション仕様を取得します。 :: project_id='{project_id}'")
     service = annofabapi.build(pat=annofab_pat)
     annotation_specs, _ = service.api.get_annotation_specs(project_id, query_params={"v": "3"})
     return annotation_specs
+
+
+def get_project_type_from_project_id(*, project_id: str, annofab_pat: str | None) -> ProjectType:
+    """
+    Annofab APIから取得したプロジェクト情報に基づいてプロジェクト種別を判定します。
+
+    Args:
+        project_id: AnnofabのプロジェクトID
+        annofab_pat: AnnofabのPAT
+
+    Returns:
+        プロジェクト種別
+    """
+    logger.info(f"Annofabからプロジェクト情報を取得します。 :: project_id='{project_id}'")
+    service = annofabapi.build(pat=annofab_pat)
+    project, _ = service.api.get_project(project_id)
+    project_type = get_project_type(project)
+    logger.info(f"プロジェクト種別を判定しました。 :: project_id='{project_id}', project_type='{project_type.value}'")
+    return project_type
 
 
 def format_unresolved_text(unresolved_text: UnresolvedText) -> str:
@@ -735,21 +740,21 @@ def main(args: argparse.Namespace) -> None:
     temp_dir.mkdir(exist_ok=True)
 
     annotation_specs = get_annotation_specs(
-        annotation_specs_json_file=args.annotation_specs_json_file,
         project_id=args.project_id,
         annofab_pat=args.annofab_pat,
     )
     print_json(annotation_specs, temp_dir / "annotation_specs.json")
+    project_type = get_project_type_from_project_id(project_id=args.project_id, annofab_pat=args.annofab_pat)
 
     current_text = annotation_rule
     result = generate_add_labels_from_text(
         text=current_text,
         annotation_specs=annotation_specs,
-        project_type=args.project_type,
+        project_type=project_type,
         llm_model=args.model,
         temp_dir=temp_dir,
     )
-    result = normalize_parsed_labels(result, annotation_specs, project_type=args.project_type)
+    result = normalize_parsed_labels(result, annotation_specs, project_type=project_type)
     print_json(result.model_dump(mode="json"), temp_dir / "parse_result.json")
 
     log_parse_warnings(result)
@@ -766,11 +771,11 @@ def main(args: argparse.Namespace) -> None:
         result = generate_add_labels_from_text(
             text=current_text,
             annotation_specs=annotation_specs,
-            project_type=args.project_type,
+            project_type=project_type,
             llm_model=args.model,
             temp_dir=temp_dir,
         )
-        result = normalize_parsed_labels(result, annotation_specs, project_type=args.project_type)
+        result = normalize_parsed_labels(result, annotation_specs, project_type=project_type)
         print_json(result.model_dump(mode="json"), temp_dir / "parse_result.json")
 
         log_parse_warnings(result)
@@ -790,25 +795,12 @@ def main(args: argparse.Namespace) -> None:
 
 
 def add_argument_to_parser(parser: argparse.ArgumentParser) -> None:
-    group = parser.add_mutually_exclusive_group(required=False)
-    group.add_argument(
-        "--annotation_specs_json_file",
-        type=Path,
-        help="annotation specs v3 のJSONファイルのパス",
-    )
-    group.add_argument(
+    parser.add_argument(
         "-p",
         "--project_id",
         type=str,
-        help="AnnofabのプロジェクトID",
-    )
-
-    parser.add_argument(
-        "--project_type",
-        type=ProjectType,
-        choices=list(ProjectType),
         required=True,
-        help=get_project_type_help(),
+        help="AnnofabのプロジェクトID",
     )
     parser.add_argument(
         "--annotation_rule",
