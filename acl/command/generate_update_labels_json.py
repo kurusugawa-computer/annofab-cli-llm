@@ -19,6 +19,7 @@ from acl.command.generate_add_labels_json import (
     get_message,
     get_required_message,
 )
+from acl.common.annofab.annotation_specs import normalize_label_color
 from acl.common.cli import read_at_file
 from acl.common.utils import print_json
 from acl.common.xdg_util import create_command_temp_dir
@@ -35,31 +36,6 @@ FieldValueKey = Literal[
     "vertex_count_min_max",
 ]
 """削除対象として指定できる field_values のキーです。"""
-
-
-def normalize_label_color(color: Any) -> str | None:  # noqa: ANN401
-    """
-    Annofab APIのラベル色を ``#RRGGBB`` 形式に正規化します。
-
-    Args:
-        color: Annofab APIのラベル色
-
-    Returns:
-        ``#RRGGBB`` 形式の色。色が未設定または未対応形式の場合はNone
-    """
-    if color is None:
-        return None
-    if isinstance(color, str):
-        return color
-    if not isinstance(color, dict):
-        return None
-
-    red = color.get("red")
-    green = color.get("green")
-    blue = color.get("blue")
-    if isinstance(red, int) and isinstance(green, int) and isinstance(blue, int):
-        return f"#{red:02X}{green:02X}{blue:02X}"
-    return None
 
 
 class LabelUpdateCatalogItem(BaseModel):

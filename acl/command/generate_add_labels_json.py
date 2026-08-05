@@ -10,6 +10,7 @@ from loguru import logger
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 import acl.common.cli
+from acl.common.annofab.annotation_specs import normalize_label_color
 from acl.common.annofab.annotation_type import AnnotationType, ProjectType, get_allowed_annotation_type_details, get_allowed_annotation_types, get_project_type
 from acl.common.cli import read_at_file
 from acl.common.utils import print_json
@@ -475,7 +476,7 @@ def get_label_catalog(annotation_specs: dict[str, Any]) -> list[LabelCatalogItem
                 label_name_en=get_required_message(label_name, lang="en-US"),
                 label_name_ja=get_required_message(label_name, lang="ja-JP"),
                 annotation_type=label["annotation_type"],
-                color=label["color"],
+                color=normalize_label_color(label["color"]),
                 keybind=get_catalog_keybind(label["keybind"]),
                 field_values=label["field_values"],
             )

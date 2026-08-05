@@ -143,6 +143,14 @@ def test_get_label_catalog_includes_color_and_field_values(annotation_specs):
     }
 
 
+def test_get_label_catalog_normalizes_rgb_color(annotation_specs):
+    annotation_specs["labels"][0]["color"] = {"red": 0, "green": 0, "blue": 0}
+
+    actual = get_label_catalog(annotation_specs)
+
+    assert actual[0].color == "#000000"
+
+
 def test_normalize_parsed_labels(annotation_specs):
     result = LabelParseResult(
         labels=[
