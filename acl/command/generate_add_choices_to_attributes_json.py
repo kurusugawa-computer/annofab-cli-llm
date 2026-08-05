@@ -87,6 +87,12 @@ def parse_add_choices_from_text(
 ) -> ChoiceParseResult:
     """自然言語のテキストから追加する選択肢候補を抽出します。"""
     existing_choices = get_existing_choices(attribute)
+    target_attribute = {
+        "attribute_id": attribute["additional_data_definition_id"],
+        "attribute_name_en": get_english_message(attribute["name"]),
+        "attribute_name_ja": get_required_japanese_message(attribute["name"]),
+        "attribute_type": attribute["type"],
+    }
     messages = [
         {
             "role": "developer",
@@ -111,7 +117,7 @@ unresolved_texts には、解釈できなかった原文を text、理由を rea
 {text}
 
 ## 対象属性
-{json.dumps({"attribute_id": attribute["additional_data_definition_id"], "attribute_name_en": get_english_message(attribute["name"]), "attribute_name_ja": get_required_japanese_message(attribute["name"]), "attribute_type": attribute["type"]}, ensure_ascii=False, indent=2)}
+{json.dumps(target_attribute, ensure_ascii=False, indent=2)}
 
 ## 既存選択肢一覧
 {json.dumps([choice.model_dump(mode="json") for choice in existing_choices], ensure_ascii=False, indent=2)}
