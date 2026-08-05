@@ -329,7 +329,6 @@ def main(args: argparse.Namespace) -> None:
     temp_dir.mkdir(exist_ok=True)
 
     annotation_specs = get_annotation_specs(
-        annotation_specs_json_file=args.annotation_specs_json_file,
         project_id=args.project_id,
         annofab_pat=args.annofab_pat,
     )
@@ -373,16 +372,11 @@ def main(args: argparse.Namespace) -> None:
 
 
 def add_argument_to_parser(parser: argparse.ArgumentParser) -> None:
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument(
-        "--annotation_specs_json_file",
-        type=Path,
-        help="annotation specs v3 のJSONファイルのパス",
-    )
-    group.add_argument(
+    parser.add_argument(
         "-p",
         "--project_id",
         type=str,
+        required=True,
         help="AnnofabのプロジェクトID",
     )
     parser.add_argument(
