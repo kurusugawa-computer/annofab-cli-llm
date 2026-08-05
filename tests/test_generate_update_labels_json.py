@@ -96,6 +96,9 @@ def test_parse_update_labels_from_text(monkeypatch, annotation_specs):
     assert "更新対象は必ず既存ラベル一覧の label_id で指定してください。" in developer_content
     assert "label_id、annotation_type は更新できません。" in developer_content
     assert "label_name_en、annotation_type は更新できません。" not in developer_content
+    assert "field_values を追加または更新する場合は field_values に出力してください。" in developer_content
+    assert "既存 field_values の一部を削除する場合は delete_field_value_keys に削除対象キーを出力してください。" in developer_content
+    assert "field_values_operation は出力せず、field_values の更新方法は判断しないでください。" in developer_content
     assert "## 既存ラベル一覧" in user_content
     assert '"label_id": "label_car"' in user_content
     assert '"label_name_vi": "xe hơi"' in user_content
@@ -182,6 +185,124 @@ def test_to_annofab_update_labels():
                     "max_pixel": 10,
                 }
             },
+            "field_values_operation": "replace",
+        }
+    ]
+
+
+def test_to_annofab_update_labels_merges_existing_field_values(annotation_specs):
+    annotation_specs_with_field_values = {
+        **annotation_specs,
+        "labels": [
+            {
+                **annotation_specs["labels"][0],
+                "field_values": {
+                    "margin_of_error_tolerance": {
+                        "_type": "MarginOfErrorTolerance",
+                        "max_pixel": 5,
+                    },
+                    "display_line_direction": {
+                        "_type": "DisplayLineDirection",
+                        "has_direction": True,
+                    },
+                },
+            }
+        ],
+    }
+    result = LabelUpdateParseResult(
+        labels=[
+            LabelUpdateCandidate(
+                label_id="label_car",
+                field_values=FieldValues(
+                    margin_of_error_tolerance=MarginOfErrorToleranceFieldValue(
+                        _type="MarginOfErrorTolerance",
+                        max_pixel=10,
+                    )
+                ),
+            )
+        ]
+    )
+
+    actual = to_annofab_update_labels(result, annotation_specs_with_field_values)
+
+    assert actual == [
+        {
+            "label_id": "label_car",
+            "field_values": {
+                "margin_of_error_tolerance": {
+                    "_type": "MarginOfErrorTolerance",
+                    "max_pixel": 10,
+                },
+                "display_line_direction": {
+                    "_type": "DisplayLineDirection",
+                    "has_direction": True,
+                },
+            },
+            "field_values_operation": "replace",
+        }
+    ]
+
+
+def test_to_annofab_update_labels_deletes_field_values(annotation_specs):
+    annotation_specs_with_field_values = {
+        **annotation_specs,
+        "labels": [
+            {
+                **annotation_specs["labels"][0],
+                "field_values": {
+                    "margin_of_error_tolerance": {
+                        "_type": "MarginOfErrorTolerance",
+                        "max_pixel": 5,
+                    },
+                    "display_line_direction": {
+                        "_type": "DisplayLineDirection",
+                        "has_direction": True,
+                    },
+                },
+            }
+        ],
+    }
+    result = LabelUpdateParseResult(
+        labels=[
+            LabelUpdateCandidate(
+                label_id="label_car",
+                delete_field_value_keys=["display_line_direction"],
+            )
+        ]
+    )
+
+    actual = to_annofab_update_labels(result, annotation_specs_with_field_values)
+
+    assert actual == [
+        {
+            "label_id": "label_car",
+            "field_values": {
+                "margin_of_error_tolerance": {
+                    "_type": "MarginOfErrorTolerance",
+                    "max_pixel": 5,
+                },
+            },
+            "field_values_operation": "replace",
+        }
+    ]
+
+
+def test_to_annofab_update_labels_deletes_all_field_values(annotation_specs):
+    result = LabelUpdateParseResult(
+        labels=[
+            LabelUpdateCandidate(
+                label_id="label_car",
+                delete_field_value_keys=["margin_of_error_tolerance"],
+            )
+        ]
+    )
+
+    actual = to_annofab_update_labels(result, annotation_specs)
+
+    assert actual == [
+        {
+            "label_id": "label_car",
+            "field_values": {},
             "field_values_operation": "replace",
         }
     ]

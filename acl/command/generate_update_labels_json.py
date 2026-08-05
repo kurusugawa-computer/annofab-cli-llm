@@ -1,7 +1,7 @@
 import argparse
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from litellm import completion
 from loguru import logger
@@ -26,6 +26,15 @@ from acl.common.xdg_util import create_command_temp_dir
 COMMAND_NAME = "generate_update_labels_json"
 OUTPUT_USAGE_MESSAGE = "出力されるJSONは、annofabcli annotation_specs update_labels コマンドの --label_json 引数にそのまま指定できます。"
 """出力JSONの利用方法に関するメッセージです。"""
+FieldValueKey = Literal[
+    "minimum_size_2d_with_default_insert_position",
+    "minimum_size_2d",
+    "minimum_area_2d",
+    "margin_of_error_tolerance",
+    "display_line_direction",
+    "vertex_count_min_max",
+]
+"""削除対象として指定できる field_values のキーです。"""
 
 
 def normalize_label_color(color: Any) -> str | None:  # noqa: ANN401
@@ -113,6 +122,9 @@ class LabelUpdateCandidate(BaseModel):
     field_values: FieldValues | None = Field(default=None, description="更新後のラベルごとの制約、表示設定、許容誤差などの field_values です。")
     """更新後の field_values です。"""
 
+    delete_field_value_keys: list[FieldValueKey] = Field(default_factory=list, description="削除する field_values のキーです。")
+    """削除する field_values のキーです。"""
+
     @model_validator(mode="after")
     def validate_update_content(self) -> "LabelUpdateCandidate":
         if self.label_id.strip() == "":
@@ -199,7 +211,10 @@ def parse_update_labels_from_text(
 label_id、annotation_type は更新できません。
 変更が必要な項目だけを出力してください。
 既存値と同じ値だけの更新は出力しないでください。
-field_values を更新する場合は置換として扱います。更新後も残すべき field_values をすべて出力してください。
+field_values を追加または更新する場合は field_values に出力してください。変更するキーだけを出力してください。
+既存 field_values の一部を削除する場合は delete_field_value_keys に削除対象キーを出力してください。
+既存 field_values をすべて削除する場合は、既存ラベル一覧の field_values に含まれるすべてのキーを delete_field_value_keys に出力してください。
+field_values_operation は出力せず、field_values の更新方法は判断しないでください。
 更新対象ラベルを特定できない場合や、更新内容が曖昧な場合は unresolved_texts に入れてください。
 unresolved_texts には、解釈できなかった原文を text、解釈できなかった理由を reason、解釈に必要な補足情報を required_information に出力してください。
 """.strip(),
@@ -245,15 +260,36 @@ unresolved_texts には、解釈できなかった原文を text、解釈でき�
     return result
 
 
-def dump_label_update_for_annofab(label: LabelUpdateCandidate) -> dict[str, Any]:
-    dumped = label.model_dump(mode="json", exclude_none=True)
-    field_values = dumped.get("field_values")
-    if isinstance(field_values, dict):
-        dumped["field_values"] = {key: value for key, value in field_values.items() if value is not None}
-        if len(dumped["field_values"]) == 0:
-            dumped.pop("field_values")
-        else:
-            dumped["field_values_operation"] = "replace"
+def get_existing_field_values_by_label_id(annotation_specs: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """
+    ラベルIDごとの既存 field_values を取得します。
+
+    Args:
+        annotation_specs: アノテーション仕様(v3)
+
+    Returns:
+        ラベルIDをキー、既存 field_values を値にした辞書
+    """
+    return {
+        label["label_id"]: label.get("field_values", {})
+        for label in annotation_specs["labels"]
+        if isinstance(label.get("field_values"), dict)
+    }
+
+
+def dump_label_update_for_annofab(label: LabelUpdateCandidate, *, existing_field_values: dict[str, Any] | None = None) -> dict[str, Any]:
+    dumped = label.model_dump(mode="json", exclude_none=True, exclude={"delete_field_value_keys"})
+    field_values = dumped.pop("field_values", None)
+    update_field_values = {key: value for key, value in field_values.items() if value is not None} if isinstance(field_values, dict) else {}
+    delete_field_value_keys = set(label.delete_field_value_keys)
+
+    if len(update_field_values) > 0 or len(delete_field_value_keys) > 0:
+        merged_field_values = dict(existing_field_values) if existing_field_values is not None else {}
+        for key in delete_field_value_keys:
+            merged_field_values.pop(key, None)
+        merged_field_values |= update_field_values
+        dumped["field_values"] = merged_field_values
+        dumped["field_values_operation"] = "replace"
     return dumped
 
 
@@ -282,11 +318,15 @@ def normalize_parsed_update_labels(result: LabelUpdateParseResult, annotation_sp
     return LabelUpdateParseResult(labels=normalized_labels, warnings=warnings, unresolved_texts=result.unresolved_texts)
 
 
-def to_annofab_update_labels(result: LabelUpdateParseResult) -> list[dict[str, Any]]:
+def to_annofab_update_labels(result: LabelUpdateParseResult, annotation_specs: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     """
     解析結果を ``annotation_specs update_labels --label_json`` に渡せるJSONへ変換します。
     """
-    return [dump_label_update_for_annofab(label) for label in result.labels]
+    existing_field_values_by_label_id = get_existing_field_values_by_label_id(annotation_specs) if annotation_specs is not None else {}
+    return [
+        dump_label_update_for_annofab(label, existing_field_values=existing_field_values_by_label_id.get(label.label_id))
+        for label in result.labels
+    ]
 
 
 def log_parse_warnings(result: LabelUpdateParseResult) -> None:
@@ -345,7 +385,7 @@ def main(args: argparse.Namespace) -> None:
         print_json(result.model_dump(mode="json"), temp_dir / "parse_result.json")
         log_parse_warnings(result)
 
-    annofab_labels = to_annofab_update_labels(result)
+    annofab_labels = to_annofab_update_labels(result, annotation_specs)
     if len(annofab_labels) == 0:
         raise ValueError("アノテーション仕様で更新可能なラベルを抽出できませんでした。")
 
