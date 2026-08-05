@@ -7,11 +7,11 @@ from acl.command.generate_update_labels_json import (
     LabelUpdateCandidate,
     LabelUpdateParseResult,
     get_label_update_catalog,
-    normalize_label_color,
     normalize_parsed_update_labels,
     parse_update_labels_from_text,
     to_annofab_update_labels,
 )
+from acl.common.annofab.annotation_specs import normalize_label_color
 
 
 @pytest.fixture

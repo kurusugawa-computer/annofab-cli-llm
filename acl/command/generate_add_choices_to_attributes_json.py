@@ -14,7 +14,7 @@ from acl.command.generate_add_attributes_json import get_annotation_specs, get_r
 from acl.command.generate_add_labels_json import STRUCTURED_OUTPUT_MODEL_CONFIG, UnresolvedText, format_unresolved_text
 from acl.command.generate_update_attributes_json import collect_supplements_interactively
 from acl.common.cli import read_at_file
-from acl.common.utils import print_json
+from acl.common.utils import print_json, to_filename
 from acl.common.xdg_util import create_command_temp_dir
 
 COMMAND_NAME = "generate_add_choices_to_attributes_json"
@@ -64,6 +64,20 @@ def get_target_attribute(annotation_specs: dict[str, Any], attribute_id: str) ->
         if additional["additional_data_definition_id"] == attribute_id:
             return additional
     raise ValueError(f"属性ID'{attribute_id}'はアノテーション仕様に存在しません。")
+
+
+def get_choice_attributes(annotation_specs: dict[str, Any]) -> list[dict[str, Any]]:
+    """
+    選択肢を追加できる属性を取得します。
+
+    Args:
+        annotation_specs: アノテーション仕様(v3)
+
+    Returns:
+        choiceまたはselect型の属性一覧
+    """
+    choice_attribute_types = {AdditionalDataDefinitionType.CHOICE.value, AdditionalDataDefinitionType.SELECT.value}
+    return [attribute for attribute in annotation_specs["additionals"] if attribute["type"] in choice_attribute_types]
 
 
 def get_existing_choices(attribute: dict[str, Any]) -> list[ExistingChoice]:
@@ -186,28 +200,40 @@ def main(args: argparse.Namespace) -> None:
     logger.info(f"一時ディレクトリ'{temp_dir}'を作成しました。このディレクトリにLLMの入出力情報などを出力します。")
     annotation_specs = get_annotation_specs(annotation_specs_json_file=args.annotation_specs_json_file, project_id=args.project_id, annofab_pat=args.annofab_pat)
     print_json(annotation_specs, temp_dir / "annotation_specs.json")
-    attribute = get_target_attribute(annotation_specs, args.attribute_id)
-    if attribute["type"] not in {AdditionalDataDefinitionType.CHOICE.value, AdditionalDataDefinitionType.SELECT.value}:
-        raise ValueError(f"属性ID'{args.attribute_id}'は選択肢系属性ではありません。 :: attribute_type='{attribute['type']}'")
+    if args.all_attributes:
+        attributes = get_choice_attributes(annotation_specs)
+    else:
+        attribute = get_target_attribute(annotation_specs, args.attribute_id)
+        if attribute["type"] not in {AdditionalDataDefinitionType.CHOICE.value, AdditionalDataDefinitionType.SELECT.value}:
+            raise ValueError(f"属性ID'{args.attribute_id}'は選択肢系属性ではありません。 :: attribute_type='{attribute['type']}'")
+        attributes = [attribute]
 
-    current_text = annotation_rule
-    result = normalize_parsed_choices(parse_add_choices_from_text(text=current_text, attribute=attribute, llm_model=args.model, temp_dir=temp_dir), attribute)
-    print_json(result.model_dump(mode="json"), temp_dir / "parse_result.json")
-    log_parse_warnings(result)
+    annofab_attributes: list[dict[str, Any]] = []
     interactive = not args.no_interactive and not args.yes
-    while result.unresolved_texts and interactive:
-        supplements = collect_supplements_interactively(result.unresolved_texts)
-        if len(supplements) == 0:
-            break
-        supplement_text = "\n".join(supplements)
-        current_text = f"{current_text}\n\n## 補足情報\n{supplement_text}"
-        result = normalize_parsed_choices(parse_add_choices_from_text(text=current_text, attribute=attribute, llm_model=args.model, temp_dir=temp_dir), attribute)
-        print_json(result.model_dump(mode="json"), temp_dir / "parse_result.json")
+    for index, attribute in enumerate(attributes, start=1):
+        attribute_id = attribute["additional_data_definition_id"]
+        logger.info(f"{len(attributes)}件中{index}件目の選択式属性を解析します。 :: attribute_id='{attribute_id}'")
+        attribute_temp_dir = temp_dir / f"attribute_{to_filename(attribute_id)}"
+        attribute_temp_dir.mkdir(exist_ok=True)
+        current_text = annotation_rule
+        result = normalize_parsed_choices(parse_add_choices_from_text(text=current_text, attribute=attribute, llm_model=args.model, temp_dir=attribute_temp_dir), attribute)
+        print_json(result.model_dump(mode="json"), attribute_temp_dir / "parse_result.json")
         log_parse_warnings(result)
+        while result.unresolved_texts and interactive:
+            supplements = collect_supplements_interactively(result.unresolved_texts)
+            if len(supplements) == 0:
+                break
+            supplement_text = "\n".join(supplements)
+            current_text = f"{current_text}\n\n## 補足情報\n{supplement_text}"
+            result = normalize_parsed_choices(parse_add_choices_from_text(text=current_text, attribute=attribute, llm_model=args.model, temp_dir=attribute_temp_dir), attribute)
+            print_json(result.model_dump(mode="json"), attribute_temp_dir / "parse_result.json")
+            log_parse_warnings(result)
 
-    if len(result.choices) == 0:
+        if result.choices:
+            annofab_attributes.extend(to_annofab_attributes(result, attribute_id=attribute_id))
+
+    if len(annofab_attributes) == 0 and not (args.allow_empty or args.all_attributes):
         raise ValueError("アノテーション仕様に追加可能な選択肢を抽出できませんでした。")
-    annofab_attributes = to_annofab_attributes(result, attribute_id=args.attribute_id)
     print_json(annofab_attributes, output=args.output)
     logger.info("選択肢を追加する属性のJSONを標準出力に出力しました。" if args.output is None else f"選択肢を追加する属性のJSONをファイルに出力しました。 :: output='{args.output}'")
     logger.info(OUTPUT_USAGE_MESSAGE)
@@ -216,10 +242,12 @@ def main(args: argparse.Namespace) -> None:
 
 
 def add_argument_to_parser(parser: argparse.ArgumentParser) -> None:
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--annotation_specs_json_file", type=Path, help="annotation specs v3 のJSONファイルのパス")
-    group.add_argument("-p", "--project_id", type=str, help="AnnofabのプロジェクトID")
-    parser.add_argument("--attribute_id", type=str, required=True, help="選択肢を追加する対象属性のID")
+    source_group = parser.add_mutually_exclusive_group(required=True)
+    source_group.add_argument("--annotation_specs_json_file", type=Path, help="annotation specs v3 のJSONファイルのパス")
+    source_group.add_argument("-p", "--project_id", type=str, help="AnnofabのプロジェクトID")
+    target_group = parser.add_mutually_exclusive_group(required=True)
+    target_group.add_argument("--attribute_id", type=str, help="選択肢を追加する対象属性のID")
+    target_group.add_argument("--all_attributes", action="store_true", help="すべての選択式属性を対象にします。")
     parser.add_argument(
         "--annotation_rule",
         type=str,
@@ -228,6 +256,7 @@ def add_argument_to_parser(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument("-o", "--output", type=Path, help="出力先のファイルパス。指定しない場合は、標準出力に出力されます。")
     parser.add_argument("--no_interactive", action="store_true", dest="no_interactive", help="未解決テキストが存在しても、補足情報の入力を求めずに終了します。")
+    parser.add_argument("--allow_empty", action="store_true", help="追加対象がない場合も空のJSONを出力して正常終了します。")
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:

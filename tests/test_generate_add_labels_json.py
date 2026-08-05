@@ -1,4 +1,3 @@
-import json
 from types import SimpleNamespace
 
 import pytest
@@ -20,6 +19,7 @@ from acl.command.generate_add_labels_json import (
     generate_add_labels_from_text,
     get_annotation_specs,
     get_label_catalog,
+    get_project_type_from_project_id,
     normalize_parsed_labels,
     to_annofab_labels,
 )
@@ -141,6 +141,14 @@ def test_get_label_catalog_includes_color_and_field_values(annotation_specs):
             }
         },
     }
+
+
+def test_get_label_catalog_normalizes_rgb_color(annotation_specs):
+    annotation_specs["labels"][0]["color"] = {"red": 0, "green": 0, "blue": 0}
+
+    actual = get_label_catalog(annotation_specs)
+
+    assert actual[0].color == "#000000"
 
 
 def test_normalize_parsed_labels(annotation_specs):
@@ -438,29 +446,6 @@ def test_label_candidate_color():
     assert actual.color == "#FF00AA"
 
 
-def test_get_annotation_specs_from_file(tmp_path, annotation_specs):
-    json_file = tmp_path / "annotation_specs.json"
-    json_file.write_text(json.dumps(annotation_specs), encoding="utf-8")
-
-    actual = get_annotation_specs(
-        annotation_specs_json_file=json_file,
-        project_id=None,
-        annofab_pat=None,
-    )
-
-    assert actual == annotation_specs
-
-
-def test_get_annotation_specs_without_project_and_file():
-    actual = get_annotation_specs(
-        annotation_specs_json_file=None,
-        project_id=None,
-        annofab_pat=None,
-    )
-
-    assert actual == {"labels": [], "additionals": []}
-
-
 def test_get_annotation_specs_from_project_id(monkeypatch, annotation_specs):
     called = {}
 
@@ -471,10 +456,34 @@ def test_get_annotation_specs_from_project_id(monkeypatch, annotation_specs):
     monkeypatch.setattr("acl.command.generate_add_labels_json.annofabapi.build", fake_build)
 
     actual = get_annotation_specs(
-        annotation_specs_json_file=None,
         project_id="prj1",
         annofab_pat="pat1",
     )
 
     assert actual == annotation_specs
     assert called["pat"] == "pat1"
+
+
+@pytest.mark.parametrize(
+    ("project", "expected"),
+    [
+        ({"input_data_type": "image", "configuration": {}}, ProjectType.IMAGE),
+        ({"input_data_type": "movie", "configuration": {}}, ProjectType.VIDEO),
+        (
+            {
+                "input_data_type": "custom",
+                "configuration": {"extended_specs_plugin_id": "703ababa-96ac-4920-8afb-d4f2bddac7e3"},
+            },
+            ProjectType.THREE_DIMENSION,
+        ),
+    ],
+)
+def test_get_project_type_from_project_id(monkeypatch, project, expected):
+    monkeypatch.setattr(
+        "acl.command.generate_add_labels_json.annofabapi.build",
+        lambda **_: SimpleNamespace(api=SimpleNamespace(get_project=lambda project_id: (project, {"project_id": project_id}))),
+    )
+
+    actual = get_project_type_from_project_id(project_id="prj1", annofab_pat="pat1")
+
+    assert actual == expected

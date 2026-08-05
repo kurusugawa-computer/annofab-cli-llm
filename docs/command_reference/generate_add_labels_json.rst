@@ -31,7 +31,7 @@ Examples
 .. code-block::
 
     $ annofabcli-llm annotation_specs generate_add_labels_json \
-     --project_type image \
+     --project_id ${PROJECT_ID} \
      --annotation_rule @rule.md \
      --output labels.json
      
@@ -112,18 +112,7 @@ Examples
 
 
 
-既存のアノテーション仕様を参照する
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-``--project_id`` オプションを指定すると、Annofabの既存のアノテーション仕様を参照して、現在存在しないラベルのみ出力されます。
-
-.. code-block::
-
-    $ annofabcli-llm annotation_specs generate_add_labels_json \
-     --project_id ${PROJECT_ID} \
-     --project_type image \
-     --annotation_rule @rule.md \
-     --output labels.json
+``--project_id`` で指定したプロジェクトのアノテーション仕様を参照して、現在存在しないラベルのみ出力します。プロジェクト種別はAnnofabから自動で取得します。
 
 
 

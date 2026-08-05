@@ -1,7 +1,8 @@
+from collections.abc import Mapping
 from enum import StrEnum
 
-from annofabapi.models import DefaultAnnotationType
-from annofabapi.plugin import ThreeDimensionAnnotationType
+from annofabapi.models import DefaultAnnotationType, InputDataType
+from annofabapi.plugin import EditorPluginId, ExtendSpecsPluginId, ThreeDimensionAnnotationType
 
 
 class ProjectType(StrEnum):
@@ -77,14 +78,35 @@ ANNOTATION_TYPE_DESCRIPTIONS: dict[AnnotationType, str] = {
 """annotation_type の説明です。"""
 
 
-def get_project_type_help() -> str:
+def get_project_type(project: Mapping[str, object]) -> ProjectType:
     """
-    ``--project_type`` のヘルプ文字列を生成します。
+    Annofabプロジェクト情報からプロジェクト種別を取得します。
+
+    Args:
+        project: Annofab APIの ``get_project`` が返すプロジェクト情報
 
     Returns:
-        ヘルプ文字列
+        プロジェクト種別
+
+    Raises:
+        TypeError: プロジェクト設定の形式が不正な場合
+        ValueError: プロジェクト種別を判定できない場合
     """
-    return "プロジェクト種別。取り得る annotation_type を限定するために使用します。\n\n * image : 画像プロジェクト\n * video : 動画プロジェクト\n * 3d : 3次元プロジェクト"
+    configuration = project.get("configuration")
+    if not isinstance(configuration, Mapping):
+        raise TypeError("プロジェクト設定が取得できないため、プロジェクト種別を判定できません。")
+
+    plugin_ids = {configuration.get("plugin_id"), configuration.get("extended_specs_plugin_id")}
+    if EditorPluginId.THREE_DIMENSION.value in plugin_ids or ExtendSpecsPluginId.THREE_DIMENSION.value in plugin_ids:
+        return ProjectType.THREE_DIMENSION
+
+    input_data_type = project.get("input_data_type")
+    if input_data_type == InputDataType.IMAGE.value:
+        return ProjectType.IMAGE
+    if input_data_type == InputDataType.MOVIE.value:
+        return ProjectType.VIDEO
+
+    raise ValueError(f"プロジェクト種別を判定できません。 :: input_data_type='{input_data_type}'")
 
 
 def get_allowed_annotation_types(project_type: ProjectType) -> tuple[AnnotationType, ...]:

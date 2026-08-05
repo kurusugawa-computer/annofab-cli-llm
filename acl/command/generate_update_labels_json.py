@@ -19,6 +19,7 @@ from acl.command.generate_add_labels_json import (
     get_message,
     get_required_message,
 )
+from acl.common.annofab.annotation_specs import normalize_label_color
 from acl.common.cli import read_at_file
 from acl.common.utils import print_json
 from acl.common.xdg_util import create_command_temp_dir
@@ -35,31 +36,6 @@ FieldValueKey = Literal[
     "vertex_count_min_max",
 ]
 """削除対象として指定できる field_values のキーです。"""
-
-
-def normalize_label_color(color: Any) -> str | None:  # noqa: ANN401
-    """
-    Annofab APIのラベル色を ``#RRGGBB`` 形式に正規化します。
-
-    Args:
-        color: Annofab APIのラベル色
-
-    Returns:
-        ``#RRGGBB`` 形式の色。色が未設定または未対応形式の場合はNone
-    """
-    if color is None:
-        return None
-    if isinstance(color, str):
-        return color
-    if not isinstance(color, dict):
-        return None
-
-    red = color.get("red")
-    green = color.get("green")
-    blue = color.get("blue")
-    if isinstance(red, int) and isinstance(green, int) and isinstance(blue, int):
-        return f"#{red:02X}{green:02X}{blue:02X}"
-    return None
 
 
 class LabelUpdateCatalogItem(BaseModel):
@@ -353,7 +329,6 @@ def main(args: argparse.Namespace) -> None:
     temp_dir.mkdir(exist_ok=True)
 
     annotation_specs = get_annotation_specs(
-        annotation_specs_json_file=args.annotation_specs_json_file,
         project_id=args.project_id,
         annofab_pat=args.annofab_pat,
     )
@@ -380,6 +355,10 @@ def main(args: argparse.Namespace) -> None:
 
     annofab_labels = to_annofab_update_labels(result, annotation_specs)
     if len(annofab_labels) == 0:
+        if args.allow_empty:
+            print_json(annofab_labels, output=args.output)
+            logger.info("更新対象ラベルがないため、空のJSONを出力しました。")
+            return
         raise ValueError("アノテーション仕様で更新可能なラベルを抽出できませんでした。")
 
     print_json(annofab_labels, output=args.output)
@@ -393,16 +372,11 @@ def main(args: argparse.Namespace) -> None:
 
 
 def add_argument_to_parser(parser: argparse.ArgumentParser) -> None:
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument(
-        "--annotation_specs_json_file",
-        type=Path,
-        help="annotation specs v3 のJSONファイルのパス",
-    )
-    group.add_argument(
+    parser.add_argument(
         "-p",
         "--project_id",
         type=str,
+        required=True,
         help="AnnofabのプロジェクトID",
     )
     parser.add_argument(
@@ -423,6 +397,7 @@ def add_argument_to_parser(parser: argparse.ArgumentParser) -> None:
         dest="no_interactive",
         help="未解決テキストが存在しても、補足情報の入力を求めずに終了します。",
     )
+    parser.add_argument("--allow_empty", action="store_true", help="更新対象がない場合も空のJSONを出力して正常終了します。")
 
 
 def add_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
