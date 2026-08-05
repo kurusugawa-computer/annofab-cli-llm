@@ -147,7 +147,6 @@ def test_to_annofab_update_labels():
                         max_pixel=10,
                     )
                 ),
-                field_values_operation="replace",
             )
         ]
     )

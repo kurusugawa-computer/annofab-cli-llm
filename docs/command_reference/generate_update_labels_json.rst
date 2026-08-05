@@ -9,6 +9,8 @@ Description
 出力されるJSONは、 `annofabcli annotation_specs update_labels <https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation_specs/update_labels.html>`_ コマンドの ``--label_json`` 引数にそのまま指定できます。
 
 このコマンドを実行するには、更新対象のラベルがアノテーション仕様に存在している必要があります。
+``field_values`` を更新する場合、出力JSONには ``field_values_operation`` として ``replace`` が自動で設定されます。
+そのため、残したい既存の ``field_values`` も含めた更新後の値が出力されます。
 
 
 Examples

@@ -1,7 +1,7 @@
 import argparse
 import json
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
 
 from litellm import completion
 from loguru import logger
@@ -79,9 +79,6 @@ class LabelUpdateCandidate(BaseModel):
     field_values: FieldValues | None = Field(default=None, description="更新後のラベルごとの制約、表示設定、許容誤差などの field_values です。")
     """更新後の field_values です。"""
 
-    field_values_operation: Literal["merge", "replace"] | None = Field(default=None, description="field_values の更新方法です。")
-    """field_values の更新方法です。"""
-
     @model_validator(mode="after")
     def validate_update_content(self) -> "LabelUpdateCandidate":
         if self.label_id.strip() == "":
@@ -154,6 +151,7 @@ def parse_update_labels_from_text(
 label_id、label_name_en、annotation_type は更新できません。
 変更が必要な項目だけを出力してください。
 既存値と同じ値だけの更新は出力しないでください。
+field_values を更新する場合は置換として扱います。更新後も残すべき field_values をすべて出力してください。
 更新対象ラベルを特定できない場合や、更新内容が曖昧な場合は unresolved_texts に入れてください。
 unresolved_texts には、解釈できなかった原文を text、解釈できなかった理由を reason、解釈に必要な補足情報を required_information に出力してください。
 """.strip(),
@@ -206,6 +204,8 @@ def dump_label_update_for_annofab(label: LabelUpdateCandidate) -> dict[str, Any]
         dumped["field_values"] = {key: value for key, value in field_values.items() if value is not None}
         if len(dumped["field_values"]) == 0:
             dumped.pop("field_values")
+        else:
+            dumped["field_values_operation"] = "replace"
     return dumped
 
 
