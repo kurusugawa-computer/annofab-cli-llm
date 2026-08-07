@@ -130,6 +130,15 @@ def test_get_label_update_catalog(annotation_specs):
     }
 
 
+def test_get_label_update_catalog_allows_unrestricted_existing_keybind(annotation_specs):
+    annotation_specs["labels"][0]["keybind"][0]["code"] = "Numpad1"
+
+    actual = get_label_update_catalog(annotation_specs)
+
+    assert actual[0].keybind is not None
+    assert actual[0].keybind.code == "Numpad1"
+
+
 def test_normalize_label_color():
     assert normalize_label_color({"red": 255, "green": 0, "blue": 170}) == "#FF00AA"
     assert normalize_label_color("#00AAFF") == "#00AAFF"

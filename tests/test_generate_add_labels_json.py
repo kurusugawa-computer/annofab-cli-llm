@@ -179,6 +179,31 @@ def test_normalize_parsed_labels_for_invalid_project_type(annotation_specs):
     assert len(actual.warnings) == 1
 
 
+def test_normalize_parsed_labels_removes_keybind_equivalent_to_existing_numpad_keybind(annotation_specs):
+    annotation_specs["labels"][0]["keybind"][0]["code"] = "Numpad1"
+    result = LabelParseResult(labels=[LabelCandidate(label_name_en="pedestrian", annotation_type=AnnotationType.BOUNDING_BOX, keybind=KeybindCandidate(code="Digit1", ctrl=True))])
+
+    actual = normalize_parsed_labels(result, annotation_specs, project_type=ProjectType.IMAGE)
+
+    assert actual.labels[0].keybind is None
+    assert len(actual.warnings) == 1
+
+
+def test_normalize_parsed_labels_removes_duplicate_generated_keybind(annotation_specs):
+    result = LabelParseResult(
+        labels=[
+            LabelCandidate(label_name_en="pedestrian", annotation_type=AnnotationType.BOUNDING_BOX, keybind=KeybindCandidate(code="Digit2")),
+            LabelCandidate(label_name_en="bicycle", annotation_type=AnnotationType.BOUNDING_BOX, keybind=KeybindCandidate(code="Digit2")),
+        ]
+    )
+
+    actual = normalize_parsed_labels(result, annotation_specs, project_type=ProjectType.IMAGE)
+
+    assert actual.labels[0].keybind is not None
+    assert actual.labels[1].keybind is None
+    assert len(actual.warnings) == 1
+
+
 def test_to_annofab_labels():
     result = LabelParseResult(
         labels=[
@@ -438,6 +463,15 @@ def test_keybind_candidate_for_empty_code():
 def test_keybind_candidate_for_not_allowed_code():
     with pytest.raises(ValueError):
         KeybindCandidate(code="Escape")
+
+
+def test_get_label_catalog_allows_unrestricted_existing_keybind(annotation_specs):
+    annotation_specs["labels"][0]["keybind"][0]["code"] = "Numpad1"
+
+    actual = get_label_catalog(annotation_specs)
+
+    assert actual[0].keybind is not None
+    assert actual[0].keybind.code == "Numpad1"
 
 
 def test_label_candidate_color():

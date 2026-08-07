@@ -174,6 +174,15 @@ def test_get_attribute_update_catalog(annotation_specs):
         },
         "choices": [],
     }
+
+
+def test_get_attribute_update_catalog_allows_unrestricted_existing_keybind(annotation_specs):
+    annotation_specs["additionals"][0]["keybind"][0]["code"] = "Numpad1"
+
+    actual = get_attribute_update_catalog(annotation_specs)
+
+    assert actual[0].keybind is not None
+    assert actual[0].keybind.code == "Numpad1"
     assert actual[1].choices[0].model_dump(mode="json") == {
         "choice_id": "choice_general_car",
         "choice_name_en": "general_car",
