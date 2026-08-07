@@ -239,6 +239,7 @@ def test_get_attribute_catalog_allows_unrestricted_existing_keybind(annotation_s
 
     actual = get_attribute_catalog(annotation_specs)
 
+    assert actual[0].keybind is not None
     assert actual[0].keybind.code == "Numpad1"
     assert actual[1].choices[0].model_dump(mode="json") == {
         "choice_name_en": "general_car",
@@ -390,6 +391,7 @@ def test_normalize_parsed_attributes_removes_duplicate_choice_keybind(annotation
 
     actual = normalize_parsed_attributes(result, annotation_specs)
 
+    assert actual.attributes[0].choices is not None
     assert actual.attributes[0].choices[0].keybind is not None
     assert actual.attributes[0].choices[1].keybind is None
     assert len(actual.warnings) == 1

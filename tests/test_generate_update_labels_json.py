@@ -135,6 +135,7 @@ def test_get_label_update_catalog_allows_unrestricted_existing_keybind(annotatio
 
     actual = get_label_update_catalog(annotation_specs)
 
+    assert actual[0].keybind is not None
     assert actual[0].keybind.code == "Numpad1"
 
 
