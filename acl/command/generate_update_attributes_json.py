@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field, model_validator
 
 import acl.common.cli
 from acl.command.generate_add_attributes_json import get_annotation_specs, get_catalog_keybind, get_required_japanese_message, is_default_choice
-from acl.command.generate_add_labels_json import STRUCTURED_OUTPUT_MODEL_CONFIG, KeybindCandidate, UnresolvedText, format_unresolved_text
+from acl.command.generate_add_labels_json import STRUCTURED_OUTPUT_MODEL_CONFIG, ExistingKeybind, KeybindCandidate, UnresolvedText, format_unresolved_text
 from acl.common.cli import read_at_file
 from acl.common.utils import print_json
 from acl.common.xdg_util import create_command_temp_dir
@@ -41,7 +41,7 @@ class ChoiceUpdateCatalogItem(BaseModel):
     is_default: bool = Field(description="デフォルト値の選択肢の場合はtrueです。")
     """デフォルト値かどうかです。"""
 
-    keybind: KeybindCandidate | None = Field(description="既存選択肢に設定されたキーボードショートカットです。")
+    keybind: ExistingKeybind | None = Field(description="既存選択肢に設定されたキーボードショートカットです。")
     """既存選択肢に設定されたキーボードショートカットです。"""
 
 
@@ -76,7 +76,7 @@ class AttributeUpdateCatalogItem(BaseModel):
     default: str | int | bool | None = Field(description="属性の初期値です。")
     """属性の初期値です。"""
 
-    keybind: KeybindCandidate | None = Field(description="既存属性に設定されたキーボードショートカットです。")
+    keybind: ExistingKeybind | None = Field(description="既存属性に設定されたキーボードショートカットです。")
     """既存属性に設定されたキーボードショートカットです。"""
 
     choices: list[ChoiceUpdateCatalogItem] = Field(description="属性種類がchoiceまたはselectの場合の選択肢一覧です。")

@@ -12,7 +12,7 @@ from loguru import logger
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 import acl.common.cli
-from acl.command.generate_add_labels_json import KeybindCandidate, UnresolvedText, format_unresolved_text
+from acl.command.generate_add_labels_json import ExistingKeybind, KeybindCandidate, UnresolvedText, format_unresolved_text, get_annotation_specs_keybind_identities, get_keybind_identity
 from acl.common.annofab.attribute_type import get_attribute_type_details
 from acl.common.cli import read_at_file
 from acl.common.utils import print_json
@@ -192,7 +192,7 @@ class LabelCatalogItem(BaseModel):
     annotation_type: str = Field(description="既存ラベルのアノテーション種類です。例: bounding_box, polygon")
     """既存ラベルのアノテーション種類です。"""
 
-    keybind: KeybindCandidate | None = Field(description="既存ラベルに設定されたキーボードショートカットです。")
+    keybind: ExistingKeybind | None = Field(description="既存ラベルに設定されたキーボードショートカットです。")
     """既存ラベルに設定されたキーボードショートカットです。"""
 
 
@@ -210,7 +210,7 @@ class ChoiceCatalogItem(BaseModel):
     is_default: bool = Field(description="デフォルト値の選択肢の場合はtrueです。")
     """デフォルト値かどうかです。"""
 
-    keybind: KeybindCandidate | None = Field(description="既存選択肢に設定されたキーボードショートカットです。")
+    keybind: ExistingKeybind | None = Field(description="既存選択肢に設定されたキーボードショートカットです。")
     """既存選択肢に設定されたキーボードショートカットです。"""
 
 
@@ -237,7 +237,7 @@ class AttributeCatalogItem(BaseModel):
     default: str | int | bool | None = Field(description="属性の初期値です。")
     """属性の初期値です。"""
 
-    keybind: KeybindCandidate | None = Field(description="既存属性に設定されたキーボードショートカットです。")
+    keybind: ExistingKeybind | None = Field(description="既存属性に設定されたキーボードショートカットです。")
     """既存属性に設定されたキーボードショートカットです。"""
 
     choices: list[ChoiceCatalogItem] = Field(description="属性種類がchoiceまたはselectの場合の選択肢一覧です。")
@@ -257,7 +257,7 @@ def dump_catalog(catalog: Sequence[BaseModel]) -> list[dict[str, Any]]:
     return [item.model_dump(mode="json") for item in catalog]
 
 
-def get_catalog_keybind(keybinds: list[dict[str, Any]] | None) -> KeybindCandidate | None:
+def get_catalog_keybind(keybinds: list[dict[str, Any]] | None) -> ExistingKeybind | None:
     """
     Annofab APIのkeybind配列からCatalog用の単一keybindを取得します。
 
@@ -269,7 +269,7 @@ def get_catalog_keybind(keybinds: list[dict[str, Any]] | None) -> KeybindCandida
     """
     if keybinds is None or len(keybinds) == 0:
         return None
-    return KeybindCandidate.model_validate(keybinds[0])
+    return ExistingKeybind.model_validate(keybinds[0])
 
 
 def is_default_choice(*, additional: dict[str, Any], choice: dict[str, Any]) -> bool:
@@ -544,6 +544,7 @@ def normalize_parsed_attributes(result: AttributeParseResult, annotation_specs: 
     label_catalog = get_label_catalog(annotation_specs)
     attribute_catalog = get_attribute_catalog(annotation_specs)
     existing_label_name_ens = {label.label_name_en for label in label_catalog if label.label_name_en is not None}
+    used_keybind_identities = get_annotation_specs_keybind_identities(annotation_specs)
     existing_attribute_labels_by_name: dict[str, list[set[str]]] = {}
     for existing_attribute in attribute_catalog:
         attribute_name_en = existing_attribute.attribute_name_en
@@ -574,8 +575,34 @@ def normalize_parsed_attributes(result: AttributeParseResult, annotation_specs: 
             warnings.append(f"属性'{parsed_attribute.attribute_name_en}'が同じラベルに対して重複していたため、先頭の1件だけを採用しました。 :: label_name_ens={overlapped_parsed_labels}")
             continue
 
+        keybind = parsed_attribute.keybind
+        if keybind is not None:
+            keybind_identity = get_keybind_identity(keybind)
+            if keybind_identity in used_keybind_identities:
+                warnings.append(f"属性'{parsed_attribute.attribute_name_en}'のショートカットは既存または追加対象のショートカットと重複するため、ショートカットを解除しました。")
+                keybind = None
+            else:
+                used_keybind_identities.add(keybind_identity)
+
+        normalized_choices: list[ChoiceCandidate] | None = None
+        if parsed_attribute.choices is not None:
+            normalized_choices = []
+            for choice in parsed_attribute.choices:
+                if choice.keybind is None:
+                    normalized_choices.append(choice)
+                    continue
+                keybind_identity = get_keybind_identity(choice.keybind)
+                if keybind_identity in used_keybind_identities:
+                    warnings.append(
+                        f"属性'{parsed_attribute.attribute_name_en}'の選択肢'{choice.choice_name_en}'のショートカットは既存または追加対象のショートカットと重複するため、ショートカットを解除しました。"
+                    )
+                    normalized_choices.append(choice.model_copy(update={"keybind": None}))
+                    continue
+                used_keybind_identities.add(keybind_identity)
+                normalized_choices.append(choice)
+
         parsed_attribute_labels_by_name.setdefault(parsed_attribute.attribute_name_en, []).append(label_name_en_set)
-        normalized_attributes.append(parsed_attribute)
+        normalized_attributes.append(parsed_attribute.model_copy(update={"keybind": keybind, "choices": normalized_choices}))
 
     return AttributeParseResult(
         attributes=normalized_attributes,

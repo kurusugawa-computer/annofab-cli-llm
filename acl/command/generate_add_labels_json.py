@@ -1,6 +1,7 @@
 import argparse
 import json
 import re
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
@@ -44,13 +45,34 @@ ALLOWED_KEYBIND_CODES = {
     "KeyP",
 }
 """keybind.code に指定できる KeyboardEvent.code の値です。"""
+NUMPAD_CODE_TO_DIGIT_CODE = {f"Numpad{number}": f"Digit{number}" for number in range(10)}
+"""Annofab上で同じショートカットとして扱われるテンキーと上段数字キーの対応です。"""
 STRUCTURED_OUTPUT_MODEL_CONFIG = ConfigDict(extra="forbid", serialize_by_alias=True)
 """OpenAIのStructured Outputsで利用できるJSON SchemaにするためのPydantic設定です。"""
 
 
-class KeybindCandidate(BaseModel):
+@dataclass(frozen=True)
+class KeybindIdentity:
     """
-    ラベルに設定するキーボードショートカットです。
+    Annofab上でのショートカット重複判定に使用するキーバインドです。
+    """
+
+    alt: bool
+    """Altキーを使用するかどうかです。"""
+
+    code: str
+    """テンキー数字を上段数字キーへ正規化したKeyboardEvent.codeです。"""
+
+    ctrl: bool
+    """Ctrlキーを使用するかどうかです。"""
+
+    shift: bool
+    """Shiftキーを使用するかどうかです。"""
+
+
+class ExistingKeybind(BaseModel):
+    """
+    Annofabに設定済みのキーボードショートカットです。
     """
 
     model_config = STRUCTURED_OUTPUT_MODEL_CONFIG
@@ -58,7 +80,7 @@ class KeybindCandidate(BaseModel):
     alt: bool = Field(default=False, description="Altキーを使用する場合はtrueです。")
     """Altキーを使用するかどうかです。"""
 
-    code: str = Field(description="KeyboardEvent.code の値です。ただし既存のショートカットと衝突しないようにするため、キーボード上部2段の数字キーと`Q`~`P`に限定してください。")
+    code: str = Field(description="KeyboardEvent.code の値です。")
     """KeyboardEvent.code の値です。"""
 
     ctrl: bool = Field(default=False, description="Ctrlキーを使用する場合はtrueです。")
@@ -85,9 +107,70 @@ class KeybindCandidate(BaseModel):
         normalized = value.strip()
         if normalized == "":
             raise ValueError("`keybind.code` には空でない文字列を指定してください。")
-        if normalized not in ALLOWED_KEYBIND_CODES:
-            raise ValueError("`keybind.code` にはキーボード上部2段の数字キーと`Q`~`P`の KeyboardEvent.code を指定してください。")
         return normalized
+
+
+class KeybindCandidate(ExistingKeybind):
+    """
+    LLMが生成するキーボードショートカットです。
+    """
+
+    code: str = Field(description="KeyboardEvent.code の値です。ただし既存のショートカットと衝突しないようにするため、キーボード上部2段の数字キーと`Q`~`P`に限定してください。")
+    """KeyboardEvent.code の値です。"""
+
+    @field_validator("code")
+    @classmethod
+    def validate_allowed_code(cls, value: str) -> str:
+        """
+        LLMが生成するキーコードを検証します。
+
+        Args:
+            value: 検証対象のキーコード
+
+        Returns:
+            検証済みのキーコード
+        """
+        if value not in ALLOWED_KEYBIND_CODES:
+            raise ValueError("`keybind.code` にはキーボード上部2段の数字キーと`Q`~`P`の KeyboardEvent.code を指定してください。")
+        return value
+
+
+def get_keybind_identity(keybind: ExistingKeybind) -> KeybindIdentity:
+    """
+    Annofab上でのショートカット重複判定用の識別子を取得します。
+
+    Args:
+        keybind: キーボードショートカット
+
+    Returns:
+        テンキー数字を上段数字キーへ正規化したショートカット識別子
+    """
+    return KeybindIdentity(
+        alt=keybind.alt,
+        code=NUMPAD_CODE_TO_DIGIT_CODE.get(keybind.code, keybind.code),
+        ctrl=keybind.ctrl,
+        shift=keybind.shift,
+    )
+
+
+def get_annotation_specs_keybind_identities(annotation_specs: dict[str, Any]) -> set[KeybindIdentity]:
+    """
+    アノテーション仕様内で使用済みのショートカット識別子を取得します。
+
+    Args:
+        annotation_specs: アノテーション仕様(v3)
+
+    Returns:
+        使用済みのショートカット識別子
+    """
+    keybind_identities: set[KeybindIdentity] = set()
+    for label in annotation_specs["labels"]:
+        keybind_identities.update(get_keybind_identity(ExistingKeybind.model_validate(keybind)) for keybind in label.get("keybind") or [])
+    for additional in annotation_specs["additionals"]:
+        keybind_identities.update(get_keybind_identity(ExistingKeybind.model_validate(keybind)) for keybind in additional.get("keybind") or [])
+        for choice in additional.get("choices") or []:
+            keybind_identities.update(get_keybind_identity(ExistingKeybind.model_validate(keybind)) for keybind in choice.get("keybind") or [])
+    return keybind_identities
 
 
 class MarginOfErrorToleranceFieldValue(BaseModel):
@@ -403,7 +486,7 @@ class LabelCatalogItem(BaseModel):
     color: str | None = Field(description="既存ラベルの色です。例: #FF0000")
     """既存ラベルの色です。"""
 
-    keybind: KeybindCandidate | None = Field(description="既存ラベルに設定されたキーボードショートカットです。")
+    keybind: ExistingKeybind | None = Field(description="既存ラベルに設定されたキーボードショートカットです。")
     """既存ラベルに設定されたキーボードショートカットです。"""
 
     field_values: dict[str, Any] = Field(description="既存ラベルごとの制約、表示設定、許容誤差などです。")
@@ -443,7 +526,7 @@ def get_required_message(annotation_text: dict[str, Any], *, lang: str) -> str:
     return message
 
 
-def get_catalog_keybind(keybinds: list[dict[str, Any]] | None) -> KeybindCandidate | None:
+def get_catalog_keybind(keybinds: list[dict[str, Any]] | None) -> ExistingKeybind | None:
     """
     Annofab APIのkeybind配列からCatalog用の単一keybindを取得します。
 
@@ -455,7 +538,7 @@ def get_catalog_keybind(keybinds: list[dict[str, Any]] | None) -> KeybindCandida
     """
     if keybinds is None or len(keybinds) == 0:
         return None
-    return KeybindCandidate.model_validate(keybinds[0])
+    return ExistingKeybind.model_validate(keybinds[0])
 
 
 def get_label_catalog(annotation_specs: dict[str, Any]) -> list[LabelCatalogItem]:
@@ -678,12 +761,14 @@ def normalize_parsed_labels(result: LabelParseResult, annotation_specs: dict[str
         正規化済みの解析結果
     """
     existing_label_name_ens = {label.label_name_en for label in get_label_catalog(annotation_specs)}
+    used_keybind_identities = get_annotation_specs_keybind_identities(annotation_specs)
     allowed_annotation_types = set(get_allowed_annotation_types(project_type))
     label_name_en_set: set[str] = set()
     normalized_labels: list[LabelCandidate] = []
     warnings = list(result.warnings)
 
     for label in result.labels:
+        normalized_label = label
         if label.annotation_type not in allowed_annotation_types:
             warnings.append(f"ラベル'{label.label_name_en}'の annotation_type='{label.annotation_type.value}' は project_type='{project_type.value}' では使用できないため、出力から除外しました。")
             continue
@@ -693,8 +778,15 @@ def normalize_parsed_labels(result: LabelParseResult, annotation_specs: dict[str
         if label.label_name_en in label_name_en_set:
             warnings.append(f"ラベル'{label.label_name_en}'が重複していたため、先頭の1件だけを採用しました。")
             continue
+        if label.keybind is not None:
+            keybind_identity = get_keybind_identity(label.keybind)
+            if keybind_identity in used_keybind_identities:
+                warnings.append(f"ラベル'{label.label_name_en}'のショートカットは既存または追加対象のショートカットと重複するため、ショートカットを解除しました。")
+                normalized_label = label.model_copy(update={"keybind": None})
+            else:
+                used_keybind_identities.add(keybind_identity)
         label_name_en_set.add(label.label_name_en)
-        normalized_labels.append(label)
+        normalized_labels.append(normalized_label)
 
     return LabelParseResult(
         labels=normalized_labels,

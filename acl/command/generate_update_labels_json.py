@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field, model_validator
 import acl.common.cli
 from acl.command.generate_add_labels_json import (
     STRUCTURED_OUTPUT_MODEL_CONFIG,
+    ExistingKeybind,
     FieldValues,
     KeybindCandidate,
     UnresolvedText,
@@ -63,7 +64,7 @@ class LabelUpdateCatalogItem(BaseModel):
     color: str | None = Field(description="既存ラベルの色です。")
     """既存ラベルの色です。"""
 
-    keybind: KeybindCandidate | None = Field(description="既存ラベルに設定されたキーボードショートカットです。")
+    keybind: ExistingKeybind | None = Field(description="既存ラベルに設定されたキーボードショートカットです。")
     """既存ラベルに設定されたキーボードショートカットです。"""
 
     field_values: dict[str, Any] = Field(description="既存ラベルごとの制約、表示設定、許容誤差などです。")

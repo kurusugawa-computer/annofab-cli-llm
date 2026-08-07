@@ -232,6 +232,14 @@ def test_get_attribute_catalog_includes_keybind_and_choice_details(annotation_sp
         },
         "choices": [],
     }
+
+
+def test_get_attribute_catalog_allows_unrestricted_existing_keybind(annotation_specs):
+    annotation_specs["additionals"][0]["keybind"][0]["code"] = "Numpad1"
+
+    actual = get_attribute_catalog(annotation_specs)
+
+    assert actual[0].keybind.code == "Numpad1"
     assert actual[1].choices[0].model_dump(mode="json") == {
         "choice_name_en": "general_car",
         "choice_name_ja": "乗用車",
@@ -343,6 +351,47 @@ def test_normalize_parsed_attributes_for_unknown_label(annotation_specs):
     actual = normalize_parsed_attributes(result, annotation_specs)
 
     assert actual.attributes == []
+    assert len(actual.warnings) == 1
+
+
+def test_normalize_parsed_attributes_removes_keybind_equivalent_to_existing_numpad_keybind(annotation_specs):
+    annotation_specs["labels"][0]["keybind"][0]["code"] = "Numpad1"
+    result = AttributeParseResult(
+        attributes=[
+            AttributeCandidate(
+                attribute_type=AdditionalDataDefinitionType.TEXT,
+                attribute_name_en="note",
+                label_name_ens=["pedestrian"],
+                keybind=KeybindCandidate(code="Digit1", ctrl=True),
+            )
+        ]
+    )
+
+    actual = normalize_parsed_attributes(result, annotation_specs)
+
+    assert actual.attributes[0].keybind is None
+    assert len(actual.warnings) == 1
+
+
+def test_normalize_parsed_attributes_removes_duplicate_choice_keybind(annotation_specs):
+    result = AttributeParseResult(
+        attributes=[
+            AttributeCandidate(
+                attribute_type=AdditionalDataDefinitionType.CHOICE,
+                attribute_name_en="weather",
+                label_name_ens=["pedestrian"],
+                choices=[
+                    ChoiceCandidate(choice_name_en="sunny", keybind=KeybindCandidate(code="Digit2")),
+                    ChoiceCandidate(choice_name_en="rainy", keybind=KeybindCandidate(code="Digit2")),
+                ],
+            )
+        ]
+    )
+
+    actual = normalize_parsed_attributes(result, annotation_specs)
+
+    assert actual.attributes[0].choices[0].keybind is not None
+    assert actual.attributes[0].choices[1].keybind is None
     assert len(actual.warnings) == 1
 
 
