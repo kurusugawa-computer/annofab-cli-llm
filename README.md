@@ -39,3 +39,5 @@ uv sync --locked
 make lint
 uv run pytest tests/ -m "not access_webapi"
 ```
+
+lint・整形には Ruff、型検査には mypy を利用します。`make format` で整形し、`make lint` でチェックしてください。
