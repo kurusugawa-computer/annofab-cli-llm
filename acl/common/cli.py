@@ -140,7 +140,7 @@ class PrettyHelpFormatter(argparse.RawTextHelpFormatter, argparse.ArgumentDefaul
 
     def _get_help_string(self, action):  # noqa: ANN001, ANN202
         # 必須な引数には、引数の説明の後ろに"(required)"を付ける
-        help = action.help  # noqa: A001 # pylint: disable=redefined-builtin
+        help = action.help  # noqa: A001
         if action.required:
             help += " (required)"  # noqa: A001
 

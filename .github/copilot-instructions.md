@@ -24,7 +24,7 @@
 * できるだけ型ヒントを付ける
 * docstringはGoogleスタイル
 * dictから値を取得する際、必須なキーならばブラケット記法を使う。キーが必須がどうか分からない場合は、必須とみなす。
-* できるだけ`os.path`でなく`pathlib.Path`を使う（Lint`flake8-use-pathlib`に従う）
+* できるだけ`os.path`でなく`pathlib.Path`を使う（Ruff の `PTH` ルールに従う）
 * Noneの判定、空文字列の判定、長さが0のコレクションの判定は、falsyとして判定するのでなく、`if a is not None:`のように判定内容を明記してください。
 
 ### テストコード
