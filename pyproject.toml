@@ -175,3 +175,6 @@ source = "uv-dynamic-versioning"
 packages = ["acl"]
 
 
+
+[tool.uv-dynamic-versioning]
+fallback-version = "0.0.0"
