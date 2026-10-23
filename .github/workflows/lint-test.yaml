@@ -19,7 +19,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ["3.12", "3.13", "3.14"]
+        python-version: ["3.12", "3.13", "3.14", "3.15"]
 
     steps:
       - uses: actions/checkout@v6
@@ -28,6 +28,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}        
           version: "latest"
+
+      # fastuuid 0.14 uses PyO3 0.26 and has no Python 3.15 wheel.
+      - name: Enable stable ABI for fastuuid on Python 3.15
+        if: matrix.python-version == '3.15'
+        run: echo "PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1" >> "$GITHUB_ENV"
 
       - name: Install the project
         run: uv sync

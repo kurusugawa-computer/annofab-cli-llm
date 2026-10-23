@@ -27,3 +27,11 @@ $ annofabcli-llm --help
 ```
 
 詳細は https://annofab-cli-llm.readthedocs.io/ja/latest/command_reference/index.html を参照してください。
+
+## Python 3.15 の開発環境
+
+依存先の `fastuuid` 0.14 は Python 3.15 用の wheel がないため、Rust ツールチェーンをインストールし、PyO3 の安定 ABI 互換モードでビルドします。CI の Python 3.15 ジョブでも同じ設定を利用します。
+
+```sh
+PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 uv sync --locked --python 3.15
+```
