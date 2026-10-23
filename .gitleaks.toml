@@ -1,0 +1,4 @@
+title = "annofab-cli-llm gitleaks config"
+
+[extend]
+useDefault = true
